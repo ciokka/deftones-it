@@ -15,16 +15,20 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=14">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=15">
 </head>
 <body>
 
 <?php /* Lo sfondo: tre copie dello stesso pattern a scale diverse che
          scorrono a velocità diverse. Fuori dal flusso e inerte. */ ?>
 <div class="sfondo" aria-hidden="true">
-  <span class="strato s1"></span>
-  <span class="strato s2"></span>
-  <span class="strato s3"></span>
+  <?php /* data-v = velocità, data-scala = larghezza del disegno in % del
+           contenitore. Stanno qui e non nel CSS perché servono a
+           entrambi: il JS calcola da scala l'altezza di una piastrella,
+           che è quanto deve scorrere prima di ricominciare. */ ?>
+  <span class="strato s1" data-v="0.06" data-scala="210"></span>
+  <span class="strato s2" data-v="0.42" data-scala="112"></span>
+  <span class="strato s3" data-v="1.05" data-scala="58"></span>
 </div>
 
 <?php
@@ -87,14 +91,33 @@ $voci = [
 
   var strati = [].slice.call(document.querySelectorAll('.strato'));
   if (!strati.length) { return; }
-  var velocita = [0.18, 0.39, 0.66];         // più è alto, più "scivola"
   var inCorso = false;
+
+  // Proporzioni del disegno: 2096 x 2705.81. Servono per sapere quanto è
+  // alta una piastrella una volta scalata, e quindi ogni quanto lo strato
+  // deve ricominciare da capo.
+  var PROPORZIONE = 2705.81 / 2096;
+
+  function misura() {
+    for (var i = 0; i < strati.length; i++) {
+      var el = strati[i];
+      var scala = parseFloat(el.getAttribute('data-scala')) || 100;
+      el.style.backgroundSize = scala + '% auto';
+      el.passo = el.clientWidth * (scala / 100) * PROPORZIONE;
+    }
+  }
 
   function aggiorna() {
     var y = window.scrollY;
     if (y === undefined) { y = (document.documentElement || document.body).scrollTop || 0; }
     for (var i = 0; i < strati.length; i++) {
-      strati[i].style.transform = 'translate3d(0,' + (-y * velocita[i]).toFixed(2) + 'px,0)';
+      var el = strati[i];
+      var d = -y * (parseFloat(el.getAttribute('data-v')) || 0);
+      // Il resto della divisione riporta lo spostamento dentro l'altezza
+      // di una piastrella: lo strato scorre all'infinito invece di
+      // scappare fuori schermo e sparire.
+      if (el.passo > 0) { d = d % el.passo; }
+      el.style.transform = 'translate3d(0,' + d.toFixed(2) + 'px,0)';
     }
     inCorso = false;
   }
@@ -103,8 +126,9 @@ $voci = [
     if (!inCorso) { inCorso = true; requestAnimationFrame(aggiorna); }
   }
   window.addEventListener('scroll', chiedi, { passive: true });
-  window.addEventListener('resize', chiedi, { passive: true });
+  window.addEventListener('resize', function () { misura(); chiedi(); }, { passive: true });
 
+  misura();
   aggiorna();
 })();
 
