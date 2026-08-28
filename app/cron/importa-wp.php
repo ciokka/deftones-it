@@ -131,6 +131,37 @@ function rimappaLinkInterni(string $html): string
     return $s;
 }
 
+/**
+ * Tiene solo l'italiano dai campi bilingui lasciati da qTranslate.
+ *
+ * Il plugin salvava le due lingue nello stesso campo separandole con
+ * commenti HTML — <!--:it-->testo<!--:--><!--:en-->text<!--:--> — oppure,
+ * nelle versioni più recenti, con [:it]testo[:en]text[:]. Disinstallato
+ * il plugin quei marcatori restano nel testo, in chiaro.
+ */
+function soloItaliano(string $t): string
+{
+    // forma classica: <!--:it-->...<!--:-->
+    if (preg_match_all('#<!--:([a-z]{2})-->(.*?)<!--:-->#is', $t, $m, PREG_SET_ORDER)) {
+        foreach ($m as $b) {
+            if (strtolower($b[1]) === 'it') { $t = $b[2]; break; }
+        }
+        if (isset($m[0]) && $t === $m[0][0]) { $t = $m[0][2]; }   // niente italiano: la prima
+    }
+    // forma nuova: [:it]...[:en]...[:]
+    elseif (preg_match('#\[:it\](.*?)(?=\[:[a-z]{0,2}\]|$)#is', $t, $m)) {
+        $t = $m[1];
+    }
+
+    // marcatori rimasti orfani, più il "leggi tutto" di WordPress
+    $t = preg_replace('#<!--:[a-z]{0,2}-->#i', '', $t);
+    $t = preg_replace('#\[:[a-z]{0,2}\]#i', '', $t);
+    $t = preg_replace('#\{:[a-z]{0,2}\}#i', '', $t);
+    $t = preg_replace('#<!--\s*(more|nextpage)[^>]*-->#i', '', $t);
+
+    return trim($t);
+}
+
 /** L'indirizzo che l'articolo aveva sul vecchio sito. */
 function urlVecchio(string $data, string $nome): string
 {
@@ -186,7 +217,7 @@ if ($soloAnalisi) {
         if (mb_strlen(strip_tags($c)) < 200) { $vuoti[] = $p['ID']; }
 
         // titoli che fanno pensare a testi di canzoni: sono opere protette
-        if (preg_match('#\b(le parole di|testo|testi|lyrics|traduzione)\b#iu', (string)$p['post_title'])) {
+        if (preg_match('#\b(le parole di|testo|testi|lyrics|traduzion[ei])\b#iu', soloItaliano((string)$p['post_title']))) {
             $sospettiTesti[] = ['id' => $p['ID'], 'titolo' => $p['post_title']];
         }
         if (isset($slugEsistenti[$p['post_name']])) { $collisioni[] = $p['post_name']; }
@@ -286,7 +317,7 @@ $ins = $pdo->prepare(
 
 $fatti = $saltati = $errori = 0;
 foreach ($post as $p) {
-    $corpo = rimappaLinkInterni(rimappaImmagini(ripuliscHtml((string)$p['post_content'])));
+    $corpo = rimappaLinkInterni(rimappaImmagini(ripuliscHtml(soloItaliano((string)$p['post_content']))));
 
     // Un articolo può essere breve ma contenere un video: quello è
     // contenuto, non un vuoto. Scartiamo solo ciò che non ha né l'uno
@@ -295,16 +326,21 @@ foreach ($post as $p) {
     if (!$haVideo && mb_strlen(strip_tags($corpo)) < 120) { $saltati++; continue; }
 
     $tag = $tassonomie[(int)$p['ID']]['post_tag'] ?? [];
-    $sommario = (string)$p['post_excerpt'];
+    $sommario = soloItaliano((string)$p['post_excerpt']);
     if (trim($sommario) === '') {
-        $sommario = mb_substr(trim(preg_replace('/\s+/u', ' ', strip_tags($corpo))), 0, 300);
+        $sommario = strip_tags($corpo);
     }
+    // decodifica prima di salvare: il testo nel database dev'essere testo,
+    // non entità. Altrimenti la & diventa &amp; e poi &amp;amp; a video.
+    $sommario = html_entity_decode($sommario, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $sommario = mb_substr(trim(preg_replace('/\s+/u', ' ', $sommario)), 0, 300);
 
     $slug = $p['post_name'] !== '' ? $p['post_name'] : slug((string)$p['post_title']);
     try {
       $ins->execute([
         mb_substr($slug, 0, 200),
-        mb_substr(html_entity_decode((string)$p['post_title'], ENT_QUOTES, 'UTF-8'), 0, 300),
+        mb_substr(html_entity_decode(soloItaliano((string)$p['post_title']),
+                  ENT_QUOTES | ENT_HTML5, 'UTF-8'), 0, 300),
         $sommario,
         $corpo,
         json_encode(array_values($tag), JSON_UNESCAPED_UNICODE),
