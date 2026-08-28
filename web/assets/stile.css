@@ -59,14 +59,22 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 ::selection { background: var(--accento); color: #000; }
-html { -webkit-text-size-adjust: 100%; }
+/* Le dimensioni del sito sono tutte in rem: cambiando la radice il
+   testo cala di 1px su mobile e le spaziature lo seguono in proporzione,
+   invece di restare tarate su un corpo che non c'è più.
+   Il logo è in px, quindi non viene toccato. */
+html {
+  font-size: 15px;
+  -webkit-text-size-adjust: 100%;
+}
+@media (min-width: 40rem) { html { font-size: 16px; } }
 
 body {
   margin: 0;
   background: var(--fondo);
   color: var(--testo);
   font-family: var(--testo-font);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 400;
   line-height: 1.6;
   letter-spacing: .005em;
@@ -158,7 +166,7 @@ a { color: inherit; }
   align-items: center;
   text-align: center;
   gap: .85rem;
-  padding: 1.1rem 0;
+  padding: 1.25rem 0 1.75rem;        /* il payoff non deve toccare il menu */
 }
 
 @media (min-width: 40rem) {
@@ -225,8 +233,9 @@ a { color: inherit; }
 .menu a {
   color: var(--testo-tenue);
   text-decoration: none;
-  font-size: .875rem;
-  text-transform: lowercase;         /* come il sito ufficiale */
+  font-size: .8125rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;             /* il maiuscolo senza spazio si legge male */
   transition: color .2s;
 }
 .menu a:hover { color: var(--accento); }
