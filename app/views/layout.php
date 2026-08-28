@@ -15,23 +15,38 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=10">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=11">
 </head>
 <body>
 
+<?php
+// Le voci del menu, definite una volta sola: vengono rese due volte —
+// dentro la testata su desktop, come barra a sé su mobile — perché un
+// elemento sticky smette di stare fermo quando il suo contenitore esce
+// dallo schermo, e su mobile la testata deve scorrere via.
+$voci = [
+    u('/')                  => 'Notizie',
+    u('categoria/tour/')    => 'Tour',
+    u('feed.xml')           => 'RSS',
+];
+?>
 <header class="testata">
   <div class="contenitore testata-int">
     <div class="marchio-blocco">
       <a class="marchio" href="<?= u('/') ?>"><?php require __DIR__ . '/logo.php'; ?></a>
       <p class="sottotitolo">The Italian Deftones fan site <span>since 2002</span></p>
     </div>
-    <nav class="menu">
-      <a href="<?= u('/') ?>">Notizie</a>
-      <a href="<?= u('categoria/tour/') ?>">Tour</a>
-      <a href="<?= u('feed.xml') ?>">RSS</a>
+    <nav class="menu menu-riga">
+      <?php foreach ($voci as $href => $et): ?><a href="<?= $href ?>"><?= $et ?></a><?php endforeach ?>
     </nav>
   </div>
 </header>
+
+<nav class="menu-barra">
+  <div class="contenitore menu">
+    <?php foreach ($voci as $href => $et): ?><a href="<?= $href ?>"><?= $et ?></a><?php endforeach ?>
+  </div>
+</nav>
 
 <main class="contenitore">
 <?= $contenuto ?>

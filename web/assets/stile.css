@@ -116,13 +116,39 @@ a { color: inherit; }
 
 /* ---------------------------------------------------------- testata */
 
+/* Su mobile la testata scorre via: logo e sottotitolo si vedono
+   all'arrivo e poi lasciano spazio. È la barra del menu, qui sotto, a
+   restare fissa. Da 40rem in su la testata torna una riga sola e resta
+   lei in cima. */
 .testata {
+  background: rgba(0,0,0,.9);
+  border-bottom: 1px solid var(--bordo);
+}
+
+@media (min-width: 40rem) {
+  .testata {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+  }
+}
+
+/* La barra del menu è fuori dalla testata, non dentro: un elemento
+   sticky si sblocca quando il suo contenitore esce dalla vista. */
+.menu-barra {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(0,0,0,.9);
+  background: rgba(0,0,0,.92);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--bordo);
+  padding: .7rem 0;
+}
+.menu-barra .menu { justify-content: center; }
+
+@media (min-width: 40rem) {
+  .menu-barra { display: none; }        /* su desktop il menu sta nella testata */
 }
 /* Da telefono la testata si incolonna e si centra: logo, sottotitolo,
    menu. Da 40rem in su torna in riga, allineata ai bordi. */
@@ -194,6 +220,8 @@ a { color: inherit; }
 @media (min-width: 64rem) { .logo { height: 25px; } }
 
 .menu { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
+.menu-riga { display: none; }           /* su mobile il menu è la barra sotto */
+@media (min-width: 40rem) { .menu-riga { display: flex; } }
 .menu a {
   color: var(--testo-tenue);
   text-decoration: none;
