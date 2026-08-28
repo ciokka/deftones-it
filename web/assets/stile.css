@@ -84,7 +84,7 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background: url(pattern.svg) center top / cover no-repeat;
-  opacity: .4;
+  opacity: .3;
   -webkit-mask-image: linear-gradient(to bottom,
       rgba(0,0,0,1) 0%, rgba(0,0,0,.85) 22%, rgba(0,0,0,.35) 55%, rgba(0,0,0,0) 88%);
   mask-image: linear-gradient(to bottom,
@@ -140,7 +140,28 @@ a { color: inherit; }
 }
 @media (min-width: 64rem) { .testata .contenitore { padding: 0 2.5rem; } }
 
+.marchio-blocco { display: flex; flex-direction: column; gap: .45rem; }
+
 .marchio { display: block; line-height: 0; color: var(--testo); transition: opacity .2s; }
+
+/* Il sottotitolo sta sotto il logo e ne condivide il bordo sinistro: il
+   logo parte da x=0 nel suo viewBox, quindi si allineano da soli.
+   Corpo molto piccolo e lettere spaziate — deve dire chi sei senza
+   competere con il marchio. */
+.sottotitolo {
+  margin: 0;
+  font-size: .5625rem;
+  line-height: 1;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--testo-tenue);
+  white-space: nowrap;
+}
+.sottotitolo span { color: var(--accento); }
+
+@media (min-width: 40rem) {
+  .sottotitolo { font-size: .625rem; letter-spacing: .2em; }
+}
 .marchio:hover { color: var(--accento); }
 
 /* Logo SVG inline monocromatico: eredita il colore del link, quindi non

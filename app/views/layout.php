@@ -15,13 +15,16 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=7">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=8">
 </head>
 <body>
 
 <header class="testata">
   <div class="contenitore testata-int">
-    <a class="marchio" href="<?= u('/') ?>"><?php require __DIR__ . '/logo.php'; ?></a>
+    <div class="marchio-blocco">
+      <a class="marchio" href="<?= u('/') ?>"><?php require __DIR__ . '/logo.php'; ?></a>
+      <p class="sottotitolo">The Italian Deftones fan site <span>since 2002</span></p>
+    </div>
     <nav class="menu">
       <a href="<?= u('/') ?>">Notizie</a>
       <a href="<?= u('categoria/tour/') ?>">Tour</a>
