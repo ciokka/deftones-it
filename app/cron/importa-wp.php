@@ -100,10 +100,30 @@ function rimappaImmagini(string $html): string
  */
 function rimappaLinkInterni(string $html): string
 {
-    return preg_replace(
+    // 1. Gli articoli del vecchio WordPress hanno un corrispondente nuovo:
+    //    quelli si riscrivono e continuano a funzionare.
+    $s = preg_replace(
         '#https?://(?:www\.)?deftones\.it/\d{2}-\d{2}-\d{4}/([a-z0-9-]+)/?#i',
         '/notizie/$1/', $html
     );
+
+    // 2. Le immagini rimaste sul vecchio dominio non esistono più: la
+    //    cartella uploads parte dal 2012 e tutto il resto è sparito.
+    $s = preg_replace(
+        '#<img[^>]+src=["\']?https?://(?:www\.)?deftones\.it/[^>]*>#i', '', $s
+    );
+
+    // 3. Tutti gli altri link puntano a sezioni del sito pre-WordPress
+    //    (/forum/, /testi/, /interviste/, /biografia/, /recensioni/) che
+    //    non esistono più. Togliamo il collegamento e teniamo il testo:
+    //    la frase resta leggibile e sparisce un link verso il nulla.
+    $s = preg_replace_callback(
+        '#<a\b[^>]*href=["\']?https?://(?:www\.)?deftones\.it/[^>]*>(.*?)</a>#is',
+        fn(array $m): string => $m[1],
+        $s
+    );
+
+    return $s;
 }
 
 /** L'indirizzo che l'articolo aveva sul vecchio sito. */
