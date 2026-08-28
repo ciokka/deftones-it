@@ -442,6 +442,39 @@ a { color: inherit; }
 .rimando a { color: var(--accento); text-decoration: none; border-bottom: 1px solid var(--accento-scuro); }
 .rimando a:hover { border-bottom-color: var(--accento); }
 
+/* ---------------------------------------------------- condivisione */
+
+.condividi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  margin: 2.5rem 0 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--bordo);
+}
+.condividi-etichetta {
+  font-size: .6875rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--testo-tenue);
+  margin-right: .25rem;
+}
+.condividi-voce {
+  font-family: inherit;
+  font-size: .75rem;
+  text-transform: lowercase;
+  color: var(--testo-tenue);
+  text-decoration: none;
+  background: transparent;
+  border: 1px solid var(--bordo);
+  padding: .35rem .75rem;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.condividi-voce:hover { border-color: var(--accento); color: var(--accento); }
+.condividi-voce.fatto { border-color: var(--accento); color: var(--accento); }
+
 .tag { margin: 2rem 0 0; display: flex; flex-wrap: wrap; gap: .5rem; }
 .tag a {
   font-size: .75rem;

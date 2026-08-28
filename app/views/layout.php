@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=23">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=24">
 </head>
 <body>
 
@@ -157,6 +157,49 @@ $voci = [
 
   misura();
   aggiorna();
+})();
+
+// Condivisione. Su telefono il sistema operativo ha già il suo
+// pannello — è più comodo di qualsiasi elenco di icone e conosce le app
+// installate — quindi se il browser lo espone sostituiamo tutto con un
+// pulsante solo. Su desktop restano i link, che nessun sistema offre.
+(function () {
+  var box = document.querySelector('.condividi');
+  if (!box) { return; }
+
+  var indirizzo = box.getAttribute('data-url');
+  var titolo = box.getAttribute('data-titolo');
+
+  if (navigator.share) {
+    var voci = box.querySelectorAll('.condividi-voce');
+    for (var i = 0; i < voci.length; i++) { voci[i].remove(); }
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'condividi-voce';
+    b.textContent = 'condividi';
+    b.addEventListener('click', function () {
+      navigator.share({ title: titolo, url: indirizzo }).catch(function () {});
+    });
+    box.appendChild(b);
+    return;
+  }
+
+  var copia = box.querySelector('.condividi-copia');
+  if (copia && navigator.clipboard) {
+    copia.addEventListener('click', function () {
+      navigator.clipboard.writeText(indirizzo).then(function () {
+        var prima = copia.textContent;
+        copia.textContent = 'copiato';
+        copia.classList.add('fatto');
+        setTimeout(function () {
+          copia.textContent = prima;
+          copia.classList.remove('fatto');
+        }, 1800);
+      }).catch(function () {});
+    });
+  } else if (copia) {
+    copia.remove();          // senza appunti il pulsante non farebbe nulla
+  }
 })();
 
 // Un'immagine che non carica lascerebbe l'icona rotta del browser.

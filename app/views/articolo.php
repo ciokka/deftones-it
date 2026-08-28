@@ -33,6 +33,29 @@
   </p>
   <?php endif ?>
 
+  <?php
+  $indirizzo = cfg('site_url') . u('notizie/' . $a['slug'] . '/');
+  $q = rawurlencode($indirizzo);
+  $t = rawurlencode($a['titolo_it']);
+  ?>
+  <div class="condividi" data-url="<?= e($indirizzo) ?>" data-titolo="<?= e($a['titolo_it']) ?>">
+    <span class="condividi-etichetta">condividi</span>
+
+    <?php /* Link semplici, non pulsanti ufficiali: quelli caricherebbero
+             codice dai server di Meta e X e traccerebbero chi apre la
+             pagina anche senza cliccare. Così non parte nulla finché
+             non è il lettore a volerlo. */ ?>
+    <a class="condividi-voce" href="https://wa.me/?text=<?= $t ?>%20<?= $q ?>"
+       target="_blank" rel="noopener nofollow">whatsapp</a>
+    <a class="condividi-voce" href="https://t.me/share/url?url=<?= $q ?>&amp;text=<?= $t ?>"
+       target="_blank" rel="noopener nofollow">telegram</a>
+    <a class="condividi-voce" href="https://www.facebook.com/sharer/sharer.php?u=<?= $q ?>"
+       target="_blank" rel="noopener nofollow">facebook</a>
+    <a class="condividi-voce" href="https://twitter.com/intent/tweet?url=<?= $q ?>&amp;text=<?= $t ?>"
+       target="_blank" rel="noopener nofollow">x</a>
+    <button class="condividi-voce condividi-copia" type="button">copia link</button>
+  </div>
+
   <?php $tag = json_decode((string)$a['tag'], true) ?: []; ?>
   <?php if ($tag): ?>
   <p class="tag">
