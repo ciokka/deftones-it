@@ -27,7 +27,16 @@ DESTINAZIONE = RADICE / 'web' / 'assets'
 
 SEME = 20260828
 PIASTRELLA = 1000.0        # lo spazio si ripete ogni 1000 unità
-TRATTO = 1.0               # spessore del contorno, in unità di piastrella
+# Due serie di file, una per formato. Lo spessore del contorno è
+# espresso in unità di piastrella e viene scalato insieme a essa: siccome
+# su mobile la piastrella è molto più grande (300% della larghezza contro
+# 90%), con un valore unico il tratto risulterebbe più spesso proprio
+# dove lo schermo è più piccolo. Ogni dispositivo scarica solo la serie
+# che lo riguarda, perché la scelta avviene in una media query.
+SERIE = [
+    {'suffisso': '',   'tratto': 1.00},   # desktop, piastrella al 90%
+    {'suffisso': '-m', 'tratto': 0.72},   # mobile,  piastrella al 300%
+]
 
 # Tutti gli strati vengono ingranditi allo stesso modo dal CSS: è ciò che
 # rende il contorno identico su ogni piano. Se le scale fossero diverse,
@@ -153,8 +162,10 @@ def genera() -> None:
     rad = math.radians(INCLINAZIONE)
     cos_a, sin_a = abs(math.cos(rad)), abs(math.sin(rad))
 
-    for n, piano in enumerate(PIANI, start=1):
-        rnd = random.Random(SEME + n * 977)
+    for serie in SERIE:
+      tratto = serie['tratto']
+      for n, piano in enumerate(PIANI, start=1):
+        rnd = random.Random(SEME + n * 977)     # stessa disposizione in entrambe le serie
         pezzi = []
 
         for _ in range(piano['quante']):
@@ -178,7 +189,7 @@ def genera() -> None:
             # la trasformazione resta uguale su tutti i piani: altrimenti le
             # lettere piccole sparirebbero e le grandi diventerebbero pesanti.
             stile = (f'fill:none;stroke:#fff;stroke-miterlimit:10;'
-                     f'stroke-width:{TRATTO / k:.3f}px')
+                     f'stroke-width:{tratto / k:.3f}px')
 
             # La stessa lettera viene ripetuta oltre i bordi che tocca:
             # è ciò che rende la piastrella continua quando si ripete.
@@ -205,11 +216,10 @@ def genera() -> None:
             f'width="{PIASTRELLA:.0f}" height="{PIASTRELLA:.0f}">'
             + ''.join(pezzi) + '</svg>'
         )
-        f = DESTINAZIONE / f'sfondo-{n}.svg'
-        f.write_text(svg, encoding='utf-8')
-        print(f'  sfondo-{n}.svg  {piano["quante"]:>2} lettere alte {piano["altezza"]:>3} '
-              f'· {len(pezzi):>3} tracciati con le ripetizioni ai bordi '
-              f'· {len(svg) / 1024:5.1f} KB')
+        nome = f'sfondo-{n}{serie["suffisso"]}.svg'
+        (DESTINAZIONE / nome).write_text(svg, encoding='utf-8')
+        print(f'  {nome:<14} {piano["quante"]:>2} lettere alte {piano["altezza"]:>3} '
+              f'· tratto {tratto:.2f} · {len(svg) / 1024:5.1f} KB')
 
 
 if __name__ == '__main__':
