@@ -1,0 +1,381 @@
+/* =====================================================================
+   deftones.it — foglio di stile unico.
+
+   Impianto allineato a deftones.com: nero e bianco puri, un serif da
+   display ad altissimo contrasto per i titoli, un grottesco neutro per
+   il testo, filetti da un pixel, bottoni solo contornati, molta aria.
+
+   I font sono ospitati qui: nessuna richiesta a Google, quindi nessun
+   dato dei visitatori esce dal sito e la pagina non aspetta terzi.
+   ===================================================================== */
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: url(fonts/instrumentserif-latin-normal.woff2) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+                 U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+                 U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url(fonts/inter-latin-normal.woff2) format("woff2");
+  font-weight: 100 900;                 /* un solo file: è variabile */
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+                 U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+                 U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF;
+}
+
+:root {
+  --fondo:       #000;
+  --fondo-alto:  #0c0c0c;
+  --bordo:       rgba(255,255,255,.15);
+  --bordo-forte: rgba(255,255,255,.35);
+  --testo:       #fff;
+  --testo-tenue: rgba(255,255,255,.52);
+
+  /* Unico colore del sito, e solo con una funzione: segnalare che una
+     notizia non è confermata. Tutto il resto è bianco e nero.
+     Il verde di deftones.com appartiene alla campagna "Private Music",
+     non all'identità della band: adottarlo farebbe invecchiare il sito
+     al prossimo disco. */
+  --avviso:      #d8b44a;
+
+  --display: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --testo-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                Roboto, Helvetica, Arial, sans-serif;
+  --larghezza: 62rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--testo);
+  font-family: var(--testo-font);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: .005em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Il pattern non è uniforme: una maschera a gradiente lo tiene presente
+   in alto, dove c'è l'apertura, e lo spegne scendendo verso il testo di
+   lettura. Così la pagina ha profondità dove serve e resta pulita dove
+   si legge — invece di una texture piatta che disturba ovunque uguale. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url(pattern.svg) center top / cover no-repeat;
+  opacity: .11;
+  -webkit-mask-image: linear-gradient(to bottom,
+      rgba(0,0,0,1) 0%, rgba(0,0,0,.85) 22%, rgba(0,0,0,.35) 55%, rgba(0,0,0,0) 88%);
+  mask-image: linear-gradient(to bottom,
+      rgba(0,0,0,1) 0%, rgba(0,0,0,.85) 22%, rgba(0,0,0,.35) 55%, rgba(0,0,0,0) 88%);
+}
+
+/* Un secondo strato, sopra il pattern e sotto il testo: una luce fredda
+   molto tenue in alto a sinistra che stacca la testata dal fondo. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 15% -10%, rgba(255,255,255,.06) 0%, transparent 60%),
+    linear-gradient(to bottom, transparent 60%, #000 100%);
+}
+
+a { color: inherit; }
+
+.contenitore {
+  width: 100%;
+  max-width: var(--larghezza);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* ---------------------------------------------------------- testata */
+
+.testata {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(0,0,0,.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--bordo);
+}
+.testata-int {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-height: 4.5rem;
+}
+
+/* La testata esce dalla colonna del testo e va da bordo a bordo: il logo
+   si appoggia al margine della finestra, il menu all'altro. */
+.testata .contenitore {
+  max-width: none;
+  padding: 0 1.75rem;
+}
+@media (min-width: 64rem) { .testata .contenitore { padding: 0 2.5rem; } }
+
+.marchio { display: block; line-height: 0; color: var(--testo); transition: opacity .2s; }
+.marchio:hover { opacity: .6; }
+
+/* Logo SVG inline monocromatico: eredita il colore del link, quindi non
+   serve una seconda immagine per la versione chiara. */
+.logo { display: block; height: 17px; width: auto; max-width: 62vw; }
+@media (min-width: 40rem) { .logo { height: 22px; } }
+@media (min-width: 64rem) { .logo { height: 25px; } }
+
+.menu { display: flex; gap: 1.5rem; }
+.menu a {
+  color: var(--testo-tenue);
+  text-decoration: none;
+  font-size: .875rem;
+  text-transform: lowercase;         /* come il sito ufficiale */
+  transition: color .2s;
+}
+.menu a:hover { color: var(--testo); }
+
+/* ------------------------------------------------------------- meta */
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-bottom: .75rem;
+  font-size: .75rem;
+  color: var(--testo-tenue);
+  text-transform: lowercase;
+}
+
+.etichetta {
+  display: inline-block;
+  padding: .2rem .6rem;
+  border: 1px solid var(--bordo);
+  font-size: .6875rem;
+  letter-spacing: .04em;
+  text-transform: lowercase;
+  color: var(--testo-tenue);
+}
+.et-dubbio { border-color: rgba(216,180,74,.5); color: var(--avviso); }
+
+/* --------------------------------------------------------- apertura */
+
+.apertura { padding: 4rem 0 3rem; border-bottom: 1px solid var(--bordo); }
+
+/* Il serif da display vuole corpi grandi: sotto una certa dimensione il
+   contrasto fra pieni e filetti sparisce e sembra solo un serif qualsiasi. */
+.apertura h1 {
+  margin: 0 0 1.25rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(2.4rem, 7vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -.01em;
+}
+.apertura h1 a { text-decoration: none; transition: opacity .2s; }
+.apertura h1 a:hover { opacity: .65; }
+
+.sommario { margin: 0 0 1rem; color: rgba(255,255,255,.75); font-size: 1rem; }
+.fonte {
+  margin: 0;
+  font-size: .75rem;
+  color: var(--testo-tenue);
+  text-transform: lowercase;
+  letter-spacing: .02em;
+}
+
+/* ----------------------------------------------------------- elenco */
+
+.elenco { display: grid; }
+.scheda { padding: 2rem 0; border-bottom: 1px solid var(--bordo); }
+.scheda h2 {
+  margin: 0 0 .625rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.6rem;
+  line-height: 1.15;
+}
+.scheda h2 a { text-decoration: none; transition: opacity .2s; }
+.scheda h2 a:hover { opacity: .65; }
+.scheda .sommario { font-size: .9375rem; margin-bottom: .625rem; }
+
+@media (min-width: 46rem) {
+  .elenco-largo { grid-template-columns: 1fr 1fr; column-gap: 3rem; }
+}
+
+/* --------------------------------------------------------- articolo */
+
+.articolo { padding: 4rem 0 2rem; max-width: 42rem; }
+.articolo h1 {
+  margin: 0 0 1.75rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(2.1rem, 6vw, 3.2rem);
+  line-height: 1.08;
+  letter-spacing: -.01em;
+}
+.corpo { font-size: 1.0625rem; line-height: 1.75; color: rgba(255,255,255,.88); }
+.corpo p { margin: 0 0 1.375rem; }
+
+.nota-dubbio {
+  margin: 0 0 2rem;
+  padding: .875rem 1.125rem;
+  border: 1px solid rgba(216,180,74,.35);
+  font-size: .875rem;
+  color: var(--avviso);
+}
+
+.rimando {
+  margin: 3rem 0 0;
+  padding: 1.5rem 0 0;
+  border-top: 1px solid var(--bordo);
+  font-size: .9375rem;
+  color: var(--testo-tenue);
+}
+.rimando strong { color: var(--testo); font-weight: 500; }
+.rimando a { color: var(--testo); text-decoration: none; border-bottom: 1px solid var(--bordo-forte); }
+.rimando a:hover { border-bottom-color: var(--testo); }
+
+.tag { margin: 2rem 0 0; display: flex; flex-wrap: wrap; gap: .5rem; }
+.tag a {
+  font-size: .75rem;
+  color: var(--testo-tenue);
+  text-decoration: none;
+  border: 1px solid var(--bordo);
+  padding: .3rem .7rem;
+  text-transform: lowercase;
+  transition: border-color .2s, color .2s;
+}
+.tag a:hover { border-color: var(--bordo-forte); color: var(--testo); }
+
+.correlate { padding: 3rem 0 0; border-top: 1px solid var(--bordo); }
+.correlate > h2 {
+  margin: 0 0 .5rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.75rem;
+  text-transform: lowercase;
+}
+
+/* ------------------------------------------------------------ varie */
+
+/* I titoli di sezione sono minuscoli come sul sito ufficiale. I titoli
+   delle notizie no: sono testo redazionale con nomi propri e date, e
+   forzarli in minuscolo li renderebbe più difficili da scorrere. */
+.titolo-sezione {
+  margin: 3.5rem 0 .5rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(2rem, 6vw, 3rem);
+  line-height: 1.05;
+  text-transform: lowercase;
+  text-align: center;
+}
+
+.vuoto { padding: 6rem 0; text-align: center; color: var(--testo-tenue); }
+.vuoto h1 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 3rem;
+  color: var(--testo);
+  margin: 0 0 .5rem;
+  text-transform: lowercase;
+}
+
+/* Bottoni contornati, mai pieni, angoli vivi: è la cifra del sito
+   ufficiale, dove ogni "tickets" è un rettangolo vuoto. */
+.bottone {
+  display: inline-block;
+  padding: .7rem 1.75rem;
+  background: transparent;
+  border: 1px solid var(--bordo-forte);
+  color: var(--testo);
+  text-decoration: none;
+  font-family: inherit;
+  font-size: .875rem;
+  text-transform: lowercase;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.bottone:hover { background: var(--testo); color: #000; border-color: var(--testo); }
+.bottone-tenue { border-color: var(--bordo); color: var(--testo-tenue); }
+.bottone-tenue:hover { background: transparent; color: var(--testo); border-color: var(--bordo-forte); }
+
+/* ---------------------------------------------------- pie di pagina */
+
+.pieDiPagina {
+  margin-top: 5rem;
+  padding: 2.5rem 0 4rem;
+  border-top: 1px solid var(--bordo);
+  font-size: .75rem;
+  color: var(--testo-tenue);
+}
+.avviso { margin: 0 0 1.25rem; max-width: 44rem; line-height: 1.7; }
+.colofone { margin: 0; }
+.pieDiPagina a { color: var(--testo-tenue); }
+.pieDiPagina a:hover { color: var(--testo); }
+
+/* ----------------------------------------------------------- admin */
+
+.pannello { padding: 3rem 0; }
+.pannello-testa {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;
+  padding-bottom: 1rem; border-bottom: 1px solid var(--bordo);
+}
+.pannello-testa h1 {
+  margin: 0; font-family: var(--display); font-weight: 400;
+  font-size: 2rem; text-transform: lowercase;
+}
+
+.bozza { border: 1px solid var(--bordo); padding: 1.5rem; margin-bottom: 1rem; }
+.bozza h2 {
+  margin: 0 0 .75rem; font-family: var(--display); font-weight: 400;
+  font-size: 1.5rem; line-height: 1.15;
+}
+.bozza .sommario { font-size: .9375rem; color: rgba(255,255,255,.72); }
+.punteggio {
+  display: inline-block; min-width: 2.5rem; text-align: center;
+  padding: .2rem .5rem; border: 1px solid var(--bordo-forte);
+  color: var(--testo); font-size: .75rem; font-variant-numeric: tabular-nums;
+}
+.azioni { display: flex; gap: .625rem; margin-top: 1.25rem; flex-wrap: wrap; }
+
+.accesso { max-width: 22rem; margin: 6rem auto; }
+.accesso h1 {
+  font-family: var(--display); font-weight: 400; font-size: 2.25rem;
+  margin: 0 0 2rem; text-transform: lowercase;
+}
+.campo { display: block; margin-bottom: 1.25rem; }
+.campo span {
+  display: block; font-size: .75rem; color: var(--testo-tenue);
+  margin-bottom: .4rem; text-transform: lowercase;
+}
+.campo input {
+  width: 100%; padding: .7rem .875rem;
+  background: transparent; border: 1px solid var(--bordo);
+  color: var(--testo); font: inherit; font-size: .9375rem;
+}
+.campo input:focus { outline: none; border-color: var(--testo); }
+
+.avvisoOk, .avvisoKo { padding: .875rem 1.125rem; margin-bottom: 1.5rem; font-size: .875rem; }
+.avvisoOk { border: 1px solid rgba(255,255,255,.3); color: var(--testo); }
+.avvisoKo { border: 1px solid rgba(216,180,74,.5); color: var(--avviso); }

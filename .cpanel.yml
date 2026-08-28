@@ -1,0 +1,28 @@
+---
+# Istruzioni di distribuzione per cPanel.
+# Quando premi "Distribuisci HEAD Commit" in Git Version Control, cPanel
+# esegue questi comandi: copiano i file dal repository al loro posto.
+#
+# config.php NON è nel repository e non viene toccato: le tue credenziali
+# restano solo sul server.
+deployment:
+  tasks:
+    - export APP=/home/bpdefton/deftones/app
+    - export WEB=/home/bpdefton/public_html/v2
+
+    - /bin/mkdir -p $APP/lib $APP/cron $APP/views $WEB/assets/fonts
+
+    # --- codice dell'applicazione (fuori da public_html) ---
+    - /bin/cp    app/admin.php           $APP/
+    - /bin/cp -r app/lib/.               $APP/lib/
+    - /bin/cp -r app/cron/.              $APP/cron/
+    - /bin/cp -r app/views/.             $APP/views/
+    - /bin/cp    app/config.example.php  $APP/
+
+    # --- file pubblici ---
+    - /bin/cp    web/index.php           $WEB/
+    - /bin/cp    web/.htaccess           $WEB/
+    - /bin/cp -r web/assets/.            $WEB/assets/
+
+    # --- la cache va svuotata, o continueresti a vedere le pagine vecchie ---
+    - /bin/rm -f $APP/cache/*.html

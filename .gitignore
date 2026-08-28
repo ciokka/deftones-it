@@ -1,0 +1,13 @@
+# Mai nel repository: contiene password del database e chiave API
+config.php
+app/config.php
+check.php
+
+# Prodotti a runtime dal sito, non sorgenti
+app/logs/
+app/cache/
+
+# Roba di sistema
+.DS_Store
+*.local.php
+.env
