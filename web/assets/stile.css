@@ -124,12 +124,25 @@ a { color: inherit; }
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--bordo);
 }
+/* Da telefono la testata si incolonna: logo, sottotitolo, menu.
+   Da 40rem in su torna in riga con il menu a destra. */
 .testata-int {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  min-height: 4.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .85rem;
+  padding: 1rem 0;
+}
+
+@media (min-width: 40rem) {
+  .testata-int {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    min-height: 4.5rem;
+    padding: 0;
+  }
 }
 
 /* La testata esce dalla colonna del testo e va da bordo a bordo: il logo
@@ -170,7 +183,7 @@ a { color: inherit; }
 @media (min-width: 40rem) { .logo { height: 22px; } }
 @media (min-width: 64rem) { .logo { height: 25px; } }
 
-.menu { display: flex; gap: 1.5rem; }
+.menu { display: flex; gap: 1.5rem; flex-wrap: wrap; }
 .menu a {
   color: var(--testo-tenue);
   text-decoration: none;
