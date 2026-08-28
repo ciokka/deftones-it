@@ -126,9 +126,15 @@ $schema = [
 ];
 
 // ---------------------------------------------------------------- giro
-$aggiorna = $pdo->prepare("UPDATE `$tab`
-                              SET stato = ?, rilevanza = ?, motivo = ?
-                            WHERE id = ? AND stato = 'draft'");
+// Preparata solo quando serve davvero: in modalità prova la colonna
+// motivo non viene creata, e prepararla comunque faceva morire lo
+// script con "Unknown column" prima ancora della prima chiamata.
+$aggiorna = null;
+if (!$soloProva) {
+    $aggiorna = $pdo->prepare("UPDATE `$tab`
+                                  SET stato = ?, rilevanza = ?, motivo = ?
+                                WHERE id = ? AND stato = 'draft'");
+}
 $tenuti = $scartati = $tokIn = $tokOut = 0;
 
 foreach ($gruppi as $n => $gruppo) {
