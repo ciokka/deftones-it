@@ -107,10 +107,15 @@ function rimappaLinkInterni(string $html): string
         '/notizie/$1/', $html
     );
 
-    // 2. Le immagini rimaste sul vecchio dominio non esistono più: la
-    //    cartella uploads parte dal 2012 e tutto il resto è sparito.
+    // 2. Le immagini del vecchio dominio (2002-2011) oggi non esistono:
+    //    uploads parte dal 2012. NON le cancelliamo però: le rimappiamo
+    //    sotto /media/legacy/ mantenendo il percorso originale. Finché i
+    //    file non ci sono si vede un segnaposto; se un giorno salta fuori
+    //    un backup basta copiarlo lì e le immagini tornano da sole, senza
+    //    dover reimportare nulla.
     $s = preg_replace(
-        '#<img[^>]+src=["\']?https?://(?:www\.)?deftones\.it/[^>]*>#i', '', $s
+        '#(<img[^>]+src=["\']?)https?://(?:www\.)?deftones\.it/#i',
+        '$1/media/legacy/', $s
     );
 
     // 3. Tutti gli altri link puntano a sezioni del sito pre-WordPress

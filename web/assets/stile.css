@@ -245,6 +245,14 @@ a { color: inherit; }
 .corpo { font-size: 1.0625rem; line-height: 1.75; color: rgba(255,255,255,.88); }
 .corpo p { margin: 0 0 1.375rem; }
 
+/* Immagine sostituita dal segnaposto: niente ombre né bordi doppi, il
+   disegno se li porta già dentro. */
+.corpo img.img-mancante {
+  width: 100%;
+  max-width: 32rem;
+  opacity: .8;
+}
+
 /* Da qui in giù: l'archivio 2002-2021. Vent'anni di HTML scritto da mani
    diverse, quindi lo stile deve reggere qualunque cosa arrivi. */
 .corpo img {
