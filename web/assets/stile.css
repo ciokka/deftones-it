@@ -124,14 +124,15 @@ a { color: inherit; }
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--bordo);
 }
-/* Da telefono la testata si incolonna: logo, sottotitolo, menu.
-   Da 40rem in su torna in riga con il menu a destra. */
+/* Da telefono la testata si incolonna e si centra: logo, sottotitolo,
+   menu. Da 40rem in su torna in riga, allineata ai bordi. */
 .testata-int {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  text-align: center;
   gap: .85rem;
-  padding: 1rem 0;
+  padding: 1.1rem 0;
 }
 
 @media (min-width: 40rem) {
@@ -139,6 +140,7 @@ a { color: inherit; }
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    text-align: left;
     gap: 1.5rem;
     min-height: 4.5rem;
     padding: 0;
@@ -153,7 +155,15 @@ a { color: inherit; }
 }
 @media (min-width: 64rem) { .testata .contenitore { padding: 0 2.5rem; } }
 
-.marchio-blocco { display: flex; flex-direction: column; gap: .45rem; }
+.marchio-blocco {
+  display: flex;
+  flex-direction: column;
+  align-items: center;          /* centrato su mobile */
+  gap: .5rem;
+}
+@media (min-width: 40rem) {
+  .marchio-blocco { align-items: flex-start; gap: .45rem; }
+}
 
 .marchio { display: block; line-height: 0; color: var(--testo); transition: opacity .2s; }
 
@@ -179,11 +189,11 @@ a { color: inherit; }
 
 /* Logo SVG inline monocromatico: eredita il colore del link, quindi non
    serve una seconda immagine per la versione chiara. */
-.logo { display: block; height: 17px; width: auto; max-width: 62vw; }
+.logo { display: block; height: 24px; width: auto; max-width: 78vw; }
 @media (min-width: 40rem) { .logo { height: 22px; } }
 @media (min-width: 64rem) { .logo { height: 25px; } }
 
-.menu { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.menu { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
 .menu a {
   color: var(--testo-tenue);
   text-decoration: none;
