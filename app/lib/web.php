@@ -53,6 +53,9 @@ function render(string $vista, array $dati = [], array $meta = []): string
     $titolo      = $meta['titolo']      ?? cfg('site_name');
     $descrizione = $meta['descrizione'] ?? '';
     $canonico    = $meta['canonico']    ?? '';
+    // L'anteprima per la condivisione. Le pagine possono passarne una
+    // propria; in mancanza vale quella del sito.
+    $immagine    = $meta['immagine']    ?? cfg('site_url') . u('assets/og.png');
 
     ob_start();
     require dirname(__DIR__) . '/views/layout.php';

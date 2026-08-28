@@ -14,8 +14,19 @@
 <meta property="og:description" content="<?= e($descrizione) ?>">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
+<meta property="og:locale" content="it_IT">
+<?php if ($canonico): ?>
+<meta property="og:url" content="<?= e($canonico) ?>">
+<?php endif ?>
+<meta property="og:image" content="<?= e($immagine) ?>">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:image:alt" content="deftones.it — the italian Deftones fan site since 2002">
+<?php /* summary_large_image è ciò che fa mostrare l'immagine grande
+         invece della miniatura quadrata di fianco al testo. */ ?>
+<meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=24">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=25">
 </head>
 <body>
 
