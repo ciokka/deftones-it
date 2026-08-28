@@ -16,9 +16,12 @@
   <?php endif ?>
 
   <div class="corpo">
-    <p><?= nl2br(e($a['sommario_it'])) ?></p>
     <?php if (!empty($a['corpo_it'])): ?>
+      <?php /* Articoli dell'archivio: il sommario è solo un estratto del
+               corpo, ripeterlo in cima sarebbe una doppione. */ ?>
       <?= $a['corpo_it'] ?>
+    <?php else: ?>
+      <p><?= nl2br(e($a['sommario_it'])) ?></p>
     <?php endif ?>
   </div>
 

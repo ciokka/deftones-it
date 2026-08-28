@@ -419,3 +419,58 @@ a { color: inherit; }
 .avvisoOk, .avvisoKo { padding: .875rem 1.125rem; margin-bottom: 1.5rem; font-size: .875rem; }
 .avvisoOk { border: 1px solid rgba(255,255,255,.3); color: var(--testo); }
 .avvisoKo { border: 1px solid rgba(216,180,74,.5); color: var(--avviso); }
+
+/* ------------------------------------------- pannello: filtri e liste */
+
+.filtri {
+  display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+  margin-bottom: 1.5rem; padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--bordo);
+}
+.filtri input[type="search"], .filtri select {
+  background: transparent; border: 1px solid var(--bordo);
+  color: var(--testo); font: inherit; font-size: .875rem;
+  padding: .5rem .7rem; border-radius: 0;
+}
+.filtri input[type="search"] { min-width: 14rem; flex: 1 1 14rem; }
+.filtri select { color: var(--testo-tenue); }
+.filtri option { background: #111; color: var(--testo); }
+.filtri input:focus, .filtri select:focus { outline: none; border-color: var(--testo); }
+
+.scelta { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; }
+.scelta input { accent-color: #fff; width: 1rem; height: 1rem; }
+
+/* La barra delle azioni resta a portata di pollice mentre scorri una
+   lista lunga: con seicento bozze si scorre parecchio. */
+.barra-azioni {
+  position: sticky; bottom: 0;
+  display: flex; flex-wrap: wrap; gap: .625rem; align-items: center;
+  margin-top: 1.5rem; padding: 1rem;
+  background: rgba(0,0,0,.92); backdrop-filter: blur(10px);
+  border: 1px solid var(--bordo);
+}
+
+.paginazione {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 1rem; margin: 2rem 0; padding-top: 1.5rem;
+  border-top: 1px solid var(--bordo);
+  font-size: .875rem; color: var(--testo-tenue);
+}
+.paginazione a { color: var(--testo); text-decoration: none; }
+.paginazione a:hover { color: var(--testo-tenue); }
+
+.titoletto {
+  font-family: var(--display); font-weight: 400; font-size: 1.5rem;
+  text-transform: lowercase; margin: 3rem 0 1rem;
+}
+.bozza.compatta { padding: .875rem 1.25rem; }
+.bozza .riga {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 1rem; flex-wrap: wrap;
+}
+.bozza .riga a { font-weight: 500; text-decoration: none; }
+.bozza .riga a:hover { color: var(--testo-tenue); }
+.bottone.piccolo { padding: .3rem .7rem; font-size: .75rem; }
+.registro { font-size: .8125rem; color: var(--testo-tenue); }
+.registro div { padding: .35rem 0; border-bottom: 1px solid var(--bordo); }
+.registro strong { color: var(--testo); font-weight: 500; }

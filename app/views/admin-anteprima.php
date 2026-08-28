@@ -1,0 +1,38 @@
+<div class="pannello">
+  <p><a href="<?= u('admin/') ?>" style="color:var(--testo-tenue);font-size:.875rem">← torna alle bozze</a></p>
+
+  <div class="meta">
+    <span class="punteggio"><?= (int)$a['rilevanza'] ?></span>
+    <span class="etichetta et-<?= e($a['categoria']) ?>"><?= e($a['categoria']) ?></span>
+    <?php if ($a['fonte_nome']): ?><span><?= e($a['fonte_nome']) ?></span><?php endif ?>
+    <time><?= e(dataIt($a['pubblicato_il'] ?: $a['creato_il'])) ?></time>
+    <?php if (!empty($a['url_vecchio'])): ?>
+      <span>vecchio indirizzo: <?= e($a['url_vecchio']) ?></span>
+    <?php endif ?>
+  </div>
+
+  <article class="articolo" style="padding-top:1rem">
+    <h1><?= e($a['titolo_it']) ?></h1>
+    <div class="corpo">
+      <?php if (!empty($a['corpo_it'])): ?>
+        <?= $a['corpo_it'] ?>
+      <?php else: ?>
+        <p><?= nl2br(e($a['sommario_it'])) ?></p>
+      <?php endif ?>
+    </div>
+  </article>
+
+  <div class="barra-azioni">
+    <?php foreach ([['pubblica', 'pubblica', ''], ['scarta', 'scarta', ' bottone-tenue']] as [$che, $et, $cl]): ?>
+      <form method="post" action="<?= u('admin/azione') ?>" style="display:inline">
+        <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
+        <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+        <input type="hidden" name="che" value="<?= $che ?>">
+        <button class="bottone<?= $cl ?>" type="submit"><?= $et ?></button>
+      </form>
+    <?php endforeach ?>
+    <?php if ($a['fonte_url']): ?>
+      <a class="bottone bottone-tenue" href="<?= e($a['fonte_url']) ?>" target="_blank" rel="noopener">fonte</a>
+    <?php endif ?>
+  </div>
+</div>

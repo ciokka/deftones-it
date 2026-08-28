@@ -147,6 +147,20 @@ elseif (preg_match('#^/tag/(.+)$#', $percorso, $m)) {
         ['titolo' => '#' . $tg . ' — deftones.it']);
 }
 
+// --- vecchi indirizzi di WordPress: /GG-MM-AAAA/slug/
+// Reindirizziamo solo se l'articolo esiste davvero: un 301 verso un 404
+// è peggio di un 404 diretto, sia per chi naviga sia per i motori.
+elseif (preg_match('#^/\d{2}-\d{2}-\d{4}/([a-z0-9-]+)$#', $percorso, $m)) {
+    $q = $pdo->prepare('SELECT slug FROM ' . t('articles') . '
+                         WHERE slug = ? AND stato = \'pubblicato\' LIMIT 1');
+    $q->execute([$m[1]]);
+    if ($q->fetchColumn() !== false) {
+        header('Location: ' . u('notizie/' . $m[1] . '/'), true, 301);
+        exit;
+    }
+    pagina404();
+}
+
 // --- pannello
 elseif (str_starts_with($percorso, '/admin')) {
     require $app . '/admin.php';
