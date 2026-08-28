@@ -27,17 +27,24 @@ DESTINAZIONE = RADICE / 'web' / 'assets'
 
 SEME = 20260828
 PIASTRELLA = 1000.0        # lo spazio si ripete ogni 1000 unità
-TRATTO = 1.6               # spessore del contorno, in unità di piastrella
+TRATTO = 1.1               # spessore del contorno, in unità di piastrella
+
+# Tutti gli strati vengono ingranditi allo stesso modo dal CSS: è ciò che
+# rende il contorno identico su ogni piano. Se le scale fossero diverse,
+# quel secondo ingrandimento moltiplicherebbe anche lo spessore, e il
+# piano vicino risulterebbe disegnato con un pennarello più grosso.
 PAROLA = 'DEFTONES'        # da cui si pescano le lettere, con le loro frequenze
 
 # altezza in unità di piastrella · quante · rotazione massima in gradi
+#
+# Quattro piani, con un intervallo di dimensioni stretto: da 70 a 195,
+# cioè meno di tre volte. Con sei piani e quindici volte di differenza
+# il piano vicino non sembrava vicino, sembrava un altro disegno.
 PIANI = [
-    {'altezza':  46, 'quante': 42, 'rotazione': 26},
-    {'altezza':  66, 'quante': 30, 'rotazione': 24},
-    {'altezza':  92, 'quante': 22, 'rotazione': 21},
-    {'altezza': 130, 'quante': 16, 'rotazione': 18},
-    {'altezza': 186, 'quante': 11, 'rotazione': 15},
-    {'altezza': 270, 'quante':  7, 'rotazione': 12},
+    {'altezza':  70, 'quante': 36, 'rotazione': 24},
+    {'altezza': 100, 'quante': 26, 'rotazione': 21},
+    {'altezza': 140, 'quante': 18, 'rotazione': 18},
+    {'altezza': 195, 'quante': 11, 'rotazione': 15},
 ]
 
 

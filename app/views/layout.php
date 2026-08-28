@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=17">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=18">
 </head>
 <body>
 
@@ -23,19 +23,19 @@
          scorrono a velocità diverse. Fuori dal flusso e inerte. */ ?>
 <div class="sfondo" aria-hidden="true">
   <?php
-  /* Sei piani di profondità, generati da strumenti/genera-sfondo.py a
-     partire dalle sette lettere di materiali/lettere.svg. Dimensione,
-     velocità e opacità crescono insieme: le lettere lontane sono
-     piccole, fitte, lente e appena visibili; quelle vicine grandi,
-     rade, veloci e più nette. data-scala serve al JS per sapere quanto
-     è alta una piastrella, cioè ogni quanto lo strato ricomincia. */
+  /* Quattro piani, generati da strumenti/genera-sfondo.py dalle sette
+     lettere di materiali/lettere.svg.
+
+     La scala è la STESSA per tutti: la profondità viene dall'altezza
+     delle lettere dentro la piastrella, non dall'ingrandimento dello
+     strato. Se le scale differissero, l'ingrandimento moltiplicherebbe
+     anche lo spessore del contorno e il piano vicino sembrerebbe
+     disegnato con un pennarello più grosso. */
   $piani = [
-      ['v' => 0.05, 'scala' => 46],
-      ['v' => 0.16, 'scala' => 54],
-      ['v' => 0.32, 'scala' => 64],
-      ['v' => 0.55, 'scala' => 78],
-      ['v' => 0.85, 'scala' => 96],
-      ['v' => 1.25, 'scala' => 120],
+      ['v' => 0.10, 'scala' => 105],
+      ['v' => 0.32, 'scala' => 105],
+      ['v' => 0.62, 'scala' => 105],
+      ['v' => 1.00, 'scala' => 105],
   ];
   foreach ($piani as $i => $pn):
   ?>

@@ -122,16 +122,14 @@ body {
   will-change: transform;
 }
 
-/* Sei piani di profondità, non sei copie dello stesso disegno: ogni
-   file contiene lettere di una sola dimensione, generate da
+/* Quattro piani di profondità, non quattro copie dello stesso disegno:
+   ogni file contiene lettere di una sola dimensione, generate da
    strumenti/genera-sfondo.py. Le opacità crescono con la vicinanza,
    come cresce il contrasto delle cose vicine. */
-.s1 { background-image: url(sfondo-1.svg); opacity: .10; }
-.s2 { background-image: url(sfondo-2.svg); opacity: .13; }
-.s3 { background-image: url(sfondo-3.svg); opacity: .16; }
-.s4 { background-image: url(sfondo-4.svg); opacity: .19; }
-.s5 { background-image: url(sfondo-5.svg); opacity: .22; }
-.s6 { background-image: url(sfondo-6.svg); opacity: .25; }
+.s1 { background-image: url(sfondo-1.svg); opacity: .13; }
+.s2 { background-image: url(sfondo-2.svg); opacity: .17; }
+.s3 { background-image: url(sfondo-3.svg); opacity: .21; }
+.s4 { background-image: url(sfondo-4.svg); opacity: .25; }
 
 /* Un secondo strato, sopra il pattern e sotto il testo: una luce fredda
    molto tenue in alto a sinistra che stacca la testata dal fondo. */
