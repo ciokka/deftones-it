@@ -75,6 +75,36 @@ if (preg_match('#^anteprima/(\d+)$#', $azione, $m)) {
     exit;
 }
 
+// ---------------------------------------------------------- raccolte
+if ($azione === 'raccolte') {
+    $msg = null;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrfValido($_POST['csrf'] ?? null)) {
+        $id = (int)($_POST['id'] ?? 0);
+        $che = (string)($_POST['che'] ?? '');
+        if (in_array($che, ['pubblica', 'ritira'], true)) {
+            $pdo->prepare('UPDATE ' . t('temi') . ' SET stato = ? WHERE id = ?')
+                ->execute([$che === 'pubblica' ? 'pubblicato' : 'draft', $id]);
+            cacheSvuota();
+            $msg = ['ok', $che === 'pubblica' ? 'Raccolta pubblicata.' : 'Raccolta ritirata.'];
+        }
+    }
+
+    // Il conteggio distingue gli articoli pubblicati dal totale: una
+    // raccolta con venti articoli tutti in bozza online sarebbe vuota.
+    $raccolte = $pdo->query(
+        'SELECT t.*,
+                COUNT(a.id) AS totali,
+                SUM(a.stato = \'pubblicato\') AS online
+           FROM ' . t('temi') . ' t
+           LEFT JOIN ' . t('articles') . ' a ON a.tema_id = t.id
+          GROUP BY t.id ORDER BY t.ordine'
+    )->fetchAll();
+
+    echo render('admin-raccolte', ['raccolte' => $raccolte, 'messaggio' => $msg],
+        ['titolo' => 'Raccolte — pannello']);
+    exit;
+}
+
 // ---------------------------------------------------- azioni sulle bozze
 $messaggio = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {

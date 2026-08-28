@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=25">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=26">
 </head>
 <body>
 
@@ -65,6 +65,7 @@
 // dallo schermo, e su mobile la testata deve scorrere via.
 $voci = [
     u('/')                  => 'Notizie',
+    u('raccolte/')          => 'Raccolte',
     u('categoria/tour/')    => 'Tour',
     u('feed.xml')           => 'RSS',
 ];

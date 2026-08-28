@@ -7,6 +7,12 @@
     <time datetime="<?= e($a['pubblicato_il']) ?>"><?= e(dataIt($a['pubblicato_il'])) ?></time>
   </div>
 
+  <?php if (!empty($raccolta)): ?>
+    <p class="appartiene">
+      parte di <a href="<?= u('raccolte/' . $raccolta['slug'] . '/') ?>"><?= e($raccolta['titolo']) ?></a>
+    </p>
+  <?php endif ?>
+
   <h1><?= e($a['titolo_it']) ?></h1>
 
   <?php if ($a['attendibilita'] !== 'confermato'): ?>
@@ -68,7 +74,7 @@
 
 <?php if ($altri): ?>
 <section class="correlate">
-  <h2>Altre notizie</h2>
+  <h2><?= !empty($raccolta) ? 'continua la storia' : 'altre notizie' ?></h2>
   <div class="elenco">
     <?php foreach ($altri as $x): ?>
       <article class="scheda">

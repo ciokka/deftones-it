@@ -109,12 +109,32 @@ elseif (preg_match('#^/notizie/([a-z0-9-]+)$#', $percorso, $m)) {
     $a = $q->fetch();
     if (!$a) { pagina404(); }
 
-    $alt = $pdo->prepare('SELECT slug, titolo_it, pubblicato_il FROM ' . t('articles') . '
-                           WHERE stato = \'pubblicato\' AND id <> ?
-                           ORDER BY pubblicato_il DESC LIMIT 4');
-    $alt->execute([$a['id']]);
+    // La raccolta di appartenenza, se è pubblicata: dà al lettore un
+    // modo di passare dall'articolo singolo alla storia intera.
+    $raccolta = null;
+    if (!empty($a['tema_id'])) {
+        $q = $pdo->prepare('SELECT slug, titolo FROM ' . t('temi') . "
+                             WHERE id = ? AND stato = 'pubblicato' LIMIT 1");
+        $q->execute([$a['tema_id']]);
+        $raccolta = $q->fetch() ?: null;
+    }
 
-    $html = render('articolo', ['a' => $a, 'altri' => $alt->fetchAll()], [
+    // Se l'articolo fa parte di una raccolta, "altre notizie" diventa
+    // il resto di quella storia: è più utile di quattro titoli a caso.
+    if ($raccolta) {
+        $alt = $pdo->prepare('SELECT slug, titolo_it, pubblicato_il FROM ' . t('articles') . "
+                               WHERE stato = 'pubblicato' AND tema_id = ? AND id <> ?
+                               ORDER BY pubblicato_il DESC LIMIT 4");
+        $alt->execute([$a['tema_id'], $a['id']]);
+    } else {
+        $alt = $pdo->prepare('SELECT slug, titolo_it, pubblicato_il FROM ' . t('articles') . "
+                               WHERE stato = 'pubblicato' AND id <> ?
+                               ORDER BY pubblicato_il DESC LIMIT 4");
+        $alt->execute([$a['id']]);
+    }
+
+    $html = render('articolo', ['a' => $a, 'altri' => $alt->fetchAll(),
+                                'raccolta' => $raccolta], [
         'titolo'      => $a['titolo_it'] . ' — deftones.it',
         'descrizione' => mb_substr($a['sommario_it'], 0, 160),
         'canonico'    => cfg('site_url') . u('notizie/' . $a['slug'] . '/'),
@@ -145,6 +165,49 @@ elseif (preg_match('#^/tag/(.+)$#', $percorso, $m)) {
     $q->execute([$tg]);
     $html = render('lista', ['articoli' => $q->fetchAll(), 'intestazione' => '#' . $tg],
         ['titolo' => '#' . $tg . ' — deftones.it']);
+}
+
+// --- indice delle raccolte
+elseif ($percorso === '/raccolte') {
+    $raccolte = $pdo->query(
+        'SELECT t.slug, t.titolo, t.sottotitolo,
+                COUNT(a.id) AS quanti
+           FROM ' . t('temi') . " t
+           LEFT JOIN " . t('articles') . " a
+                  ON a.tema_id = t.id AND a.stato = 'pubblicato'
+          WHERE t.stato = 'pubblicato'
+          GROUP BY t.id
+          HAVING quanti > 0
+          ORDER BY t.ordine"
+    )->fetchAll();
+
+    $html = render('raccolte', ['raccolte' => $raccolte], [
+        'titolo'      => 'Raccolte — deftones.it',
+        'descrizione' => "Le storie che l'archivio di deftones.it ha raccontato a "
+                       . 'puntate dal 2002, rimesse in ordine cronologico.',
+        'canonico'    => cfg('site_url') . u('raccolte/'),
+    ]);
+}
+
+// --- singola raccolta
+elseif (preg_match('#^/raccolte/([a-z0-9-]+)$#', $percorso, $m)) {
+    $q = $pdo->prepare('SELECT * FROM ' . t('temi') . "
+                         WHERE slug = ? AND stato = 'pubblicato' LIMIT 1");
+    $q->execute([$m[1]]);
+    $r = $q->fetch();
+    if (!$r) { pagina404(); }
+
+    $q = $pdo->prepare('SELECT slug, titolo_it, pubblicato_il
+                          FROM ' . t('articles') . "
+                         WHERE tema_id = ? AND stato = 'pubblicato'
+                         ORDER BY pubblicato_il ASC");
+    $q->execute([$r['id']]);
+
+    $html = render('raccolta', ['r' => $r, 'articoli' => $q->fetchAll()], [
+        'titolo'      => $r['titolo'] . ' — deftones.it',
+        'descrizione' => mb_substr((string)$r['sottotitolo'], 0, 160),
+        'canonico'    => cfg('site_url') . u('raccolte/' . $r['slug'] . '/'),
+    ]);
 }
 
 // --- vecchi indirizzi di WordPress: /GG-MM-AAAA/slug/

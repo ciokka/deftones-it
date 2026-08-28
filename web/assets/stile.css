@@ -442,6 +442,75 @@ a { color: inherit; }
 .rimando a { color: var(--accento); text-decoration: none; border-bottom: 1px solid var(--accento-scuro); }
 .rimando a:hover { border-bottom-color: var(--accento); }
 
+/* -------------------------------------------------------- raccolte */
+
+.occhiello {
+  max-width: 40rem;
+  margin: 0 0 2.5rem;
+  color: var(--testo-tenue);
+  font-size: 1rem;
+}
+
+.raccolta { padding: 3.5rem 0 1rem; max-width: 42rem; }
+.raccolta h1 {
+  margin: .75rem 0 1rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(2.1rem, 6vw, 3.2rem);
+  line-height: 1.08;
+  letter-spacing: -.01em;
+}
+.raccolta .meta a { color: var(--testo-tenue); text-decoration: none; }
+.raccolta .meta a:hover { color: var(--accento); }
+.introduzione { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--bordo); }
+
+/* La cronologia è il punto della raccolta: un elenco di date, non di
+   schede. Le schede si sfogliano, una cronologia si legge in fila. */
+.cronologia { list-style: none; margin: 2.5rem 0 0; padding: 0; }
+.cronologia-anno {
+  font-family: var(--display);
+  font-size: 2rem;
+  color: var(--testo-tenue);
+  margin: 2.5rem 0 .75rem;
+  padding-bottom: .5rem;
+  border-bottom: 1px solid var(--bordo);
+}
+.cronologia-anno:first-child { margin-top: 0; }
+.cronologia-voce {
+  display: flex;
+  gap: 1.25rem;
+  align-items: baseline;
+  padding: .7rem 0;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.cronologia-voce time {
+  flex: 0 0 8.5rem;
+  font-size: .75rem;
+  color: var(--testo-tenue);
+  text-transform: lowercase;
+}
+.cronologia-voce a {
+  text-decoration: none;
+  line-height: 1.35;
+  transition: color .2s;
+}
+.cronologia-voce a:hover { color: var(--accento); }
+
+@media (max-width: 34rem) {
+  .cronologia-voce { flex-direction: column; gap: .25rem; }
+  .cronologia-voce time { flex: none; }
+}
+
+.appartiene {
+  margin: 0 0 1rem;
+  font-size: .75rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--testo-tenue);
+}
+.appartiene a { color: var(--accento); text-decoration: none; }
+.appartiene a:hover { border-bottom: 1px solid var(--accento); }
+
 /* ---------------------------------------------------- condivisione */
 
 .condividi {
