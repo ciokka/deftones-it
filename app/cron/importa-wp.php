@@ -29,6 +29,43 @@ function ripuliscHtml(string $html): string
 {
     $s = $html;
 
+    // --- video: recupero prima di distruggere ---------------------------
+    // Gli <object>/<embed> sono Flash, morto nel 2020, e resterebbero come
+    // markup rotto. Ma contengono l'ID del video di YouTube: lo estraiamo
+    // e lo rimettiamo come iframe moderno, così il video torna a funzionare.
+    $s = preg_replace_callback(
+        '#<object\b.*?</object>#is',
+        function (array $m): string {
+            if (preg_match('#youtube(?:-nocookie)?\.com/(?:v|embed)/([A-Za-z0-9_-]{6,})#i', $m[0], $v)) {
+                return '<p><iframe src="https://www.youtube-nocookie.com/embed/' . $v[1]
+                     . '" title="Video YouTube" loading="lazy" allowfullscreen></iframe></p>';
+            }
+            return '';                       // Flash non recuperabile: via
+        },
+        $s
+    );
+    $s = preg_replace('#<(?:embed|param)\b[^>]*>#i', '', $s);
+
+    // iframe: teniamo solo YouTube. Gli altri sono servizi chiusi da anni
+    // (o incorporamenti di terzi che non vogliamo caricare sulle pagine).
+    $s = preg_replace_callback(
+        '#<iframe\b[^>]*src=["\']?([^"\'\s>]+)[^>]*>(?:\s*</iframe>)?#i',
+        function (array $m): string {
+            if (preg_match('#youtube(?:-nocookie)?\.com/(?:embed/|v/)([A-Za-z0-9_-]{6,})#i', $m[1], $v)
+             || preg_match('#youtu\.be/([A-Za-z0-9_-]{6,})#i', $m[1], $v)) {
+                return '<iframe src="https://www.youtube-nocookie.com/embed/' . $v[1]
+                     . '" title="Video YouTube" loading="lazy" allowfullscreen></iframe>';
+            }
+            return '';
+        },
+        $s
+    );
+
+    // --- immagini morte -------------------------------------------------
+    // TinyPic ha chiuso nel 2019: quelle immagini non esistono più. Meglio
+    // toglierle che lasciare 98 icone rotte sparse nell'archivio.
+    $s = preg_replace('#<img[^>]+src=["\']?https?://[^"\'\s>]*(?:tinypic\.com|photobucket\.com|imageshack\.us)[^>]*>#i', '', $s);
+
     // <FONT ...>testo</FONT> → testo. Il tag è deprecato da HTML 4.
     $s = preg_replace('#</?font[^>]*>#i', '', $s);
     // <span>/<div> vuoti di significato usati solo per lo stile del tema
@@ -53,6 +90,19 @@ function rimappaImmagini(string $html): string
     return preg_replace(
         '#(https?://(?:www\.)?deftones\.it)?/wp-content/uploads/#i',
         '/media/', $html
+    );
+}
+
+/**
+ * I link interni puntano ai vecchi indirizzi /GG-MM-AAAA/slug/: li
+ * riscriviamo sui nuovi. Senza questo, ogni rimando fra un articolo e
+ * l'altro dell'archivio finirebbe su un 404.
+ */
+function rimappaLinkInterni(string $html): string
+{
+    return preg_replace(
+        '#https?://(?:www\.)?deftones\.it/\d{2}-\d{2}-\d{4}/([a-z0-9-]+)/?#i',
+        '/notizie/$1/', $html
     );
 }
 
@@ -173,8 +223,13 @@ $ins = $pdo->prepare(
 
 $fatti = $saltati = 0;
 foreach ($post as $p) {
-    $corpo = rimappaImmagini(ripuliscHtml((string)$p['post_content']));
-    if (mb_strlen(strip_tags($corpo)) < 120) { $saltati++; continue; }
+    $corpo = rimappaLinkInterni(rimappaImmagini(ripuliscHtml((string)$p['post_content'])));
+
+    // Un articolo può essere breve ma contenere un video: quello è
+    // contenuto, non un vuoto. Scartiamo solo ciò che non ha né l'uno
+    // né l'altro.
+    $haVideo = str_contains($corpo, '<iframe');
+    if (!$haVideo && mb_strlen(strip_tags($corpo)) < 120) { $saltati++; continue; }
 
     $tag = $tassonomie[(int)$p['ID']]['post_tag'] ?? [];
     $sommario = (string)$p['post_excerpt'];
