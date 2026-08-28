@@ -274,3 +274,64 @@ Poi vedrai le bozze, con Pubblica e Scarta. Pubblicane una e apri
 4. In `config.php`, `'base_url' => ''`
 5. Svuota la cache dal pannello
 6. Elimina il cron del plugin SSL di WordPress
+
+---
+
+# Distribuzione — come si aggiorna il sito
+
+Dal 28/08/2026 il sito si aggiorna da git. Niente più file scelti a mano
+in FileZilla: era la fonte di metà dei problemi avuti in fase di
+installazione ("ho caricato index.php ma non web.php").
+
+## Il ciclo
+
+1. Le modifiche vengono committate e spinte su `github.com/ciokka/deftones-it`
+2. cPanel → **Git™ Version Control** → repository `deftones-it` → *Pull or Deploy*
+3. **Update from Remote** — il server scarica i commit nuovi
+4. **Deploy HEAD Commit** — `.cpanel.yml` mette ogni file al suo posto
+
+Il pannello mostra data e SHA dell'ultimo deploy: se coincide con HEAD,
+online c'è l'ultima versione.
+
+## Cosa fa il deploy
+
+`.cpanel.yml` nella radice del repository:
+
+| Da | A |
+|---|---|
+| `app/` | `/home/bpdefton/deftones/app/` |
+| `web/` | `/home/bpdefton/public_html/v2/` |
+
+e in fondo svuota `app/cache/`, altrimenti continueresti a vedere le
+pagine vecchie anche con i file nuovi.
+
+## Cosa NON viene toccato
+
+- **`config.php`** — non è nel repository (`.gitignore`). Password del
+  database, chiave API e ID del workspace restano solo sul server, e
+  nessun deploy può sovrascriverli o cancellarli.
+- **`app/logs/`** e **`app/cache/`** — prodotti a runtime, non sorgenti.
+
+Se un giorno aggiungessimo una voce nuova a `config.example.php`, quella
+va copiata a mano nel tuo `config.php`: è l'unico passaggio manuale
+rimasto, ed è voluto.
+
+## Se un deploy rompe qualcosa
+
+Il repository sul server è un clone completo, quindi la versione
+precedente c'è. Dal Mac:
+
+```
+git revert HEAD          # annulla l'ultimo commit creandone uno nuovo
+git push
+```
+
+poi *Update from Remote* e *Deploy* di nuovo. Meglio di `reset --hard`:
+la cronologia resta leggibile e si vede cosa è stato annullato e perché.
+
+## Nota sulla visibilità del repository
+
+Il repository è **pubblico** perché il piano di hosting non ha le chiavi
+SSH e cPanel può clonare solo via HTTPS. Non è un compromesso: nel
+repository non c'è nulla di riservato, ed è verificato — nessuna chiave
+API, nessuna password, nessun nome utente reale del database.
