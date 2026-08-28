@@ -15,22 +15,32 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=16">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=17">
 </head>
 <body>
 
 <?php /* Lo sfondo: tre copie dello stesso pattern a scale diverse che
          scorrono a velocità diverse. Fuori dal flusso e inerte. */ ?>
 <div class="sfondo" aria-hidden="true">
-  <?php /* Le 123 lettere del pattern sono divise in tre file — 48, 45 e
-           30 — distribuite a rotazione 3-3-2, così lettere adiacenti
-           finiscono sempre in gruppi diversi. Stessa scala e stessa
-           posizione: sovrapposti ricompongono il disegno originale, ma
-           scorrendo si separano. data-scala serve al JS per sapere
-           quanto è alta una piastrella. */ ?>
-  <span class="strato s1" data-v="0.08" data-scala="150"></span>
-  <span class="strato s2" data-v="0.45" data-scala="150"></span>
-  <span class="strato s3" data-v="1.10" data-scala="150"></span>
+  <?php
+  /* Sei piani di profondità, generati da strumenti/genera-sfondo.py a
+     partire dalle sette lettere di materiali/lettere.svg. Dimensione,
+     velocità e opacità crescono insieme: le lettere lontane sono
+     piccole, fitte, lente e appena visibili; quelle vicine grandi,
+     rade, veloci e più nette. data-scala serve al JS per sapere quanto
+     è alta una piastrella, cioè ogni quanto lo strato ricomincia. */
+  $piani = [
+      ['v' => 0.05, 'scala' => 46],
+      ['v' => 0.16, 'scala' => 54],
+      ['v' => 0.32, 'scala' => 64],
+      ['v' => 0.55, 'scala' => 78],
+      ['v' => 0.85, 'scala' => 96],
+      ['v' => 1.25, 'scala' => 120],
+  ];
+  foreach ($piani as $i => $pn):
+  ?>
+    <span class="strato s<?= $i + 1 ?>" data-v="<?= $pn['v'] ?>" data-scala="<?= $pn['scala'] ?>"></span>
+  <?php endforeach ?>
 </div>
 
 <?php
@@ -95,10 +105,10 @@ $voci = [
   if (!strati.length) { return; }
   var inCorso = false;
 
-  // Proporzioni del disegno: 2096 x 2705.81. Servono per sapere quanto è
-  // alta una piastrella una volta scalata, e quindi ogni quanto lo strato
-  // deve ricominciare da capo.
-  var PROPORZIONE = 2705.81 / 2096;
+  // Le piastrelle degli strati sono quadrate (1000x1000), quindi la loro
+  // altezza sullo schermo è pari alla larghezza. Serve a sapere ogni
+  // quanto lo strato deve ricominciare da capo.
+  var PROPORZIONE = 1;
 
   function misura() {
     for (var i = 0; i < strati.length; i++) {
