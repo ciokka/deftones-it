@@ -27,7 +27,7 @@ DESTINAZIONE = RADICE / 'web' / 'assets'
 
 SEME = 20260828
 PIASTRELLA = 1000.0        # lo spazio si ripete ogni 1000 unità
-TRATTO = 1.1               # spessore del contorno, in unità di piastrella
+TRATTO = 1.0               # spessore del contorno, in unità di piastrella
 
 # Tutti gli strati vengono ingranditi allo stesso modo dal CSS: è ciò che
 # rende il contorno identico su ogni piano. Se le scale fossero diverse,
@@ -43,10 +43,10 @@ INCLINAZIONE = -14.0       # gradi, uguale per tutte: le lettere sono un
 # cioè meno di tre volte. Con sei piani e quindici volte di differenza
 # il piano vicino non sembrava vicino, sembrava un altro disegno.
 PIANI = [
-    {'altezza':  70, 'quante': 18},
-    {'altezza': 100, 'quante': 13},
-    {'altezza': 140, 'quante':  9},
-    {'altezza': 195, 'quante':  6},
+    {'altezza':  70, 'quante': 24},
+    {'altezza': 100, 'quante': 17},
+    {'altezza': 140, 'quante': 12},
+    {'altezza': 195, 'quante':  8},
 ]
 
 

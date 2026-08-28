@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=21">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=22">
 </head>
 <body>
 
@@ -35,10 +35,10 @@
   // Su mobile è molto maggiore: lo schermo è stretto, e senza questo le
   // lettere risulterebbero minuscole e troppo fitte.
   $piani = [
-      ['v' => 0.10, 'scala' => 120, 'scalaMobile' => 300],
-      ['v' => 0.32, 'scala' => 120, 'scalaMobile' => 300],
-      ['v' => 0.62, 'scala' => 120, 'scalaMobile' => 300],
-      ['v' => 1.00, 'scala' => 120, 'scalaMobile' => 300],
+      ['v' => 0.10, 'scala' => 90, 'scalaMobile' => 300],
+      ['v' => 0.32, 'scala' => 90, 'scalaMobile' => 300],
+      ['v' => 0.62, 'scala' => 90, 'scalaMobile' => 300],
+      ['v' => 1.00, 'scala' => 90, 'scalaMobile' => 300],
   ];
   foreach ($piani as $i => $pn):
   ?>
