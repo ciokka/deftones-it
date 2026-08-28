@@ -15,9 +15,17 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=12">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=13">
 </head>
 <body>
+
+<?php /* Lo sfondo: tre copie dello stesso pattern a scale diverse che
+         scorrono a velocità diverse. Fuori dal flusso e inerte. */ ?>
+<div class="sfondo" aria-hidden="true">
+  <span class="strato s1"></span>
+  <span class="strato s2"></span>
+  <span class="strato s3"></span>
+</div>
 
 <?php
 // Le voci del menu, definite una volta sola: vengono rese due volte —
@@ -66,6 +74,34 @@ $voci = [
 </footer>
 
 <script>
+// Parallasse dello sfondo: i tre strati si muovono a velocità diverse,
+// così le lettere del pattern scorrono l'una sull'altra invece di stare
+// ferme. Si aggiorna una volta per fotogramma e usa translate3d, che il
+// browser compone sulla GPU senza ridisegnare la pagina.
+(function () {
+  var muoviti = window.matchMedia('(prefers-reduced-motion: no-preference)');
+  if (!muoviti.matches) { return; }          // chi ha chiesto meno animazioni non le vede
+
+  var strati = [].slice.call(document.querySelectorAll('.strato'));
+  if (!strati.length) { return; }
+  var velocita = [0.12, 0.26, 0.44];         // più è alto, più "scivola"
+  var inCorso = false;
+
+  function aggiorna() {
+    var y = window.scrollY || window.pageYOffset || 0;
+    for (var i = 0; i < strati.length; i++) {
+      strati[i].style.transform = 'translate3d(0,' + (-y * velocita[i]).toFixed(2) + 'px,0)';
+    }
+    inCorso = false;
+  }
+
+  window.addEventListener('scroll', function () {
+    if (!inCorso) { inCorso = true; requestAnimationFrame(aggiorna); }
+  }, { passive: true });
+
+  aggiorna();
+})();
+
 // Un'immagine che non carica lascerebbe l'icona rotta del browser.
 // Un ascoltatore solo, in fase di cattura perché "error" non risale,
 // la sostituisce con un segnaposto coerente col resto del sito.

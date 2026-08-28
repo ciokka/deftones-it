@@ -81,23 +81,45 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Il pattern non è uniforme: una maschera a gradiente lo tiene presente
-   in alto, dove c'è l'apertura, e lo spegne scendendo verso il testo di
-   lettura. Così la pagina ha profondità dove serve e resta pulita dove
-   si legge — invece di una texture piatta che disturba ovunque uguale. */
-body::before {
-  content: "";
+/* Lo sfondo: tre copie dello stesso pattern a scale e opacità diverse.
+   Lo scorrimento le muove a velocità crescenti, così le lettere che
+   compongono la parola si separano invece di restare un blocco fermo.
+   La maschera a gradiente le spegne scendendo, dove si legge.
+
+   Le tre opacità sommano all'incirca al .3 che era impostato prima su
+   un unico livello: l'intensità complessiva resta quella. */
+.sfondo {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: url(pattern.svg) center top / cover no-repeat;
-  opacity: .3;
+  overflow: hidden;
   -webkit-mask-image: linear-gradient(to bottom,
-      rgba(0,0,0,1) 0%, rgba(0,0,0,.85) 22%, rgba(0,0,0,.35) 55%, rgba(0,0,0,0) 88%);
+      rgba(0,0,0,1) 0%, rgba(0,0,0,.85) 22%, rgba(0,0,0,.4) 58%, rgba(0,0,0,0) 92%);
   mask-image: linear-gradient(to bottom,
-      rgba(0,0,0,1) 0%, rgba(0,0,0,.85) 22%, rgba(0,0,0,.35) 55%, rgba(0,0,0,0) 88%);
+      rgba(0,0,0,1) 0%, rgba(0,0,0,.85) 22%, rgba(0,0,0,.4) 58%, rgba(0,0,0,0) 92%);
 }
+
+/* Ogni strato è più alto della finestra: scorrendo si sposta verso
+   l'alto e non deve mai scoprire il bordo inferiore. */
+.strato {
+  position: absolute;
+  top: -25%;
+  left: 0;
+  width: 100%;
+  height: 165%;
+  background-image: url(pattern.svg);
+  background-repeat: no-repeat;
+  will-change: transform;
+}
+
+.s1 { background-size: 190% auto; background-position: 12% 0;   opacity: .15; }
+.s2 { background-size: 115% auto; background-position: 68% 8%;  opacity: .10; }
+.s3 { background-size:  72% auto; background-position: 30% 22%; opacity: .07; }
+
+/* Su schermi piccoli due strati bastano: il terzo sarebbe una terza
+   rasterizzazione dello stesso SVG, e su un telefono non si nota. */
+@media (max-width: 40rem) { .s3 { display: none; } }
 
 /* Un secondo strato, sopra il pattern e sotto il testo: una luce fredda
    molto tenue in alto a sinistra che stacca la testata dal fondo. */
@@ -185,7 +207,7 @@ a { color: inherit; }
    si appoggia al margine della finestra, il menu all'altro. */
 .testata .contenitore {
   max-width: none;
-  padding: 0 1.75rem;
+  padding: 0.75rem 1.75rem;
 }
 @media (min-width: 64rem) { .testata .contenitore { padding: 0 2.5rem; } }
 
