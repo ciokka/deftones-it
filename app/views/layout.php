@@ -19,9 +19,9 @@
 <meta property="og:url" content="<?= e($canonico) ?>">
 <?php endif ?>
 <meta property="og:image" content="<?= e($immagine) ?>">
-<meta property="og:image:width" content="2400">
-<meta property="og:image:height" content="1260">
-<meta property="og:image:alt" content="deftones.it — the italian Deftones fan site since 2002">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="675">
+<meta property="og:image:alt" content="deftones.it — the italian Deftones family">
 <?php /* summary_large_image è ciò che fa mostrare l'immagine grande
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
