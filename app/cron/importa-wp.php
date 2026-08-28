@@ -15,6 +15,12 @@ require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/web.php';
 
 @set_time_limit(0);
+
+// Sotto questa lunghezza l'articolo non viene importato. Erano avvisi
+// utili nel loro momento — "stasera in diretta", "biglietti in vendita
+// da domani" — e oggi non dicono più niente. Conta i caratteri del
+// testo, non dell'HTML.
+const MINIMO_CARATTERI = 240;
 $soloAnalisi = in_array('--analisi', $argv ?? [], true);
 $pdo = db();
 function ilog(string $m): void { logline($m, 'importa'); }
@@ -323,7 +329,7 @@ foreach ($post as $p) {
     // contenuto, non un vuoto. Scartiamo solo ciò che non ha né l'uno
     // né l'altro.
     $haVideo = str_contains($corpo, '<iframe');
-    if (!$haVideo && mb_strlen(strip_tags($corpo)) < 120) { $saltati++; continue; }
+    if (!$haVideo && mb_strlen(strip_tags($corpo)) < MINIMO_CARATTERI) { $saltati++; continue; }
 
     $tag = $tassonomie[(int)$p['ID']]['post_tag'] ?? [];
     $sommario = soloItaliano((string)$p['post_excerpt']);
