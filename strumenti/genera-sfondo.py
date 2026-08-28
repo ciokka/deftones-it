@@ -43,10 +43,10 @@ INCLINAZIONE = -14.0       # gradi, uguale per tutte: le lettere sono un
 # cioè meno di tre volte. Con sei piani e quindici volte di differenza
 # il piano vicino non sembrava vicino, sembrava un altro disegno.
 PIANI = [
-    {'altezza':  70, 'quante': 36},
-    {'altezza': 100, 'quante': 26},
-    {'altezza': 140, 'quante': 18},
-    {'altezza': 195, 'quante': 11},
+    {'altezza':  70, 'quante': 18},
+    {'altezza': 100, 'quante': 13},
+    {'altezza': 140, 'quante':  9},
+    {'altezza': 195, 'quante':  6},
 ]
 
 

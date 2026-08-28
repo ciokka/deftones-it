@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=20">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=21">
 </head>
 <body>
 
@@ -31,15 +31,19 @@
      strato. Se le scale differissero, l'ingrandimento moltiplicherebbe
      anche lo spessore del contorno e il piano vicino sembrerebbe
      disegnato con un pennarello più grosso. */
+  // scala = quanto è larga la piastrella rispetto al contenitore.
+  // Su mobile è molto maggiore: lo schermo è stretto, e senza questo le
+  // lettere risulterebbero minuscole e troppo fitte.
   $piani = [
-      ['v' => 0.10, 'scala' => 105],
-      ['v' => 0.32, 'scala' => 105],
-      ['v' => 0.62, 'scala' => 105],
-      ['v' => 1.00, 'scala' => 105],
+      ['v' => 0.10, 'scala' => 120, 'scalaMobile' => 300],
+      ['v' => 0.32, 'scala' => 120, 'scalaMobile' => 300],
+      ['v' => 0.62, 'scala' => 120, 'scalaMobile' => 300],
+      ['v' => 1.00, 'scala' => 120, 'scalaMobile' => 300],
   ];
   foreach ($piani as $i => $pn):
   ?>
-    <span class="strato s<?= $i + 1 ?>" data-v="<?= $pn['v'] ?>" data-scala="<?= $pn['scala'] ?>"></span>
+    <span class="strato s<?= $i + 1 ?>" data-v="<?= $pn['v'] ?>"
+          data-scala="<?= $pn['scala'] ?>" data-scala-mobile="<?= $pn['scalaMobile'] ?>"></span>
   <?php endforeach ?>
 </div>
 
@@ -111,11 +115,22 @@ $voci = [
   var PROPORZIONE = 1;
 
   function misura() {
+    var stretto = window.innerWidth < 640;
+    var alt = window.innerHeight;
     for (var i = 0; i < strati.length; i++) {
       var el = strati[i];
-      var scala = parseFloat(el.getAttribute('data-scala')) || 100;
+      var attr = stretto ? 'data-scala-mobile' : 'data-scala';
+      var scala = parseFloat(el.getAttribute(attr)) || 100;
       el.style.backgroundSize = scala + '% auto';
-      el.passo = el.clientWidth * (scala / 100) * PROPORZIONE;
+      el.passo = el.parentNode.clientWidth * (scala / 100) * PROPORZIONE;
+
+      // Lo strato dev'essere alto almeno quanto la finestra PIÙ una
+      // piastrella: scorrendo si sposta verso l'alto di una piastrella
+      // intera prima di ricominciare, e se fosse più basso il suo bordo
+      // inferiore entrerebbe in campo — un taglio netto in mezzo al
+      // disegno. Su desktop la piastrella è più alta della finestra,
+      // quindi non basta una percentuale fissa.
+      el.style.height = (alt + el.passo + 4) + 'px';
     }
   }
 
