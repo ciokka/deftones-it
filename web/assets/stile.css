@@ -39,11 +39,15 @@
   --testo:       #fff;
   --testo-tenue: rgba(255,255,255,.52);
 
-  /* Unico colore del sito, e solo con una funzione: segnalare che una
-     notizia non è confermata. Tutto il resto è bianco e nero.
-     Il verde di deftones.com appartiene alla campagna "Private Music",
-     non all'identità della band: adottarlo farebbe invecchiare il sito
-     al prossimo disco. */
+  /* Il verde di deftones.com. Stimato dagli screenshot del sito
+     ufficiale, non campionato: quel dominio risponde 403 a chi non è un
+     browser. Se hai il valore esatto, cambialo qui e basta — è l'unico
+     punto in cui è scritto. */
+  --accento:      #3ea84b;
+  --accento-scuro:#2d7d38;
+
+  /* Colore funzionale, non decorativo: segnala che una notizia non è
+     confermata. Resta distinto dal verde proprio per questo. */
   --avviso:      #d8b44a;
 
   --display: "Instrument Serif", Georgia, "Times New Roman", serif;
@@ -53,6 +57,8 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
+
+::selection { background: var(--accento); color: #000; }
 html { -webkit-text-size-adjust: 100%; }
 
 body {
@@ -94,6 +100,7 @@ body::after {
   z-index: -1;
   pointer-events: none;
   background:
+    radial-gradient(90% 60% at 78% -12%, rgba(62,168,75,.10) 0%, transparent 62%),
     radial-gradient(120% 80% at 15% -10%, rgba(255,255,255,.06) 0%, transparent 60%),
     linear-gradient(to bottom, transparent 60%, #000 100%);
 }
@@ -134,7 +141,7 @@ a { color: inherit; }
 @media (min-width: 64rem) { .testata .contenitore { padding: 0 2.5rem; } }
 
 .marchio { display: block; line-height: 0; color: var(--testo); transition: opacity .2s; }
-.marchio:hover { opacity: .6; }
+.marchio:hover { color: var(--accento); }
 
 /* Logo SVG inline monocromatico: eredita il colore del link, quindi non
    serve una seconda immagine per la versione chiara. */
@@ -150,7 +157,7 @@ a { color: inherit; }
   text-transform: lowercase;         /* come il sito ufficiale */
   transition: color .2s;
 }
-.menu a:hover { color: var(--testo); }
+.menu a:hover { color: var(--accento); }
 
 /* ------------------------------------------------------------- meta */
 
@@ -174,6 +181,9 @@ a { color: inherit; }
   text-transform: lowercase;
   color: var(--testo-tenue);
 }
+/* Le due categorie che un fan cerca davvero: tour e uscite. Il verde
+   qui ha una funzione — farle saltare all'occhio in un elenco. */
+.et-tour, .et-uscita { border-color: rgba(62,168,75,.55); color: var(--accento); }
 .et-dubbio { border-color: rgba(216,180,74,.5); color: var(--avviso); }
 
 /* --------------------------------------------------------- apertura */
@@ -191,7 +201,7 @@ a { color: inherit; }
   letter-spacing: -.01em;
 }
 .apertura h1 a { text-decoration: none; transition: opacity .2s; }
-.apertura h1 a:hover { opacity: .65; }
+.apertura h1 a:hover { color: var(--accento); }
 
 .sommario { margin: 0 0 1rem; color: rgba(255,255,255,.75); font-size: 1rem; }
 .fonte {
@@ -214,7 +224,7 @@ a { color: inherit; }
   line-height: 1.15;
 }
 .scheda h2 a { text-decoration: none; transition: opacity .2s; }
-.scheda h2 a:hover { opacity: .65; }
+.scheda h2 a:hover { color: var(--accento); }
 .scheda .sommario { font-size: .9375rem; margin-bottom: .625rem; }
 
 @media (min-width: 46rem) {
@@ -253,7 +263,7 @@ a { color: inherit; }
   background: var(--fondo-alto);
 }
 .corpo a { color: var(--testo); text-decoration: underline; text-underline-offset: .18em; }
-.corpo a:hover { color: var(--testo-tenue); }
+.corpo a:hover { color: var(--accento); }
 .corpo h2, .corpo h3 {
   font-family: var(--display);
   font-weight: 400;
@@ -291,8 +301,8 @@ a { color: inherit; }
   color: var(--testo-tenue);
 }
 .rimando strong { color: var(--testo); font-weight: 500; }
-.rimando a { color: var(--testo); text-decoration: none; border-bottom: 1px solid var(--bordo-forte); }
-.rimando a:hover { border-bottom-color: var(--testo); }
+.rimando a { color: var(--accento); text-decoration: none; border-bottom: 1px solid var(--accento-scuro); }
+.rimando a:hover { border-bottom-color: var(--accento); }
 
 .tag { margin: 2rem 0 0; display: flex; flex-wrap: wrap; gap: .5rem; }
 .tag a {
@@ -355,9 +365,9 @@ a { color: inherit; }
   cursor: pointer;
   transition: background .2s, border-color .2s;
 }
-.bottone:hover { background: var(--testo); color: #000; border-color: var(--testo); }
+.bottone:hover { background: var(--accento); color: #000; border-color: var(--accento); }
 .bottone-tenue { border-color: var(--bordo); color: var(--testo-tenue); }
-.bottone-tenue:hover { background: transparent; color: var(--testo); border-color: var(--bordo-forte); }
+.bottone-tenue:hover { background: transparent; color: var(--accento); border-color: var(--accento); }
 
 /* ---------------------------------------------------- pie di pagina */
 
@@ -371,7 +381,7 @@ a { color: inherit; }
 .avviso { margin: 0 0 1.25rem; max-width: 44rem; line-height: 1.7; }
 .colofone { margin: 0; }
 .pieDiPagina a { color: var(--testo-tenue); }
-.pieDiPagina a:hover { color: var(--testo); }
+.pieDiPagina a:hover { color: var(--accento); }
 
 /* ----------------------------------------------------------- admin */
 
@@ -394,8 +404,8 @@ a { color: inherit; }
 .bozza .sommario { font-size: .9375rem; color: rgba(255,255,255,.72); }
 .punteggio {
   display: inline-block; min-width: 2.5rem; text-align: center;
-  padding: .2rem .5rem; border: 1px solid var(--bordo-forte);
-  color: var(--testo); font-size: .75rem; font-variant-numeric: tabular-nums;
+  padding: .2rem .5rem; border: 1px solid var(--accento-scuro);
+  color: var(--accento); font-size: .75rem; font-variant-numeric: tabular-nums;
 }
 .azioni { display: flex; gap: .625rem; margin-top: 1.25rem; flex-wrap: wrap; }
 
@@ -414,10 +424,10 @@ a { color: inherit; }
   background: transparent; border: 1px solid var(--bordo);
   color: var(--testo); font: inherit; font-size: .9375rem;
 }
-.campo input:focus { outline: none; border-color: var(--testo); }
+.campo input:focus { outline: none; border-color: var(--accento); }
 
 .avvisoOk, .avvisoKo { padding: .875rem 1.125rem; margin-bottom: 1.5rem; font-size: .875rem; }
-.avvisoOk { border: 1px solid rgba(255,255,255,.3); color: var(--testo); }
+.avvisoOk { border: 1px solid var(--accento-scuro); color: var(--accento); }
 .avvisoKo { border: 1px solid rgba(216,180,74,.5); color: var(--avviso); }
 
 /* ------------------------------------------- pannello: filtri e liste */
@@ -435,10 +445,10 @@ a { color: inherit; }
 .filtri input[type="search"] { min-width: 14rem; flex: 1 1 14rem; }
 .filtri select { color: var(--testo-tenue); }
 .filtri option { background: #111; color: var(--testo); }
-.filtri input:focus, .filtri select:focus { outline: none; border-color: var(--testo); }
+.filtri input:focus, .filtri select:focus { outline: none; border-color: var(--accento); }
 
 .scelta { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; }
-.scelta input { accent-color: #fff; width: 1rem; height: 1rem; }
+.scelta input { accent-color: var(--accento); width: 1rem; height: 1rem; }
 
 /* La barra delle azioni resta a portata di pollice mentre scorri una
    lista lunga: con seicento bozze si scorre parecchio. */
@@ -457,7 +467,7 @@ a { color: inherit; }
   font-size: .875rem; color: var(--testo-tenue);
 }
 .paginazione a { color: var(--testo); text-decoration: none; }
-.paginazione a:hover { color: var(--testo-tenue); }
+.paginazione a:hover { color: var(--accento); }
 
 .titoletto {
   font-family: var(--display); font-weight: 400; font-size: 1.5rem;
@@ -469,7 +479,7 @@ a { color: inherit; }
   gap: 1rem; flex-wrap: wrap;
 }
 .bozza .riga a { font-weight: 500; text-decoration: none; }
-.bozza .riga a:hover { color: var(--testo-tenue); }
+.bozza .riga a:hover { color: var(--accento); }
 .bottone.piccolo { padding: .3rem .7rem; font-size: .75rem; }
 .registro { font-size: .8125rem; color: var(--testo-tenue); }
 .registro div { padding: .35rem 0; border-bottom: 1px solid var(--bordo); }
