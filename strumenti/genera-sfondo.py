@@ -34,52 +34,145 @@ TRATTO = 1.1               # spessore del contorno, in unità di piastrella
 # quel secondo ingrandimento moltiplicherebbe anche lo spessore, e il
 # piano vicino risulterebbe disegnato con un pennarello più grosso.
 PAROLA = 'DEFTONES'        # da cui si pescano le lettere, con le loro frequenze
+INCLINAZIONE = -14.0       # gradi, uguale per tutte: le lettere sono un
+                           # reticolo, non un mucchio buttato lì
 
-# altezza in unità di piastrella · quante · rotazione massima in gradi
+# altezza in unità di piastrella · quante
 #
 # Quattro piani, con un intervallo di dimensioni stretto: da 70 a 195,
 # cioè meno di tre volte. Con sei piani e quindici volte di differenza
 # il piano vicino non sembrava vicino, sembrava un altro disegno.
 PIANI = [
-    {'altezza':  70, 'quante': 36, 'rotazione': 24},
-    {'altezza': 100, 'quante': 26, 'rotazione': 21},
-    {'altezza': 140, 'quante': 18, 'rotazione': 18},
-    {'altezza': 195, 'quante': 11, 'rotazione': 15},
+    {'altezza':  70, 'quante': 36},
+    {'altezza': 100, 'quante': 26},
+    {'altezza': 140, 'quante': 18},
+    {'altezza': 195, 'quante': 11},
 ]
 
 
-def leggi_lettere() -> tuple[dict[str, str], float]:
-    """Restituisce {lettera: dati del tracciato} e l'altezza del viewBox."""
+def ingombro(d: str) -> tuple[float, float, float, float]:
+    """Riquadro che contiene il tracciato: (x0, y0, x1, y1).
+
+    Serve per due cose: centrare ogni lettera sul suo centro vero, e
+    sapere quanto sporge davvero. Stimare l'ingombro dall'altezza — che
+    è quello che facevo prima — va bene per una O ma non per una F, che
+    è larga il 30% in meno: le copie ai bordi non venivano disegnate e
+    le lettere risultavano tagliate.
+    """
+    toks = re.findall(r'[MmLlHhVvCcSsQqTtAaZz]|[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?', d)
+    x = y = sx = sy = 0.0
+    xs: list[float] = []
+    ys: list[float] = []
+    i = 0
+    cmd = None
+
+    def num() -> float:
+        nonlocal i
+        v = float(toks[i])
+        i += 1
+        return v
+
+    while i < len(toks):
+        t = toks[i]
+        if re.match(r'[A-Za-z]', t):
+            cmd = t
+            i += 1
+            if cmd in 'Zz':
+                x, y = sx, sy
+                continue
+        rel = cmd.islower()
+        c = cmd.upper()
+        try:
+            if c == 'M':
+                a, b = num(), num()
+                x, y = (x + a, y + b) if rel else (a, b)
+                sx, sy = x, y
+                cmd = 'l' if rel else 'L'
+            elif c == 'L':
+                a, b = num(), num()
+                x, y = (x + a, y + b) if rel else (a, b)
+            elif c == 'H':
+                a = num()
+                x = x + a if rel else a
+            elif c == 'V':
+                a = num()
+                y = y + a if rel else a
+            elif c == 'C':
+                p = [num() for _ in range(6)]
+                pts = ([(x + p[k], y + p[k + 1]) for k in (0, 2, 4)] if rel
+                       else [(p[0], p[1]), (p[2], p[3]), (p[4], p[5])])
+                xs += [q[0] for q in pts]
+                ys += [q[1] for q in pts]
+                x, y = pts[-1]
+            elif c in 'SQ':
+                p = [num() for _ in range(4)]
+                pts = ([(x + p[k], y + p[k + 1]) for k in (0, 2)] if rel
+                       else [(p[0], p[1]), (p[2], p[3])])
+                xs += [q[0] for q in pts]
+                ys += [q[1] for q in pts]
+                x, y = pts[-1]
+            elif c == 'T':
+                a, b = num(), num()
+                x, y = (x + a, y + b) if rel else (a, b)
+            elif c == 'A':
+                p = [num() for _ in range(7)]
+                x, y = (x + p[5], y + p[6]) if rel else (p[5], p[6])
+            else:
+                i += 1
+                continue
+        except (IndexError, ValueError):
+            break
+        xs.append(x)
+        ys.append(y)
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def leggi_lettere() -> dict[str, dict]:
+    """{lettera: {d, cx, cy, larghezza, altezza}} con gli ingombri veri."""
     testo = SORGENTE.read_text(encoding='utf-8')
-    vb = re.search(r'viewBox="([\d.\-\s]+)"', testo).group(1).split()
-    altezza_naturale = float(vb[3])
     lettere = {}
     for m in re.finditer(r'<path[^>]*\sid="([A-Z])"[^>]*\sd="([^"]+)"', testo):
-        lettere[m.group(1)] = m.group(2)
-    return lettere, altezza_naturale
+        d = m.group(2)
+        x0, y0, x1, y1 = ingombro(d)
+        lettere[m.group(1)] = {
+            'd': d,
+            'cx': (x0 + x1) / 2, 'cy': (y0 + y1) / 2,
+            'larghezza': x1 - x0, 'altezza': y1 - y0,
+        }
+    return lettere
 
 
 def genera() -> None:
-    lettere, altezza_naturale = leggi_lettere()
+    lettere = leggi_lettere()
     if not lettere:
         raise SystemExit('nessuna lettera trovata in lettere.svg')
-    # solo le lettere che esistono davvero nel file
     alfabeto = [c for c in PAROLA if c in lettere]
+
+    # L'inclinazione è la stessa per tutte, quindi seno e coseno si
+    # calcolano una volta sola.
+    rad = math.radians(INCLINAZIONE)
+    cos_a, sin_a = abs(math.cos(rad)), abs(math.sin(rad))
 
     for n, piano in enumerate(PIANI, start=1):
         rnd = random.Random(SEME + n * 977)
-        k = piano['altezza'] / altezza_naturale        # fattore di scala
         pezzi = []
 
         for _ in range(piano['quante']):
             c = rnd.choice(alfabeto)
+            L = lettere[c]
+            # Scala calcolata sull'altezza reale di QUESTA lettera, così
+            # tutte risultano alte uguale sul piano.
+            k = piano['altezza'] / L['altezza']
             x = rnd.uniform(0, PIASTRELLA)
             y = rnd.uniform(0, PIASTRELLA)
-            r = rnd.uniform(-piano['rotazione'], piano['rotazione'])
 
-            # Raggio che circoscrive la lettera ruotata: serve a sapere se
-            # sborda dalla piastrella e va ripetuta sul lato opposto.
-            raggio = piano['altezza'] * 0.75
+            # Semiassi del riquadro dopo l'inclinazione: è la sporgenza
+            # vera, calcolata sull'ingombro di questa lettera e non
+            # stimata da un'altezza uguale per tutte.
+            hw = L['larghezza'] * k / 2
+            hh = L['altezza'] * k / 2
+            sx_ = hw * cos_a + hh * sin_a
+            sy_ = hw * sin_a + hh * cos_a
 
             # Lo spessore del contorno viene diviso per la scala, così dopo
             # la trasformazione resta uguale su tutti i piani: altrimenti le
@@ -91,18 +184,18 @@ def genera() -> None:
             # è ciò che rende la piastrella continua quando si ripete.
             dx = [0.0]
             dy = [0.0]
-            if x - raggio < 0:            dx.append(PIASTRELLA)
-            if x + raggio > PIASTRELLA:   dx.append(-PIASTRELLA)
-            if y - raggio < 0:            dy.append(PIASTRELLA)
-            if y + raggio > PIASTRELLA:   dy.append(-PIASTRELLA)
+            if x - sx_ < 0:            dx.append(PIASTRELLA)
+            if x + sx_ > PIASTRELLA:   dx.append(-PIASTRELLA)
+            if y - sy_ < 0:            dy.append(PIASTRELLA)
+            if y + sy_ > PIASTRELLA:   dy.append(-PIASTRELLA)
 
             for ox in dx:
                 for oy in dy:
                     pezzi.append(
-                        f'<path d="{lettere[c]}" style="{stile}" '
+                        f'<path d="{L["d"]}" style="{stile}" '
                         f'transform="translate({x + ox:.2f} {y + oy:.2f}) '
-                        f'rotate({r:.2f}) scale({k:.4f}) '
-                        f'translate({-altezza_naturale / 2:.2f} {-altezza_naturale / 2:.2f})"/>'
+                        f'rotate({INCLINAZIONE:.2f}) scale({k:.4f}) '
+                        f'translate({-L["cx"]:.2f} {-L["cy"]:.2f})"/>'
                     )
 
         svg = (
