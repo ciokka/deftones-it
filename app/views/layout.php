@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=13">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=14">
 </head>
 <body>
 
@@ -79,25 +79,31 @@ $voci = [
 // ferme. Si aggiorna una volta per fotogramma e usa translate3d, che il
 // browser compone sulla GPU senza ridisegnare la pagina.
 (function () {
-  var muoviti = window.matchMedia('(prefers-reduced-motion: no-preference)');
-  if (!muoviti.matches) { return; }          // chi ha chiesto meno animazioni non le vede
+  // Va controllato "reduce", non "no-preference": un browser che non
+  // conoscesse la query risponderebbe falso a entrambe, e chiedendo
+  // "no-preference" l'animazione resterebbe spenta senza motivo.
+  var fermo = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (fermo && fermo.matches) { return; }
 
   var strati = [].slice.call(document.querySelectorAll('.strato'));
   if (!strati.length) { return; }
-  var velocita = [0.12, 0.26, 0.44];         // più è alto, più "scivola"
+  var velocita = [0.18, 0.39, 0.66];         // più è alto, più "scivola"
   var inCorso = false;
 
   function aggiorna() {
-    var y = window.scrollY || window.pageYOffset || 0;
+    var y = window.scrollY;
+    if (y === undefined) { y = (document.documentElement || document.body).scrollTop || 0; }
     for (var i = 0; i < strati.length; i++) {
       strati[i].style.transform = 'translate3d(0,' + (-y * velocita[i]).toFixed(2) + 'px,0)';
     }
     inCorso = false;
   }
 
-  window.addEventListener('scroll', function () {
+  function chiedi() {
     if (!inCorso) { inCorso = true; requestAnimationFrame(aggiorna); }
-  }, { passive: true });
+  }
+  window.addEventListener('scroll', chiedi, { passive: true });
+  window.addEventListener('resize', chiedi, { passive: true });
 
   aggiorna();
 })();

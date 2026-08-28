@@ -94,10 +94,17 @@ body {
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
+  /* Molte tappe ravvicinate invece di poche: una sfumatura con tre soli
+     punti mostra le fasce, con sette scende senza che si veda il salto.
+     E arriva fino in fondo, non si spegne all'92%. */
   -webkit-mask-image: linear-gradient(to bottom,
-      rgba(0,0,0,1) 0%, rgba(0,0,0,.85) 22%, rgba(0,0,0,.4) 58%, rgba(0,0,0,0) 92%);
+      rgba(0,0,0,1) 0%, rgba(0,0,0,.97) 16%, rgba(0,0,0,.86) 32%,
+      rgba(0,0,0,.66) 50%, rgba(0,0,0,.42) 68%, rgba(0,0,0,.2) 85%,
+      rgba(0,0,0,0) 100%);
   mask-image: linear-gradient(to bottom,
-      rgba(0,0,0,1) 0%, rgba(0,0,0,.85) 22%, rgba(0,0,0,.4) 58%, rgba(0,0,0,0) 92%);
+      rgba(0,0,0,1) 0%, rgba(0,0,0,.97) 16%, rgba(0,0,0,.86) 32%,
+      rgba(0,0,0,.66) 50%, rgba(0,0,0,.42) 68%, rgba(0,0,0,.2) 85%,
+      rgba(0,0,0,0) 100%);
 }
 
 /* Ogni strato è più alto della finestra: scorrendo si sposta verso
