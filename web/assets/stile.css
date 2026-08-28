@@ -78,7 +78,7 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background: url(pattern.svg) center top / cover no-repeat;
-  opacity: .11;
+  opacity: .4;
   -webkit-mask-image: linear-gradient(to bottom,
       rgba(0,0,0,1) 0%, rgba(0,0,0,.85) 22%, rgba(0,0,0,.35) 55%, rgba(0,0,0,0) 88%);
   mask-image: linear-gradient(to bottom,
