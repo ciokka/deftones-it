@@ -115,9 +115,13 @@ body {
   left: 0;
   width: 100%;
   height: 165%;
-  /* Ripetuto in verticale: scorrendo, lo strato ricomincia da capo
-     invece di finire e lasciare il vuoto. */
-  background-repeat: repeat-y;
+  /* Ripetuto in ENTRAMBE le direzioni, non solo in verticale.
+     Il generatore ridisegna ogni lettera che sborda anche sul lato
+     opposto della piastrella: è così che il disegno resta continuo
+     quando si affianca a sé stesso. Ma con repeat-y le piastrelle si
+     impilavano soltanto verso il basso, e il bordo laterale restava un
+     taglio esposto — da cui le lettere tagliate. */
+  background-repeat: repeat;
   background-position: center 0;
   will-change: transform;
 }
