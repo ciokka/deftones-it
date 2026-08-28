@@ -115,25 +115,28 @@ body {
   left: 0;
   width: 100%;
   height: 165%;
-  background-image: url(pattern.svg);
   /* Ripetuto in verticale: scorrendo, lo strato ricomincia da capo
      invece di finire e lasciare il vuoto. */
   background-repeat: repeat-y;
+  background-position: center 0;
   will-change: transform;
 }
 
-/* Le tre velocità sono molto distanti fra loro — 0,06 · 0,42 · 1,05 —
-   e la scala segue: il piano lontano è grande e quasi fermo, quello
-   vicino è piccolo e corre più della pagina stessa. È la stessa regola
-   dei fondali dipinti su più piani. Velocità e scala stanno negli
-   attributi data- del markup. */
-.s1 { background-position: 12% 0;   opacity: .15; }
-.s2 { background-position: 68% 8%;  opacity: .10; }
-.s3 { background-position: 30% 22%; opacity: .07; }
+/* Tre sottoinsiemi delle stesse 123 lettere, non tre copie del disegno.
+   Fermi si sovrappongono e ricompongono il pattern originale; scorrendo
+   si separano, perché ogni gruppo va a una velocità diversa — 0,08,
+   0,45 e 1,10, quest'ultima più veloce della pagina stessa.
 
-/* Su schermi piccoli due strati bastano: il terzo sarebbe una terza
-   rasterizzazione dello stesso SVG, e su un telefono non si nota. */
-@media (max-width: 40rem) { .s3 { display: none; } }
+   Le opacità crescono con la velocità: le cose vicine hanno più
+   contrasto di quelle lontane, ed è ciò che dà la profondità insieme
+   al movimento. Sommate danno il .3 di prima. */
+.s1 { background-image: url(pattern-1.svg); opacity: .22; }
+.s2 { background-image: url(pattern-2.svg); opacity: .27; }
+.s3 { background-image: url(pattern-3.svg); opacity: .32; }
+
+/* Su mobile restano tutti e tre: ora ogni strato è un pezzo del
+   disegno, non una sua copia, quindi nasconderne uno lascerebbe dei
+   buchi nel pattern invece di alleggerirlo. */
 
 /* Un secondo strato, sopra il pattern e sotto il testo: una luce fredda
    molto tenue in alto a sinistra che stacca la testata dal fondo. */

@@ -15,20 +15,22 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="<?= e(cfg('site_name')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=15">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=16">
 </head>
 <body>
 
 <?php /* Lo sfondo: tre copie dello stesso pattern a scale diverse che
          scorrono a velocità diverse. Fuori dal flusso e inerte. */ ?>
 <div class="sfondo" aria-hidden="true">
-  <?php /* data-v = velocità, data-scala = larghezza del disegno in % del
-           contenitore. Stanno qui e non nel CSS perché servono a
-           entrambi: il JS calcola da scala l'altezza di una piastrella,
-           che è quanto deve scorrere prima di ricominciare. */ ?>
-  <span class="strato s1" data-v="0.06" data-scala="210"></span>
-  <span class="strato s2" data-v="0.42" data-scala="112"></span>
-  <span class="strato s3" data-v="1.05" data-scala="58"></span>
+  <?php /* Le 123 lettere del pattern sono divise in tre file — 48, 45 e
+           30 — distribuite a rotazione 3-3-2, così lettere adiacenti
+           finiscono sempre in gruppi diversi. Stessa scala e stessa
+           posizione: sovrapposti ricompongono il disegno originale, ma
+           scorrendo si separano. data-scala serve al JS per sapere
+           quanto è alta una piastrella. */ ?>
+  <span class="strato s1" data-v="0.08" data-scala="150"></span>
+  <span class="strato s2" data-v="0.45" data-scala="150"></span>
+  <span class="strato s3" data-v="1.10" data-scala="150"></span>
 </div>
 
 <?php
