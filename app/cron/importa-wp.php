@@ -206,10 +206,48 @@ if ($soloAnalisi) {
 }
 
 // ------------------------------------------------------------ importazione
-$pdo->exec('ALTER TABLE ' . t('articles') . '
-  ADD COLUMN IF NOT EXISTS url_vecchio VARCHAR(300) NULL COMMENT \'indirizzo sul vecchio WordPress\',
-  ADD COLUMN IF NOT EXISTS wp_id BIGINT UNSIGNED NULL COMMENT \'ID originale in wp_posts\'');
-$pdo->exec('CREATE UNIQUE INDEX IF NOT EXISTS uq_art_wp ON ' . t('articles') . ' (wp_id)');
+
+// ATTENZIONE: "ADD COLUMN IF NOT EXISTS" e "CREATE INDEX IF NOT EXISTS"
+// sono sintassi MariaDB. MySQL non li supporta e lancia un errore.
+// Qui controlliamo prima, così funziona su entrambi ed è ripetibile.
+function colonnaEsiste(PDO $pdo, string $tabella, string $colonna): bool
+{
+    $q = $pdo->prepare('SELECT 1 FROM information_schema.COLUMNS
+                         WHERE TABLE_SCHEMA = DATABASE()
+                           AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1');
+    $q->execute([$tabella, $colonna]);
+    return $q->fetchColumn() !== false;
+}
+
+function indiceEsiste(PDO $pdo, string $tabella, string $indice): bool
+{
+    $q = $pdo->prepare('SELECT 1 FROM information_schema.STATISTICS
+                         WHERE TABLE_SCHEMA = DATABASE()
+                           AND TABLE_NAME = ? AND INDEX_NAME = ? LIMIT 1');
+    $q->execute([$tabella, $indice]);
+    return $q->fetchColumn() !== false;
+}
+
+$tab = t('articles');
+try {
+    if (!colonnaEsiste($pdo, $tab, 'url_vecchio')) {
+        $pdo->exec("ALTER TABLE `$tab` ADD COLUMN url_vecchio VARCHAR(300) NULL
+                    COMMENT 'indirizzo sul vecchio WordPress'");
+        ilog('  aggiunta la colonna url_vecchio');
+    }
+    if (!colonnaEsiste($pdo, $tab, 'wp_id')) {
+        $pdo->exec("ALTER TABLE `$tab` ADD COLUMN wp_id BIGINT UNSIGNED NULL
+                    COMMENT 'ID originale in wp_posts'");
+        ilog('  aggiunta la colonna wp_id');
+    }
+    if (!indiceEsiste($pdo, $tab, 'uq_art_wp')) {
+        $pdo->exec("CREATE UNIQUE INDEX uq_art_wp ON `$tab` (wp_id)");
+        ilog('  creato l\'indice uq_art_wp');
+    }
+} catch (Throwable $e) {
+    allarme('preparazione della tabella fallita: ' . $e->getMessage(), 'importa');
+    exit(1);
+}
 
 $ins = $pdo->prepare(
     'INSERT INTO ' . t('articles') . '
@@ -221,7 +259,7 @@ $ins = $pdo->prepare(
        tag = VALUES(tag), url_vecchio = VALUES(url_vecchio)'
 );
 
-$fatti = $saltati = 0;
+$fatti = $saltati = $errori = 0;
 foreach ($post as $p) {
     $corpo = rimappaLinkInterni(rimappaImmagini(ripuliscHtml((string)$p['post_content'])));
 
@@ -238,7 +276,8 @@ foreach ($post as $p) {
     }
 
     $slug = $p['post_name'] !== '' ? $p['post_name'] : slug((string)$p['post_title']);
-    $ins->execute([
+    try {
+      $ins->execute([
         mb_substr($slug, 0, 200),
         mb_substr(html_entity_decode((string)$p['post_title'], ENT_QUOTES, 'UTF-8'), 0, 300),
         $sommario,
@@ -248,9 +287,16 @@ foreach ($post as $p) {
         $p['post_date'],
         urlVecchio((string)$p['post_date'], (string)$p['post_name']),
         (int)$p['ID'],
-    ]);
-    $fatti++;
+      ]);
+      $fatti++;
+    } catch (Throwable $e) {
+      // un articolo problematico non deve fermare gli altri 620
+      ilog(sprintf('  ! articolo %d (%s): %s', $p['ID'],
+           mb_substr((string)$p['post_title'], 0, 40), mb_substr($e->getMessage(), 0, 120)));
+      $errori++;
+    }
 }
 
-ilog(sprintf('Importati %d articoli come bozze, %d saltati perché vuoti.', $fatti, $saltati));
+ilog(sprintf('Importati %d articoli come bozze, %d saltati perché vuoti, %d con errori.',
+    $fatti, $saltati, $errori));
 ilog('Nessuno è online: vanno approvati dal pannello.');
