@@ -216,21 +216,30 @@ function copertinaDisco(string $mbid): ?string
  */
 function soggettoArticolo(string $titolo, array $tag, array $dischi): array
 {
-    $testo = mb_strtolower($titolo . ' ' . implode(' ', $tag));
+    $solotitolo = mb_strtolower($titolo);
 
-    // I dischi per primi: se l'articolo parla di Ohms, la copertina di
-    // Ohms dice più di una foto dal vivo del 2016.
+    // I dischi per primi, ma cercati SOLO nel titolo.
+    //
+    // La prima versione guardava anche nei tag, e sbagliava di brutto:
+    // i tag sono i temi dell'articolo, non il suo argomento. "Terry Date
+    // Drums: expansion per SSD4" si prendeva la copertina di White Pony
+    // perché era taggato white pony; "25 Best Albums of 2020" quella di
+    // Ohms; un'intervista a Sergio quella di Koi No Yokan. Nel titolo
+    // invece il nome del disco c'è quando l'articolo parla di quello.
     foreach ($dischi as $d) {
         $t = mb_strtolower((string)$d['titolo']);
         // "Deftones" e "Covers" come titoli sono troppo generici: il
         // primo compare in ogni articolo, il secondo in mezzi.
         if (mb_strlen($t) < 4 || in_array($t, ['deftones', 'covers'], true)) { continue; }
-        if (preg_match('/\b' . preg_quote($t, '/') . '\b/u', $testo)) {
+        if (preg_match('/\b' . preg_quote($t, '/') . '\b/u', $solotitolo)) {
             return ['tipo' => 'disco', 'chiave' => (string)$d['mbid'],
                     'nome' => (string)$d['titolo']];
         }
     }
 
+    // Per le persone invece i tag vanno bene: se un articolo è taggato
+    // "chino moreno" una foto di Chino ci sta, qualunque cosa racconti.
+    $testo = $solotitolo . ' ' . mb_strtolower(implode(' ', $tag));
     foreach (NOMI_SOGGETTO as $nome => $soggetto) {
         if (str_contains($testo, $nome)) {
             return ['tipo' => 'foto', 'chiave' => $soggetto, 'nome' => $nome];

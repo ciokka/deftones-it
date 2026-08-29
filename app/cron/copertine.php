@@ -116,6 +116,71 @@ $dischi = $pdo->query('SELECT titolo, mbid FROM ' . t('albums') . '
                         WHERE mbid IS NOT NULL
                         ORDER BY CHAR_LENGTH(titolo) DESC')->fetchAll();
 
+// Il catalogo sta tutto in memoria: sono un paio di centinaia di righe,
+// e averlo qui permette di scegliere in PHP invece che con una query per
+// articolo. Serve soprattutto a --prova: tenendo il conto degli usi in
+// memoria, il giro a vuoto mostra la stessa rotazione che ci sarà per
+// davvero, invece di ripetere all'infinito la prima foto dell'elenco.
+$catalogo = $pdo->query('SELECT id, url_file, url_pagina, autore, licenza,
+                                licenza_url, soggetto, usata
+                           FROM ' . t('immagini') . '
+                          WHERE scartata = 0
+                          ORDER BY id')->fetchAll();
+foreach ($catalogo as $k => $c) { $catalogo[$k]['usata'] = (int)$c['usata']; }
+logline(sprintf('%d foto nel catalogo', count($catalogo)), 'copertine');
+
+/**
+ * Sceglie la foto meno consumata fra quelle buone per un soggetto.
+ *
+ * Il "usata < 3" non è un dettaglio. Di Stephen Carpenter su Commons ci
+ * sono quattro foto libere: senza quel limite ogni articolo che lo nomina
+ * si riprendeva quelle quattro in giro, all'infinito, mentre centoventisei
+ * foto di gruppo mai usate stavano lì. Dopo tre volte il soggetto giusto
+ * smette di avere la precedenza e vince chi è stato usato di meno.
+ */
+$scegliFoto = function (string $soggetto) use (&$catalogo): ?int {
+    $miglior = null; $migliorChiave = null;
+    foreach ($catalogo as $k => $c) {
+        if ($c['soggetto'] !== $soggetto && $c['soggetto'] !== 'band') { continue; }
+        $chiave = [
+            ($c['soggetto'] === $soggetto && $c['usata'] < 3) ? 0 : 1,
+            $c['usata'],
+            (int)$c['id'],
+        ];
+        if ($migliorChiave === null || $chiave < $migliorChiave) {
+            $migliorChiave = $chiave; $miglior = $k;
+        }
+    }
+    return $miglior;
+};
+
+// Quante volte una copertina di disco è già in giro per il sito. Oltre
+// una certa soglia la home diventa un muro della stessa busta, quindi
+// gli articoli più vecchi su quel disco ripiegano su una foto: quelli
+// più recenti la tengono, perché la coda è ordinata dal più nuovo.
+const MAX_PER_DISCO = 4;
+$usiDisco = [];
+foreach ($pdo->query('SELECT immagine_fonte_url AS f, COUNT(*) AS n
+                        FROM ' . t('articles') . "
+                       WHERE immagine_origine = 'disco'
+                         AND immagine_fonte_url IS NOT NULL
+                       GROUP BY immagine_fonte_url") as $r) {
+    $usiDisco[(string)$r['f']] = (int)$r['n'];
+}
+
+// Le copertine dei dischi si scaricano una volta sola: venti articoli su
+// 'private music' chiedevano venti volte lo stesso file al Cover Art
+// Archive. In --prova serve anche a dire la verità, perché la copertina
+// viene davvero cercata: se per un disco non c'è, il log lo dice invece
+// di prometterla.
+$copertineDisco = [];
+$prendiDisco = function (string $mbid) use (&$copertineDisco): ?string {
+    if (!array_key_exists($mbid, $copertineDisco)) {
+        $copertineDisco[$mbid] = copertinaDisco($mbid);
+    }
+    return $copertineDisco[$mbid];
+};
+
 // Le copertine messe a mano non si toccano mai, nemmeno con --rifai:
 // se hai scelto tu quella foto, l'hai scelta.
 $dove = $rifai
@@ -145,71 +210,61 @@ foreach ($articoli as $a) {
     $tag = json_decode((string)$a['tag'], true) ?: [];
     $s = soggettoArticolo((string)$a['titolo_it'], $tag, $dischi);
     $esito = null;
+    $file = $cartella . '/' . $a['slug'] . '.jpg';
 
-    // --- 1. la copertina del disco, se l'articolo parla di un disco ---
+    // --- 1. la copertina del disco, se il titolo nomina un disco ------
     if ($s['tipo'] === 'disco' && $s['chiave'] !== '') {
-        $dati = $soloProva ? 'x' : copertinaDisco($s['chiave']);
-        if ($dati !== null) {
-            $file = '/copertine/' . $a['slug'] . '.jpg';
-            if ($soloProva || @file_put_contents($cartella . '/' . $a['slug'] . '.jpg', $dati) !== false) {
+        $rif = 'https://musicbrainz.org/release-group/' . $s['chiave'];
+        if (($usiDisco[$rif] ?? 0) < MAX_PER_DISCO) {
+            $dati = $prendiDisco($s['chiave']);
+            if ($dati !== null && ($soloProva || @file_put_contents($file, $dati) !== false)) {
+                $usiDisco[$rif] = ($usiDisco[$rif] ?? 0) + 1;
                 $esito = [
-                    'url' => '/media' . $file, 'autore' => null,
+                    'url' => '/media/copertine/' . $a['slug'] . '.jpg',
+                    'autore' => null,
                     'licenza' => 'copertina di ' . $s['nome'],
-                    'licenza_url' => null,
-                    'fonte' => 'https://musicbrainz.org/release-group/' . $s['chiave'],
+                    'licenza_url' => null, 'fonte' => $rif,
                     'origine' => 'disco', 'img' => null,
+                    'nota' => $s['nome'],
                 ];
             }
         }
     }
 
-    // --- 2. una foto libera dal catalogo -----------------------------
+    // --- 2. una foto libera dal catalogo ------------------------------
     if ($esito === null) {
-        // Prima le foto del soggetto giusto, poi quelle di gruppo, e a
-        // parità le meno usate.
-        //
-        // Il "usata < 3" non è un dettaglio. Di Stephen Carpenter su
-        // Commons ci sono quattro foto libere: senza quel limite ogni
-        // articolo che lo nomina si sarebbe ripreso quelle quattro in
-        // giro, all'infinito, mentre centoventisei foto di gruppo mai
-        // usate stavano lì. Dopo tre volte il soggetto giusto smette di
-        // avere la precedenza e vince chi è stato usato di meno.
-        $q = $pdo->prepare('SELECT * FROM ' . t('immagini') . '
-                             WHERE scartata = 0 AND soggetto IN (?, ?)
-                             ORDER BY (soggetto = ? AND usata < 3) DESC, usata ASC, id ASC
-                             LIMIT 1');
-        $q->execute([$s['chiave'], 'band', $s['chiave']]);
-        $img = $q->fetch();
-
-        if ($img) {
+        $k = $scegliFoto($s['tipo'] === 'foto' ? $s['chiave'] : 'band');
+        if ($k !== null) {
+            $img = $catalogo[$k];
             $dati = $soloProva ? 'x' : (httpGet((string)$img['url_file'])['body'] ?? null);
             if ($dati !== null && ($soloProva || strlen($dati) > 5000)) {
-                $file = '/copertine/' . $a['slug'] . '.jpg';
-                if ($soloProva || @file_put_contents($cartella . '/' . $a['slug'] . '.jpg', $dati) !== false) {
+                if ($soloProva || @file_put_contents($file, $dati) !== false) {
+                    $catalogo[$k]['usata']++;      // conta anche in prova
                     $esito = [
-                        'url' => '/media' . $file,
+                        'url' => '/media/copertine/' . $a['slug'] . '.jpg',
                         'autore' => $img['autore'],
                         'licenza' => $img['licenza'],
                         'licenza_url' => $img['licenza_url'],
                         'fonte' => $img['url_pagina'],
                         'origine' => 'commons', 'img' => (int)$img['id'],
+                        'nota' => (string)$img['autore'],
                     ];
                 }
             }
         }
     }
 
-    // --- 3. il ripiego: le lettere del pattern -----------------------
+    // --- 3. il ripiego: le lettere del pattern ------------------------
     if ($esito === null) {
         $esito = ['url' => null, 'autore' => null, 'licenza' => null,
                   'licenza_url' => null, 'fonte' => null,
-                  'origine' => 'generata', 'img' => null];
+                  'origine' => 'generata', 'img' => null, 'nota' => ''];
     }
 
     $conti[$esito['origine']]++;
     logline(sprintf('  %-9s %-52s %s', $esito['origine'],
         mb_substr((string)$a['titolo_it'], 0, 52),
-        $esito['origine'] === 'commons' ? (string)$esito['autore'] : ($s['nome'] ?? '')), 'copertine');
+        mb_substr((string)$esito['nota'], 0, 40)), 'copertine');
 
     if ($soloProva) { continue; }
     $salva->execute([$esito['url'], $esito['autore'], $esito['licenza'],
