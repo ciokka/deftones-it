@@ -178,7 +178,12 @@ a { color: inherit; }
    restare fissa. Da 40rem in su la testata torna una riga sola e resta
    lei in cima. */
 .testata {
-  background: rgba(0,0,0,.9);
+  /* Fondo appena velato invece che pieno: quello che scorre sotto si
+     intuisce, sfocato. Il saturate serve perché lo sfocato da solo
+     slava i colori, e il verde dell'accento sotto ne uscirebbe grigio. */
+  background: rgba(0,0,0,.62);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
   border-bottom: 1px solid var(--bordo);
 }
 
@@ -187,7 +192,6 @@ a { color: inherit; }
     position: sticky;
     top: 0;
     z-index: 10;
-    backdrop-filter: blur(10px);
   }
 }
 
@@ -197,12 +201,19 @@ a { color: inherit; }
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(0,0,0,.92);
-  backdrop-filter: blur(10px);
+  background: rgba(0,0,0,.62);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
   border-bottom: 1px solid var(--bordo);
   padding: .7rem 0;
 }
 .menu-barra .menu { justify-content: center; }
+
+/* Senza sfocato la sola trasparenza lascerebbe leggere il testo
+   dell'articolo attraverso la testata. Lì si torna a un fondo pieno. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .testata, .menu-barra { background: rgba(0,0,0,.95); }
+}
 
 @media (min-width: 40rem) {
   .menu-barra { display: none; }        /* su desktop il menu sta nella testata */
@@ -225,7 +236,7 @@ a { color: inherit; }
     justify-content: space-between;
     text-align: left;
     gap: 1.5rem;
-    min-height: 4.5rem;
+    min-height: 5rem;
     padding: 0;
   }
 }
@@ -272,9 +283,7 @@ a { color: inherit; }
 
 /* Logo SVG inline monocromatico: eredita il colore del link, quindi non
    serve una seconda immagine per la versione chiara. */
-.logo { display: block; height: 24px; width: auto; max-width: 78vw; }
-@media (min-width: 40rem) { .logo { height: 22px; } }
-@media (min-width: 64rem) { .logo { height: 25px; } }
+.logo { display: block; height: 30px; width: auto; max-width: 78vw; }
 
 .menu { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
 .menu-riga { display: none; }           /* su mobile il menu è la barra sotto */
@@ -759,7 +768,8 @@ a { color: inherit; }
   position: sticky; bottom: 0;
   display: flex; flex-wrap: wrap; gap: .625rem; align-items: center;
   margin-top: 1.5rem; padding: 1rem;
-  background: rgba(0,0,0,.92); backdrop-filter: blur(10px);
+  background: rgba(0,0,0,.92);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   border: 1px solid var(--bordo);
 }
 
