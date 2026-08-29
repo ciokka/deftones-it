@@ -226,15 +226,22 @@ function soggettoArticolo(string $titolo, array $tag, array $dischi): array
     // perché era taggato white pony; "25 Best Albums of 2020" quella di
     // Ohms; un'intervista a Sergio quella di Koi No Yokan. Nel titolo
     // invece il nome del disco c'è quando l'articolo parla di quello.
+    // Quando un titolo nomina due dischi — "Intervista a Sergio: Eros,
+    // etichetta, White Pony" — vince quello nominato per primo, non il
+    // più lungo: l'argomento di un pezzo si annuncia all'inizio.
+    $vincitore = null; $prima = PHP_INT_MAX;
     foreach ($dischi as $d) {
         $t = mb_strtolower((string)$d['titolo']);
         // "Deftones" e "Covers" come titoli sono troppo generici: il
         // primo compare in ogni articolo, il secondo in mezzi.
         if (mb_strlen($t) < 4 || in_array($t, ['deftones', 'covers'], true)) { continue; }
-        if (preg_match('/\b' . preg_quote($t, '/') . '\b/u', $solotitolo)) {
-            return ['tipo' => 'disco', 'chiave' => (string)$d['mbid'],
-                    'nome' => (string)$d['titolo']];
+        if (preg_match('/\b' . preg_quote($t, '/') . '\b/u', $solotitolo, $m, PREG_OFFSET_CAPTURE)) {
+            if ($m[0][1] < $prima) { $prima = $m[0][1]; $vincitore = $d; }
         }
+    }
+    if ($vincitore !== null) {
+        return ['tipo' => 'disco', 'chiave' => (string)$vincitore['mbid'],
+                'nome' => (string)$vincitore['titolo']];
     }
 
     // Per le persone invece i tag vanno bene: se un articolo è taggato

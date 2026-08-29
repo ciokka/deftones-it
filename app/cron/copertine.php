@@ -127,6 +127,14 @@ $catalogo = $pdo->query('SELECT id, url_file, url_pagina, autore, licenza,
                           WHERE scartata = 0
                           ORDER BY id')->fetchAll();
 foreach ($catalogo as $k => $c) { $catalogo[$k]['usata'] = (int)$c['usata']; }
+
+// Il catalogo si mescola, con un ordine che resta lo stesso a ogni giro.
+// Senza, la scelta scorreva per id e gli id sono raggruppati per
+// categoria: venti articoli di fila prendevano venti foto della stessa
+// sera, tutte dello stesso fotografo. Mescolando, due articoli vicini
+// prendono foto di concerti diversi.
+usort($catalogo, fn(array $x, array $y): int
+    => strcmp(md5('cop' . $x['id']), md5('cop' . $y['id'])));
 logline(sprintf('%d foto nel catalogo', count($catalogo)), 'copertine');
 
 /**
@@ -145,7 +153,7 @@ $scegliFoto = function (string $soggetto) use (&$catalogo): ?int {
         $chiave = [
             ($c['soggetto'] === $soggetto && $c['usata'] < 3) ? 0 : 1,
             $c['usata'],
-            (int)$c['id'],
+            $k,                 // l'ordine mescolato, non quello degli id
         ];
         if ($migliorChiave === null || $chiave < $migliorChiave) {
             $migliorChiave = $chiave; $miglior = $k;
