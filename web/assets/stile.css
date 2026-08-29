@@ -32,27 +32,23 @@
 }
 
 :root {
-  /* Grigio scuro su grigio chiaro. Nessuno dei due è puro: il nero
-     assoluto su bianco assoluto affatica, questi due si posano. */
-  --fondo:       #d5d4d0;
-  --fondo-alto:  #cbcac5;
-  --bordo:       rgba(0,0,0,.16);
-  --bordo-forte: rgba(0,0,0,.44);
-  --testo:       #24241f;
-  --testo-tenue: rgba(0,0,0,.57);
+  --fondo:       #000;
+  --fondo-alto:  #0c0c0c;
+  --bordo:       rgba(255,255,255,.15);
+  --bordo-forte: rgba(255,255,255,.35);
+  --testo:       #fff;
+  --testo-tenue: rgba(255,255,255,.52);
 
   /* Il verde di deftones.com. Stimato dagli screenshot del sito
      ufficiale, non campionato: quel dominio risponde 403 a chi non è un
      browser. Se hai il valore esatto, cambialo qui e basta — è l'unico
      punto in cui è scritto. */
-  /* Il verde va scurito: quello del sito ufficiale è tarato sul nero e
-     su fondo chiaro non avrebbe contrasto sufficiente per un link. */
-  --accento:      #26682e;
-  --accento-scuro:#1c4f22;
+  --accento:      #3ea84b;
+  --accento-scuro:#2d7d38;
 
   /* Colore funzionale, non decorativo: segnala che una notizia non è
      confermata. Resta distinto dal verde proprio per questo. */
-  --avviso:      #6c5a25;
+  --avviso:      #d8b44a;
 
   --display: "Instrument Serif", Georgia, "Times New Roman", serif;
   --testo-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -62,7 +58,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
-::selection { background: var(--accento); color: #fff; }
+::selection { background: var(--accento); color: #000; }
 /* Le dimensioni del sito sono tutte in rem: cambiando la radice il
    testo cala di 1px su mobile e le spaziature lo seguono in proporzione,
    invece di restare tarate su un corpo che non c'è più.
@@ -135,10 +131,10 @@ body {
    ogni file contiene lettere di una sola dimensione, generate da
    strumenti/genera-sfondo.py. Le opacità crescono con la vicinanza,
    come cresce il contrasto delle cose vicine. */
-.s1 { background-image: url(sfondo-1-m.svg); opacity: .09; }
-.s2 { background-image: url(sfondo-2-m.svg); opacity: .12; }
-.s3 { background-image: url(sfondo-3-m.svg); opacity: .15; }
-.s4 { background-image: url(sfondo-4-m.svg); opacity: .18; }
+.s1 { background-image: url(sfondo-1-m.svg); opacity: .13; }
+.s2 { background-image: url(sfondo-2-m.svg); opacity: .17; }
+.s3 { background-image: url(sfondo-3-m.svg); opacity: .21; }
+.s4 { background-image: url(sfondo-4-m.svg); opacity: .25; }
 
 /* Due serie di file con lo stesso disegno ma tratto diverso: su mobile
    la piastrella è grande il 300% della larghezza contro il 90% del
@@ -161,9 +157,9 @@ body::after {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(90% 60% at 78% -12%, rgba(38,104,46,.10) 0%, transparent 62%),
-    radial-gradient(120% 80% at 15% -10%, rgba(0,0,0,.05) 0%, transparent 60%),
-    linear-gradient(to bottom, transparent 62%, rgba(255,255,255,.28) 100%);
+    radial-gradient(90% 60% at 78% -12%, rgba(62,168,75,.10) 0%, transparent 62%),
+    radial-gradient(120% 80% at 15% -10%, rgba(255,255,255,.06) 0%, transparent 60%),
+    linear-gradient(to bottom, transparent 60%, #000 100%);
 }
 
 a { color: inherit; }
@@ -182,7 +178,7 @@ a { color: inherit; }
    restare fissa. Da 40rem in su la testata torna una riga sola e resta
    lei in cima. */
 .testata {
-  background: rgba(213,212,208,.9);
+  background: rgba(0,0,0,.9);
   border-bottom: 1px solid var(--bordo);
 }
 
@@ -201,7 +197,7 @@ a { color: inherit; }
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(213,212,208,.92);
+  background: rgba(0,0,0,.92);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--bordo);
   padding: .7rem 0;
@@ -317,8 +313,8 @@ a { color: inherit; }
 }
 /* Le due categorie che un fan cerca davvero: tour e uscite. Il verde
    qui ha una funzione — farle saltare all'occhio in un elenco. */
-.et-tour, .et-uscita { border-color: rgba(38,104,46,.55); color: var(--accento); }
-.et-dubbio { border-color: rgba(108,90,37,.5); color: var(--avviso); }
+.et-tour, .et-uscita { border-color: rgba(62,168,75,.55); color: var(--accento); }
+.et-dubbio { border-color: rgba(216,180,74,.5); color: var(--avviso); }
 
 /* --------------------------------------------------------- apertura */
 
@@ -337,7 +333,7 @@ a { color: inherit; }
 .apertura h1 a { text-decoration: none; transition: opacity .2s; }
 .apertura h1 a:hover { color: var(--accento); }
 
-.sommario { margin: 0 0 1rem; color: rgba(0,0,0,.7); font-size: 1rem; }
+.sommario { margin: 0 0 1rem; color: rgba(255,255,255,.75); font-size: 1rem; }
 .fonte {
   margin: 0;
   font-size: .75rem;
@@ -376,7 +372,7 @@ a { color: inherit; }
   line-height: 1.08;
   letter-spacing: -.01em;
 }
-.corpo { font-size: 1.0625rem; line-height: 1.75; color: rgba(0,0,0,.82); }
+.corpo { font-size: 1.0625rem; line-height: 1.75; color: rgba(255,255,255,.88); }
 .corpo p { margin: 0 0 1.375rem; }
 
 /* Immagine sostituita dal segnaposto: niente ombre né bordi doppi, il
@@ -430,7 +426,7 @@ a { color: inherit; }
 .nota-dubbio {
   margin: 0 0 2rem;
   padding: .875rem 1.125rem;
-  border: 1px solid rgba(108,90,37,.35);
+  border: 1px solid rgba(216,180,74,.35);
   font-size: .875rem;
   color: var(--avviso);
 }
@@ -485,7 +481,7 @@ a { color: inherit; }
   gap: 1.25rem;
   align-items: baseline;
   padding: .7rem 0;
-  border-bottom: 1px solid rgba(0,0,0,.08);
+  border-bottom: 1px solid rgba(255,255,255,.07);
 }
 .cronologia-voce time {
   flex: 0 0 8.5rem;
@@ -609,7 +605,7 @@ a { color: inherit; }
   cursor: pointer;
   transition: background .2s, border-color .2s;
 }
-.bottone:hover { background: var(--accento); color: #fff; border-color: var(--accento); }
+.bottone:hover { background: var(--accento); color: #000; border-color: var(--accento); }
 .bottone-tenue { border-color: var(--bordo); color: var(--testo-tenue); }
 .bottone-tenue:hover { background: transparent; color: var(--accento); border-color: var(--accento); }
 
@@ -645,7 +641,7 @@ a { color: inherit; }
   margin: 0 0 .75rem; font-family: var(--display); font-weight: 400;
   font-size: 1.5rem; line-height: 1.15;
 }
-.bozza .sommario { font-size: .9375rem; color: rgba(0,0,0,.68); }
+.bozza .sommario { font-size: .9375rem; color: rgba(255,255,255,.72); }
 .punteggio {
   display: inline-block; min-width: 2.5rem; text-align: center;
   padding: .2rem .5rem; border: 1px solid var(--accento-scuro);
@@ -671,8 +667,8 @@ a { color: inherit; }
 .campo input:focus { outline: none; border-color: var(--accento); }
 
 .avvisoOk, .avvisoKo { padding: .875rem 1.125rem; margin-bottom: 1.5rem; font-size: .875rem; }
-.avvisoOk { border: 1px solid var(--accento-scuro); color: var(--accento-scuro); }
-.avvisoKo { border: 1px solid rgba(108,90,37,.5); color: var(--avviso); }
+.avvisoOk { border: 1px solid var(--accento-scuro); color: var(--accento); }
+.avvisoKo { border: 1px solid rgba(216,180,74,.5); color: var(--avviso); }
 
 /* ------------------------------------------- pannello: filtri e liste */
 
@@ -700,7 +696,7 @@ a { color: inherit; }
   position: sticky; bottom: 0;
   display: flex; flex-wrap: wrap; gap: .625rem; align-items: center;
   margin-top: 1.5rem; padding: 1rem;
-  background: rgba(213,212,208,.92); backdrop-filter: blur(10px);
+  background: rgba(0,0,0,.92); backdrop-filter: blur(10px);
   border: 1px solid var(--bordo);
 }
 
