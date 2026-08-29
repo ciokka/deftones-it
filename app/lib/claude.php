@@ -122,8 +122,3 @@ function claudeJson(string $system, string $prompt, array $schema, int $maxToken
     ]);
 }
 
-/** Costo stimato in euro, per il log. Tariffe Claude Opus 5. */
-function costoEuro(int $in, int $out): float
-{
-    return ($in / 1_000_000 * 5.00 + $out / 1_000_000 * 25.00) * 0.92;
-}

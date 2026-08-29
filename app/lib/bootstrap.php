@@ -102,6 +102,16 @@ function prendiLock(string $job): mixed
     return $fh;
 }
 
+/**
+ * Costo in euro di una chiamata, dalle tariffe di Claude Opus 5.
+ * Sta qui e non nel client dell'API perché è aritmetica: la usa anche
+ * il riepilogo, che con l'API non parla.
+ */
+function costoEuro(int $in, int $out): float
+{
+    return ($in / 1_000_000 * 5.00 + $out / 1_000_000 * 25.00) * 0.92;
+}
+
 // ---------------------------------------------------------------- HTTP
 
 /**
