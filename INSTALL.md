@@ -1,3 +1,8 @@
+> **Questo file è il registro storico dell'installazione**, passo per
+> passo, così com'è stata fatta. Per capire come funziona il sistema
+> oggi, cosa fa ogni script e cosa guardare quando qualcosa non va,
+> vai a **[GUIDA.md](GUIDA.md)**.
+
 # deftones.it — installazione passo 1 (ingest)
 
 ## Struttura sul server
