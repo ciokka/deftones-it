@@ -55,8 +55,30 @@ $q->execute([ORE]);
 $sp = $q->fetch();
 $costo = costoEuro((int)$sp['ti'], (int)$sp['tou']);
 
+// ------------------------------------------------- il guardiano del silenzio
+// Questo riepilogo tace quando non c'è niente da dire, ed è voluto. Ma
+// tacerebbe allo stesso modo se i cron smettessero di girare — e il
+// silenzio diventerebbe un guasto travestito da normalità. Se l'ultimo
+// ingest riuscito è vecchio, quello è di per sé una notizia.
+$ultimoIngest = $pdo->query('SELECT MAX(finito_il) FROM ' . t('run_log') . "
+                              WHERE job = 'ingest' AND esito = 'ok'")->fetchColumn();
+$oreFerme = $ultimoIngest ? (time() - strtotime((string)$ultimoIngest)) / 3600 : 999;
+
+if ($oreFerme > 12) {
+    $guasti[] = [
+        'job'       => 'ingest',
+        'finito_il' => $ultimoIngest,
+        'esito'     => 'fermo',
+        'messaggio' => $ultimoIngest
+            ? sprintf('nessuna raccolta riuscita da %.0f ore (ultima: %s)',
+                      $oreFerme, dataIt((string)$ultimoIngest))
+            : 'non risulta nessuna raccolta riuscita',
+    ];
+}
+
 if (!$nuove && !$guasti && !$forza) {
-    rlog('Niente di nuovo e nessun guasto: non mando niente.');
+    rlog(sprintf('Niente di nuovo, nessun guasto, ultimo ingest %.0f ore fa: non mando niente.',
+        $oreFerme));
     exit(0);
 }
 
@@ -92,6 +114,7 @@ if ($nuove) {
     $t .= "Nessuna bozza nuova nelle ultime 24 ore.\n\n";
 }
 
+$t .= sprintf("Ultima raccolta riuscita: %.0f ore fa\n", $oreFerme);
 $t .= sprintf("In attesa di revisione: %d\n", $inAttesa);
 $t .= sprintf("Speso nelle ultime 24 ore: %.2f €\n\n", $costo);
 $t .= "Pannello: $pannello\n";
@@ -133,6 +156,8 @@ if ($nuove) {
 
 $h .= '<div style="border-top:1px solid #262629;margin-top:22px;padding-top:18px;'
     . 'font-size:13px;color:#8f8d8a">'
+    . 'Ultima raccolta riuscita: <b style="color:#e8e6e3">'
+    . sprintf('%.0f', $oreFerme) . ' ore fa</b><br>'
     . 'In attesa di revisione: <b style="color:#e8e6e3">' . $inAttesa . '</b><br>'
     . 'Speso nelle ultime 24 ore: <b style="color:#e8e6e3">'
     . number_format($costo, 2, ',', '.') . ' €</b></div>';
