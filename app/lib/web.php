@@ -211,22 +211,26 @@ function condividiMini(string $slug, string $titolo): string
  */
 function copertina(array $a, bool $subito = false): string
 {
-    $o = (string)($a['immagine_origine'] ?? '');
+    $img = copertinaImg($a, $subito);
+    if ($img === '') { return ''; }
+    return '<figure class="copertina">' . $img . creditoImmagine($a) . '</figure>';
+}
 
-    if ($o === 'generata') {
+/**
+ * Solo l'immagine, senza cornice né credito. Il banner della home li
+ * dispone per conto suo, perché lì il credito va sopra la foto e non
+ * sotto.
+ */
+function copertinaImg(array $a, bool $subito = false): string
+{
+    if ((string)($a['immagine_origine'] ?? '') === 'generata') {
         require_once __DIR__ . '/copertina-generata.php';
-        return '<div class="copertina copertina-generata">'
-             . copertinaGenerata((string)$a['slug']) . '</div>';
+        return copertinaGenerata((string)$a['slug']);
     }
-
     if (empty($a['immagine_url'])) { return ''; }
 
-    return '<figure class="copertina">'
-         . '<img src="' . e((string)$a['immagine_url']) . '" alt=""'
-         . ' loading="' . ($subito ? 'eager' : 'lazy') . '"'
-         . ' decoding="async">'
-         . creditoImmagine($a)
-         . '</figure>';
+    return '<img src="' . e((string)$a['immagine_url']) . '" alt=""'
+         . ' loading="' . ($subito ? 'eager' : 'lazy') . '" decoding="async">';
 }
 
 /**
@@ -237,14 +241,14 @@ function copertina(array $a, bool $subito = false): string
  * libera, stiamo usando una foto altrui. Per questo il credito sta
  * sotto l'immagine e non in fondo alla pagina.
  */
-function creditoImmagine(array $a): string
+function creditoImmagine(array $a, string $tag = 'figcaption'): string
 {
     $o = (string)($a['immagine_origine'] ?? '');
     if ($o === '' || $o === 'generata') { return ''; }
 
     if ($o === 'disco') {
         $t = e((string)($a['immagine_licenza'] ?? ''));
-        return $t === '' ? '' : '<figcaption class="credito">' . $t . '</figcaption>';
+        return $t === '' ? '' : "<$tag class=\"credito\">" . $t . "</$tag>";
     }
 
     $link = function (?string $url, string $testo): string {
@@ -264,6 +268,6 @@ function creditoImmagine(array $a): string
         $pezzi[] = $link($a['immagine_licenza_url'] ?? null, e($lic));
     }
 
-    return '<figcaption class="credito">' . implode(' · ', $pezzi) . '</figcaption>';
+    return "<$tag class=\"credito\">" . implode(' · ', $pezzi) . "</$tag>";
 }
 

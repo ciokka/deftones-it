@@ -70,7 +70,11 @@ function copertinaGenerata(string $slug): string
     // Le stesse due luci del fondo del sito, così la copertina generata
     // sembra un ritaglio della pagina invece di un'immagine estranea.
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' . $L . ' ' . $A . '"'
-        . ' width="' . $L . '" height="' . $A . '" role="img" aria-label="deftones.it">'
+        . ' width="' . $L . '" height="' . $A . '" role="img" aria-label="deftones.it"'
+        // "slice" fa all'SVG quello che object-fit:cover fa a una foto:
+        // riempi il riquadro e taglia il di più. Serve nel banner della
+        // home, che non è 16:9. Dove il riquadro è 16:9 non taglia nulla.
+        . ' preserveAspectRatio="xMidYMid slice">'
         . '<defs>'
         . '<radialGradient id="v" cx="80%" cy="-8%" r="58%">'
         . '<stop offset="0" stop-color="#3ea84b" stop-opacity=".22"/>'

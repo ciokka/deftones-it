@@ -6,20 +6,33 @@
 <?php else: ?>
 
   <?php $primo = array_shift($articoli); ?>
-  <article class="apertura">
-    <?php /* Qui invece la foto viene prima: in home è lei l'aggancio,
-             il titolo lo si legge dopo essersi fermati. */ ?>
-    <a class="copertina-link" href="<?= u('notizie/' . $primo['slug'] . '/') ?>"
-       tabindex="-1" aria-hidden="true"><?= copertina($primo, true) ?></a>
-    <div class="meta">
-      <span class="etichetta et-<?= e($primo['categoria']) ?>"><?= e($primo['categoria']) ?></span>
-      <?php if ($primo['attendibilita'] !== 'confermato'): ?>
-        <span class="etichetta et-dubbio"><?= e($primo['attendibilita']) ?></span>
-      <?php endif ?>
-      <time datetime="<?= e($primo['pubblicato_il']) ?>"><?= e(quandoIt($primo['pubblicato_il'])) ?></time>
+  <?php $conFoto = copertinaImg($primo, true); ?>
+
+  <article class="apertura<?= $conFoto ? ' hero' : '' ?>">
+    <?php if ($conFoto): ?>
+      <?php /* Il banner: la foto riempie il riquadro, il testo ci sta
+               sopra. Non avvolgo tutto in un <a> perché dentro ci va il
+               credito, che è a sua volta un link e non può stare dentro
+               un altro link: il collegamento lo stende il titolo, con un
+               ::after che copre tutto il banner. */ ?>
+      <div class="hero-foto"><?= $conFoto ?></div>
+      <div class="hero-velo" aria-hidden="true"></div>
+    <?php endif ?>
+
+    <div class="hero-testo">
+      <div class="meta">
+        <span class="etichetta et-<?= e($primo['categoria']) ?>"><?= e($primo['categoria']) ?></span>
+        <?php if ($primo['attendibilita'] !== 'confermato'): ?>
+          <span class="etichetta et-dubbio"><?= e($primo['attendibilita']) ?></span>
+        <?php endif ?>
+        <time datetime="<?= e($primo['pubblicato_il']) ?>"><?= e(quandoIt($primo['pubblicato_il'])) ?></time>
+      </div>
+      <h1><a href="<?= u('notizie/' . $primo['slug'] . '/') ?>"><?= e($primo['titolo_it']) ?></a></h1>
+      <p class="sommario"><?= e(mb_substr($primo['sommario_it'], 0, 260)) ?><?= mb_strlen($primo['sommario_it']) > 260 ? '…' : '' ?></p>
     </div>
-    <h1><a href="<?= u('notizie/' . $primo['slug'] . '/') ?>"><?= e($primo['titolo_it']) ?></a></h1>
-    <p class="sommario"><?= e(mb_substr($primo['sommario_it'], 0, 260)) ?><?= mb_strlen($primo['sommario_it']) > 260 ? '…' : '' ?></p>
+
+    <?= creditoImmagine($primo, 'p') ?>
+
     <div class="piede">
       <?php if ($primo['fonte_nome']): ?>
         <p class="fonte">Fonte: <?= e($primo['fonte_nome']) ?></p>
