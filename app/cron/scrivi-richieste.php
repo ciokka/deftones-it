@@ -177,7 +177,15 @@ foreach ($attesa as $r) {
     $prompt .= "\nMATERIALE RACCOLTO\n\n{$ric['testo']}\n\n"
              . "PAGINE CONSULTATE\n\n" . ($elenco ?: "(nessuna registrata)\n");
 
-    $a = claudeJson(SYS_SCRITTURA, $prompt, $schema, 12000);
+    // Una riga prima e una dopo: senza, quando il processo muore non si
+    // sa nemmeno se la chiamata era partita.
+    qlog(sprintf('      scrittura: invio %d caratteri di materiale…', mb_strlen($prompt)));
+    // 8000 invece di 12000: un articolo da 900 parole ne usa meno di
+    // 2000, e il resto è margine per il ragionamento. Un tetto più basso
+    // accorcia i tempi e riduce la finestra in cui qualcosa può ucciderci.
+    $a = claudeJson(SYS_SCRITTURA, $prompt, $schema, 8000);
+    qlog(sprintf('      scrittura: %s (%d token in, %d out)',
+        $a['ok'] ? 'risposta ricevuta' : 'FALLITA', $a['in'], $a['out']));
     $tin = $ric['in'] + $a['in'];
     $tout = $ric['out'] + $a['out'];
 
@@ -200,6 +208,7 @@ foreach ($attesa as $r) {
         json_encode(['in' => $tin, 'out' => $tout]),
     ]);
     $articoloId = (int)$pdo->lastInsertId();
+    qlog(sprintf('      salvata la bozza %d', $articoloId));
 
     $segnaStato->execute(['fatto', $articoloId,
         json_encode($ric['fonti'], JSON_UNESCAPED_UNICODE), null, $tin, $tout, $id]);
