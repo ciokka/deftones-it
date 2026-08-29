@@ -364,3 +364,39 @@ function riparaEscape(?string $s): ?string
         $s
     );
 }
+
+/**
+ * Invia una mail in testo semplice e HTML insieme.
+ *
+ * Il mittente DEVE essere un indirizzo del dominio: scrivendo "da"
+ * un indirizzo altrui (@me.com, @gmail.com) i controlli antispam del
+ * destinatario vedono un server che non è autorizzato per quel dominio
+ * e cestinano il messaggio.
+ */
+function inviaMail(string $a, string $oggetto, string $testo, string $html): bool
+{
+    $mittente = (string)(cfg('email_mittente') ?? '');
+    if ($mittente === '' || $a === '') { return false; }
+
+    $confine = 'x' . bin2hex(random_bytes(12));
+    $intestazioni = implode("\r\n", [
+        'From: ' . cfg('site_name') . ' <' . $mittente . '>',
+        'Reply-To: ' . $mittente,
+        'MIME-Version: 1.0',
+        'Content-Type: multipart/alternative; boundary="' . $confine . '"',
+        'X-Auto-Response-Suppress: All',      // niente risposte automatiche
+        'Auto-Submitted: auto-generated',     // è posta di servizio, non personale
+    ]);
+
+    $corpo = "--$confine\r\n"
+           . "Content-Type: text/plain; charset=UTF-8\r\n"
+           . "Content-Transfer-Encoding: 8bit\r\n\r\n"
+           . $testo . "\r\n\r\n"
+           . "--$confine\r\n"
+           . "Content-Type: text/html; charset=UTF-8\r\n"
+           . "Content-Transfer-Encoding: 8bit\r\n\r\n"
+           . $html . "\r\n\r\n"
+           . "--$confine--\r\n";
+
+    return @mail($a, mb_encode_mimeheader($oggetto, 'UTF-8'), $corpo, $intestazioni);
+}

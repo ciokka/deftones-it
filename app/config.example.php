@@ -55,6 +55,14 @@ return [
     'max_eta_giorni' => 14,
 
 
+    // --- avvisi via email ---------------------------------------------
+    // Dove arriva il riepilogo giornaliero.
+    'email_avvisi' => 'ciokka@me.com',
+    // Da quale indirizzo parte. DEVE essere del dominio, altrimenti i
+    // filtri antispam del destinatario lo scartano: un server che scrive
+    // "da" un indirizzo @me.com non è autorizzato a farlo.
+    'email_mittente' => 'sito@deftones.it',
+
     // --- sito ---------------------------------------------------------
     'site_name' => 'deftones.it',
     'site_url'  => 'https://www.deftones.it',
