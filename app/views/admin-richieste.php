@@ -24,7 +24,8 @@
 
     <p class="sommario" style="margin:0 0 1rem">
       Il modello cerca le fonti sul web, le legge e scrive citandole. Serve
-      qualche minuto e costa circa venti centesimi. L'articolo nasce in bozza.
+      qualche minuto e costa fra i cinquanta centesimi e l'euro e mezzo,
+      a seconda di quanto deve cercare. L'articolo nasce in bozza.
     </p>
     <button class="bottone" type="submit">metti in coda</button>
   </form>

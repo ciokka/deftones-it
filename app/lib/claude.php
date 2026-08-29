@@ -139,6 +139,7 @@ function claudeConRicerca(string $sistema, string $prompt,
     $testo = '';
     $fonti = [];
     $in = $out = 0;
+    $letti = $scritti = 0;      // token serviti dalla cache, e scritti in cache
 
     for ($ripresa = 0; $ripresa <= $maxRiprese; $ripresa++) {
         $r = claude([
@@ -151,9 +152,18 @@ function claudeConRicerca(string $sistema, string $prompt,
                 'name'     => 'web_search',
                 'max_uses' => $maxRicerche,
             ]],
+            // Quando il giro si ferma per riprendere fiato rimandiamo
+            // indietro tutta la conversazione, pagine lette comprese.
+            // Senza cache quel materiale si paga a ogni ripresa: con 56
+            // ricerche è il grosso del conto. La cache lo fa pagare un
+            // decimo dalla seconda volta in poi.
+            'cache_control' => ['type' => 'ephemeral'],
             'output_config' => ['effort' => cfg('effort') ?: 'medium'],
         ]);
         $in += $r['in']; $out += $r['out'];
+        $u = $r['grezzo']['usage'] ?? [];
+        $letti += (int)($u['cache_read_input_tokens'] ?? 0);
+        $scritti += (int)($u['cache_creation_input_tokens'] ?? 0);
 
         // claude() considera un errore la risposta senza blocchi di testo,
         // ma qui è normale: un giro può contenere solo ricerche.
@@ -185,7 +195,9 @@ function claudeConRicerca(string $sistema, string $prompt,
         // niente — il server riconosce la ricerca in coda e prosegue.
         if (($grezzo['stop_reason'] ?? '') !== 'pause_turn') {
             return ['ok' => true, 'testo' => $testo, 'fonti' => $fonti,
-                    'in' => $in, 'out' => $out, 'errore' => null];
+                    'in' => $in, 'out' => $out,
+                    'cache_letti' => $letti, 'cache_scritti' => $scritti,
+                    'errore' => null];
         }
         $messaggi[] = ['role' => 'assistant', 'content' => $grezzo['content']];
     }

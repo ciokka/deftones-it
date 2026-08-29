@@ -179,8 +179,10 @@ foreach ($attesa as $r) {
         $fallite++; $inCorso = null;
         continue;
     }
-    qlog(sprintf('      ricerca: %d fonti, %d caratteri',
-        count($ric['fonti']), mb_strlen($ric['testo'])));
+    qlog(sprintf('      ricerca: %d fonti, %d caratteri · %d token nuovi, '
+        . '%d dalla cache (%.2f €)',
+        count($ric['fonti']), mb_strlen($ric['testo']), $ric['in'],
+        $ric['cache_letti'] ?? 0, costoEuro($ric['in'], $ric['out'])));
 
     // --- 2. scrittura
     $elenco = '';
