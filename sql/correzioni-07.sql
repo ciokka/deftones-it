@@ -26,7 +26,7 @@ JOIN df_raw_items r ON r.id = a.raw_item_id
 WHERE a.categoria <> 'evergreen'
   AND r.pubblicato_il IS NOT NULL
   AND (a.pubblicato_il IS NULL
-       OR ABS(TIMESTAMPDIFF(HOUR, a.pubblicato_il, a.creato_il)) < 2)
+       OR DATE(a.pubblicato_il) <> DATE(r.pubblicato_il))
 GROUP BY a.stato;
 
 
@@ -40,22 +40,27 @@ JOIN df_raw_items r ON r.id = a.raw_item_id
 WHERE a.categoria <> 'evergreen'
   AND r.pubblicato_il IS NOT NULL
   AND (a.pubblicato_il IS NULL
-       OR ABS(TIMESTAMPDIFF(HOUR, a.pubblicato_il, a.creato_il)) < 2)
+       OR DATE(a.pubblicato_il) <> DATE(r.pubblicato_il))
 ORDER BY r.pubblicato_il
 LIMIT 25;
 
 
 -- 3 ── LA CORREZIONE ─────────────────────────────────────────────────
--- Agisce solo dove la data manca o coincide con il momento della
--- creazione, cioè dove è chiaramente quella sbagliata. Se avessi
--- corretto una data a mano, quella resta.
+-- Agisce dove la data dell'articolo non coincide con quella della fonte.
+--
+-- La prima versione usava un'euristica sbagliata — "la data coincide con
+-- il momento della creazione, entro due ore" — che non prendeva niente:
+-- gli articoli erano stati scritti alle 13:51 e pubblicati alle 16:11,
+-- e due ore e venti non stanno dentro la finestra. Il difetto non è
+-- "la data è quella della creazione", è "la data non è quella del
+-- fatto": conviene dirlo direttamente.
 UPDATE df_articles a
 JOIN df_raw_items r ON r.id = a.raw_item_id
 SET a.pubblicato_il = r.pubblicato_il
 WHERE a.categoria <> 'evergreen'
   AND r.pubblicato_il IS NOT NULL
   AND (a.pubblicato_il IS NULL
-       OR ABS(TIMESTAMPDIFF(HOUR, a.pubblicato_il, a.creato_il)) < 2);
+       OR DATE(a.pubblicato_il) <> DATE(r.pubblicato_il));
 
 
 -- ── verifica: come si distribuiscono adesso ──────────────────────────
