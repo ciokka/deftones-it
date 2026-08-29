@@ -57,7 +57,7 @@ return [
 
     // --- avvisi via email ---------------------------------------------
     // Dove arriva il riepilogo giornaliero.
-    'email_avvisi' => 'ciokka@me.com',
+    'email_avvisi' => 'deftones.it@gmail.com',
     // Da quale indirizzo parte. DEVE essere del dominio, altrimenti i
     // filtri antispam del destinatario lo scartano: un server che scrive
     // "da" un indirizzo @me.com non è autorizzato a farlo.
