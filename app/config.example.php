@@ -73,6 +73,12 @@ return [
     // svuotata a ogni pubblicazione, quindi puoi tenerla alta.
     'cache_ttl' => 900,
 
+    // Dove stanno i file caricati, sul disco. Ci finiscono le immagini
+    // del vecchio WordPress e le copertine scaricate. È un percorso di
+    // filesystem, non un indirizzo: gli articoli le cercano su /media/,
+    // che è assoluto e non passa da base_url.
+    'media_dir' => '/home/bpdefton/public_html/media',
+
     'user_agent' => 'deftones.it/1.0 (aggregatore notizie fan; +https://www.deftones.it)',
     'http_timeout' => 15,
 ];

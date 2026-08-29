@@ -63,7 +63,9 @@ $html = null;
 if ($percorso === '/') {
     $articoli = $pdo->query(
         'SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
-                fonte_nome, pubblicato_il
+                fonte_nome, pubblicato_il, immagine_url, immagine_origine,
+                immagine_autore, immagine_licenza, immagine_licenza_url,
+                immagine_fonte_url
            FROM ' . t('articles') . '
           WHERE stato = \'pubblicato\'
           ORDER BY pubblicato_il DESC LIMIT 21'
@@ -204,7 +206,10 @@ elseif (preg_match('#^/notizie/([a-z0-9-]+)$#', $percorso, $m)) {
         'titolo'      => $a['titolo_it'] . ' — deftones.it',
         'descrizione' => mb_substr($a['sommario_it'], 0, 160),
         'canonico'    => cfg('site_url') . u('notizie/' . $a['slug'] . '/'),
-    ]);
+        // Quando c'è una foto vera, è quella che si vede quando il pezzo
+        // viene condiviso. Le copertine generate restano fuori: sono SVG,
+        // e nessun social sa disegnarle nell'anteprima.
+    ] + ($a['immagine_url'] ? ['immagine' => cfg('site_url') . $a['immagine_url']] : []));
 }
 
 // --- categoria

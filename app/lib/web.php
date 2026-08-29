@@ -199,3 +199,71 @@ function condividiMini(string $slug, string $titolo): string
          . ' data-url="' . e(cfg('site_url') . u('notizie/' . $slug . '/')) . '"'
          . ' data-titolo="' . e($titolo) . '">' . $svg . '</button>';
 }
+
+/**
+ * La copertina di un articolo.
+ *
+ * Tre casi, che il database distingue con immagine_origine:
+ * una foto vera salvata sul nostro disco, l'immagine generata dalle
+ * lettere del pattern, o niente. Le foto arrivano da Commons con
+ * proporzioni tutte diverse: il ritaglio a 16:9 lo fa il CSS, così una
+ * verticale non sfonda la pagina e la fascia resta sempre la stessa.
+ */
+function copertina(array $a, bool $subito = false): string
+{
+    $o = (string)($a['immagine_origine'] ?? '');
+
+    if ($o === 'generata') {
+        require_once __DIR__ . '/copertina-generata.php';
+        return '<div class="copertina copertina-generata">'
+             . copertinaGenerata((string)$a['slug']) . '</div>';
+    }
+
+    if (empty($a['immagine_url'])) { return ''; }
+
+    return '<figure class="copertina">'
+         . '<img src="' . e((string)$a['immagine_url']) . '" alt=""'
+         . ' loading="' . ($subito ? 'eager' : 'lazy') . '"'
+         . ' decoding="async">'
+         . creditoImmagine($a)
+         . '</figure>';
+}
+
+/**
+ * Il credito sotto la foto.
+ *
+ * Non è una cortesia: una foto CC BY è libera *a condizione* che
+ * l'autore sia citato. Senza questa riga non stiamo usando una foto
+ * libera, stiamo usando una foto altrui. Per questo il credito sta
+ * sotto l'immagine e non in fondo alla pagina.
+ */
+function creditoImmagine(array $a): string
+{
+    $o = (string)($a['immagine_origine'] ?? '');
+    if ($o === '' || $o === 'generata') { return ''; }
+
+    if ($o === 'disco') {
+        $t = e((string)($a['immagine_licenza'] ?? ''));
+        return $t === '' ? '' : '<figcaption class="credito">' . $t . '</figcaption>';
+    }
+
+    $link = function (?string $url, string $testo): string {
+        return $url
+            ? '<a href="' . e($url) . '" target="_blank" rel="noopener">' . $testo . '</a>'
+            : $testo;
+    };
+
+    $pezzi = [];
+    $autore = trim((string)($a['immagine_autore'] ?? ''));
+    $pezzi[] = $autore !== ''
+        ? 'foto di ' . $link($a['immagine_fonte_url'] ?? null, e(mb_substr($autore, 0, 120)))
+        : $link($a['immagine_fonte_url'] ?? null, 'foto da Wikimedia Commons');
+
+    $lic = trim((string)($a['immagine_licenza'] ?? ''));
+    if ($lic !== '') {
+        $pezzi[] = $link($a['immagine_licenza_url'] ?? null, e($lic));
+    }
+
+    return '<figcaption class="credito">' . implode(' · ', $pezzi) . '</figcaption>';
+}
+

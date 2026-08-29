@@ -116,6 +116,7 @@ passato, e si può annullare a sua volta.
 | `35 */4` | scrittura | `enrich.php >/dev/null` |
 | `15 9` | riepilogo | `riepilogo.php >/dev/null` |
 | `*/30` | richieste | `scrivi-richieste.php --una >/dev/null` |
+| `50 */4` | copertine | `copertine.php >/dev/null` |
 
 Percorso completo del PHP: `/opt/cpanel/ea-php83/root/usr/bin/php -q`
 seguito da `/home/bpdefton/deftones/app/cron/<script>.php`.
@@ -125,6 +126,10 @@ sparisce, ma gli errori restano su stderr e cPanel te li manda per
 email. Aggiungendo `2>&1` spariscono anche quelli, e un guasto diventa
 silenzioso. Perché la mail parta, il campo email in cima alla pagina
 Processi Cron dev'essere compilato.
+
+Le copertine girano subito dopo la scrittura, e come le richieste non
+costano niente a vuoto: pescano da un catalogo locale, senza toccare né
+Wikimedia né l'IA.
 
 Le richieste girano ogni mezz'ora perché a vuoto non costano niente: lo
 script prende un lock, non trova nulla in attesa ed esce. È la differenza
@@ -318,6 +323,35 @@ Non viene toccata da nessun deploy, ed è l'unica parte del sito che non
 sta in git: la sua copia buona è `wp-content/uploads/` dell'archivio
 WordPress. Da lì si ricostruisce in qualsiasi momento.
 
+**Le copertine non si possono prendere dove capita.** Le foto che
+accompagnano gli articoli dei giornali sono di agenzia o dei fotografi
+accreditati. Prenderne l'`og:image` è quello che fa quasi ogni
+aggregatore, ed è anche il motivo per cui ogni tanto a qualcuno arriva
+una richiesta di danni a quattro cifre. Quindi si pesca in tre posti, in
+quest'ordine: la copertina del disco se l'articolo parla di un disco, una
+foto libera di Wikimedia Commons, e in mancanza d'altro un'immagine
+generata dalle lettere del pattern.
+
+Il credito sotto la foto non è una cortesia. Una foto CC BY è libera *a
+condizione* che l'autore sia citato: senza quella riga non stiamo usando
+una foto libera, stiamo usando una foto altrui. Per questo sta sotto
+l'immagine e non in fondo alla pagina.
+
+**Commons viene interrogato di rado, non a ogni articolo.** Le foto
+libere dei Deftones non nascono al ritmo delle notizie: `--raccogli`
+riempie il catalogo `df_immagini` (162 immagini utilizzabili su 252
+viste, alla prima raccolta), e da lì in poi assegnare una copertina è una
+query locale. Non dipende dalla rete, non ha limiti di frequenza, e il
+catalogo si può curare: dal pannello, *altra copertina* bandisce una foto
+brutta e la sostituisce.
+
+**Il campo Restrictions di Commons non parla di copyright.** Su 252 file,
+110 portano `personality`: è il diritto all'immagine di chi è ritratto,
+che Commons segnala su qualunque foto di persona riconoscibile. Riguarda
+l'uso pubblicitario, non quello editoriale, e scartare su quello buttava
+via il materiale migliore — intere serie di concerti. `trademarked` e
+`insignia` invece fanno scartare: quelli sono marchi.
+
 **La sitemap si costruisce da sola.** `/sitemap.xml` è una rotta, non un
 file: legge il database a ogni richiesta e finisce in cache come le altre
 pagine. Non c'è niente da rigenerare quando pubblichi — l'indirizzo lo
@@ -357,4 +391,4 @@ sole senza reimportare nulla.
 
 ---
 
-*Ultimo aggiornamento: 29 agosto 2026 — trasloco nella radice.*
+*Ultimo aggiornamento: 30 agosto 2026 — copertine automatiche.*

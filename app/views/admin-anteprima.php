@@ -13,6 +13,7 @@
 
   <article class="articolo" style="padding-top:1rem">
     <h1><?= e($a['titolo_it']) ?></h1>
+    <?= copertina($a, true) ?>
     <div class="corpo">
       <?php if (!empty($a['corpo_it'])): ?>
         <?= $a['corpo_it'] ?>
@@ -31,6 +32,14 @@
         <button class="bottone<?= $cl ?>" type="submit"><?= $et ?></button>
       </form>
     <?php endforeach ?>
+    <?php if (!empty($a['immagine_origine'])): ?>
+      <form method="post" action="<?= u('admin/azione') ?>" style="display:inline">
+        <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
+        <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+        <input type="hidden" name="che" value="copertina-no">
+        <button class="bottone bottone-tenue" type="submit">altra copertina</button>
+      </form>
+    <?php endif ?>
     <?php if ($a['fonte_url']): ?>
       <a class="bottone bottone-tenue" href="<?= e($a['fonte_url']) ?>" target="_blank" rel="noopener">fonte</a>
     <?php endif ?>

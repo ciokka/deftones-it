@@ -190,6 +190,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {
             } else {
                 $messaggio = ['ko', 'Nessun articolo selezionato.'];
             }
+        } elseif ($che === 'copertina-no') {
+            // Due cose insieme, perché è quello che serve davvero: la
+            // foto sbagliata sparisce da questo articolo *e* dal
+            // catalogo, così il prossimo giro non te la ripropone su un
+            // altro pezzo. Se invece era generata, l'articolo torna solo
+            // in coda e riprova a cercarne una vera.
+            $q = $pdo->prepare('SELECT slug, immagine_fonte_url, immagine_origine
+                                  FROM ' . t('articles') . ' WHERE id = ?');
+            $q->execute([$id]);
+            $r = $q->fetch();
+
+            if ($r && $r['immagine_origine'] === 'commons' && $r['immagine_fonte_url']) {
+                $pdo->prepare('UPDATE ' . t('immagini') . '
+                                  SET scartata = 1 WHERE url_pagina = ?')
+                    ->execute([$r['immagine_fonte_url']]);
+            }
+            if ($r) {
+                $f = rtrim((string)(cfg('media_dir') ?: '/home/bpdefton/public_html/media'), '/')
+                   . '/copertine/' . $r['slug'] . '.jpg';
+                if (is_file($f)) { @unlink($f); }
+            }
+
+            $pdo->prepare('UPDATE ' . t('articles') . '
+                              SET immagine_url = NULL, immagine_autore = NULL,
+                                  immagine_licenza = NULL, immagine_licenza_url = NULL,
+                                  immagine_fonte_url = NULL, immagine_origine = NULL,
+                                  immagine_cercata_il = NULL
+                            WHERE id = ?')->execute([$id]);
+            cacheSvuota();
+            $messaggio = ['ok', 'Copertina rifiutata: quella foto non verrà più scelta, '
+                              . 'e al prossimo giro l\'articolo ne prende un\'altra.'];
         } elseif ($che === 'svuota') {
             $n = cacheSvuota();
             $messaggio = ['ok', "Cache svuotata ($n pagine)."];

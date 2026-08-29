@@ -21,6 +21,10 @@
     </p>
   <?php endif ?>
 
+  <?php /* La copertina sta sotto il titolo e non sopra: il titolo è
+           l'attacco del pezzo, e una foto messa prima glielo ruba. */ ?>
+  <?= copertina($a, true) ?>
+
   <div class="corpo">
     <?php if (!empty($a['corpo_it'])): ?>
       <?php /* Articoli dell'archivio: il sommario è solo un estratto del

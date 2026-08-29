@@ -7,6 +7,10 @@
 
   <?php $primo = array_shift($articoli); ?>
   <article class="apertura">
+    <?php /* Qui invece la foto viene prima: in home è lei l'aggancio,
+             il titolo lo si legge dopo essersi fermati. */ ?>
+    <a class="copertina-link" href="<?= u('notizie/' . $primo['slug'] . '/') ?>"
+       tabindex="-1" aria-hidden="true"><?= copertina($primo, true) ?></a>
     <div class="meta">
       <span class="etichetta et-<?= e($primo['categoria']) ?>"><?= e($primo['categoria']) ?></span>
       <?php if ($primo['attendibilita'] !== 'confermato'): ?>
