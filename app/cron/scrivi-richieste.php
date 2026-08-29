@@ -114,30 +114,42 @@ $schema = [
 ];
 
 // ---------------------------------------------------------------- giro
-$segnaStato = $pdo->prepare('UPDATE ' . t('richieste') . '
+// Le query preparate NON si creano qui: appartengono alla connessione, e
+// fra questo punto e il loro uso ci sono minuti di attesa sull'API. Si
+// preparano dopo, su una connessione verificata.
+$fatte = $fallite = 0;
+
+$preparaSegna = fn(PDO $c) => $c->prepare('UPDATE ' . t('richieste') . '
       SET stato = ?, articolo_id = ?, fonti = ?, nota = ?,
           token_in = ?, token_out = ?, elaborato_il = NOW()
     WHERE id = ?');
-$salva = $pdo->prepare('INSERT INTO ' . t('articles') . '
+$preparaSalva = fn(PDO $c) => $c->prepare('INSERT INTO ' . t('articles') . '
       (slug, titolo_it, sommario_it, corpo_it, categoria, tag, rilevanza,
        attendibilita, stato, modello, uso_token, pubblicato_il, creato_il)
     VALUES (?,?,?,?,\'evergreen\',?,70,\'confermato\',\'draft\',?,?,NOW(),NOW())');
-
-$fatte = $fallite = 0;
 
 // Se il processo muore mentre lavora — fatal, memoria esaurita, il
 // gestore dell'hosting che lo termina — questa funzione scatta comunque
 // e lascia la richiesta in uno stato onesto invece che appesa.
 $inCorso = null;
-register_shutdown_function(function () use (&$inCorso, $pdo) {
+register_shutdown_function(function () use (&$inCorso) {
     if ($inCorso === null) { return; }
     $e = error_get_last();
     $motivo = $e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)
         ? mb_substr($e['message'], 0, 300)
         : 'il processo è terminato prima di finire';
-    $pdo->prepare('UPDATE ' . t('richieste') . "
-                      SET stato = 'errore', nota = ?, elaborato_il = NOW()
-                    WHERE id = ? AND stato = 'lavorazione'")->execute([$motivo, $inCorso]);
+    try {
+        // db(true) e non la connessione di prima: se lo script è morto
+        // perché il database era caduto, quella è inservibile — ed è
+        // esattamente quello che è successo la prima volta.
+        db(true)->prepare('UPDATE ' . t('richieste') . "
+                              SET stato = 'errore', nota = ?, elaborato_il = NOW()
+                            WHERE id = ? AND stato = 'lavorazione'")
+                ->execute([$motivo, $inCorso]);
+    } catch (Throwable) {
+        // se nemmeno riconnettersi funziona, il recupero dei blocchi
+        // all'avvio del prossimo giro rimedia comunque
+    }
 });
 
 foreach ($attesa as $r) {
@@ -153,6 +165,11 @@ foreach ($attesa as $r) {
         $domanda .= "\n\nIndicazioni di chi ha chiesto l'articolo:\n{$r['indicazioni']}";
     }
     $ric = claudeConRicerca(SYS_RICERCA, $domanda);
+
+    // La ricerca ha impiegato minuti: la connessione potrebbe non
+    // esserci più.
+    $pdo = db(true);
+    $segnaStato = $preparaSegna($pdo);
 
     if (!$ric['ok'] || trim($ric['testo']) === '') {
         $segnaStato->execute(['errore', null, null,
@@ -188,6 +205,12 @@ foreach ($attesa as $r) {
         $a['ok'] ? 'risposta ricevuta' : 'FALLITA', $a['in'], $a['out']));
     $tin = $ric['in'] + $a['in'];
     $tout = $ric['out'] + $a['out'];
+
+    // Stessa cosa dopo la scrittura, che è l'attesa più lunga: è qui
+    // che si è rotto due volte.
+    $pdo = db(true);
+    $segnaStato = $preparaSegna($pdo);
+    $salva = $preparaSalva($pdo);
 
     if (!$a['ok'] || empty($a['dati']['titolo_it'])) {
         $segnaStato->execute(['errore', null, json_encode($ric['fonti'], JSON_UNESCAPED_UNICODE),

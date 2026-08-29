@@ -23,9 +23,30 @@ function cfg(?string $chiave = null): mixed
     return $chiave === null ? $c : ($c[$chiave] ?? null);
 }
 
-function db(): PDO
+/**
+ * La connessione al database.
+ *
+ * Con $verifica = true controlla che sia ancora viva e la rifà se non lo
+ * è. Serve dopo le attese lunghe: MySQL su hosting condiviso chiude le
+ * connessioni inattive dopo pochi minuti, e uno script che aspetta la
+ * risposta di un modello per cinque minuti al ritorno trova il cavo
+ * staccato — "MySQL server has gone away".
+ *
+ * Attenzione: le query preparate appartengono alla connessione. Dopo una
+ * riconnessione vanno ripreparate, altrimenti falliscono anche loro.
+ */
+function db(bool $verifica = false): PDO
 {
     static $pdo = null;
+
+    if ($pdo !== null && $verifica) {
+        try {
+            $pdo->query('SELECT 1');
+        } catch (Throwable) {
+            $pdo = null;
+        }
+    }
+
     if ($pdo === null) {
         $d = cfg('db');
         $pdo = new PDO(
@@ -332,11 +353,17 @@ function slug(string $testo, int $max = 80): string
     return $s !== '' ? $s : 'notizia';
 }
 
-/** Come slug(), ma garantisce che non esista già in df_articles. */
+/**
+ * Come slug(), ma garantisce che non esista già in df_articles.
+ *
+ * Verifica la connessione: viene chiamata al momento di salvare, che è
+ * spesso subito dopo una lunga attesa sull'API — ed è proprio qui che il
+ * "MySQL server has gone away" si è manifestato.
+ */
 function slugUnico(string $testo): string
 {
     $base = slug($testo);
-    $q = db()->prepare('SELECT 1 FROM ' . t('articles') . ' WHERE slug = ? LIMIT 1');
+    $q = db(true)->prepare('SELECT 1 FROM ' . t('articles') . ' WHERE slug = ? LIMIT 1');
     $s = $base;
     for ($n = 2; $n < 100; $n++) {
         $q->execute([$s]);
