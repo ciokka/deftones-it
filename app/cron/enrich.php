@@ -16,6 +16,11 @@ require __DIR__ . '/../lib/prompts.php';
 
 @set_time_limit(0);
 $soloProva = in_array('--prova', $argv ?? [], true);
+// --tutto ripete il ciclo finché la coda è vuota: serve dopo un recupero
+// storico, dove la coda ha centinaia di item e i giri ordinari da otto
+// articoli l'uno ci metterebbero giorni.
+$tutto = in_array('--tutto', $argv ?? [], true);
+$MAX_GIRI = 40;                       // rete di sicurezza contro i cicli infiniti
 $avvio = microtime(true);
 
 $lock = prendiLock('enrich');
@@ -28,8 +33,25 @@ elog($soloProva ? 'Avvio enrich — MODALITÀ PROVA (nessuna scrittura)' : 'Avvi
 $pdo = db();
 $tokIn = $tokOut = 0;
 
-// ---------------------------------------------------------------- la coda
+// ---------------------------------------------- preparazione, una volta sola
 $maxItem = (int)(cfg('max_item_per_giro') ?? 60);
+$soglia = (int)(cfg('soglia_rilevanza') ?? 40);
+$maxEventi = (int)(cfg('max_eventi_per_giro') ?? 8);
+$scritti = $sottoSoglia = $falliti = 0;
+$giro = 0;
+
+$scarta = $pdo->prepare('UPDATE ' . t('raw_items') . ' SET stato = ?, nota = ? WHERE id = ?');
+$segna  = $pdo->prepare('UPDATE ' . t('raw_items') . ' SET stato = \'elaborato\' WHERE id = ?');
+$salva  = $pdo->prepare(
+    'INSERT INTO ' . t('articles') . '
+       (raw_item_id, slug, titolo_it, sommario_it, categoria, tag, rilevanza,
+        attendibilita, fonte_nome, fonte_url, stato, modello, uso_token)
+     VALUES (?,?,?,?,?,?,?,?,?,?,\'draft\',?,?)'
+);
+
+// ---------------------------------------------------------------- il ciclo
+do {
+$giro++;
 $items = $pdo->query(
     'SELECT r.id, r.titolo, r.estratto, r.url_canonico, r.pubblicato_il,
             COALESCE(r.editore, s.nome) AS fonte, s.peso
@@ -41,11 +63,10 @@ $items = $pdo->query(
 )->fetchAll();
 
 if (!$items) {
-    elog('Niente in coda — esco.');
-    if (is_resource($lock)) { flock($lock, LOCK_UN); fclose($lock); }
-    exit(0);
+    if ($giro === 1) { elog('Niente in coda — esco.'); }
+    break;
 }
-elog(sprintf('%d item in coda', count($items)));
+elog(sprintf('%sgiro %d — %d item in coda', $tutto ? '' : '', $giro, count($items)));
 
 // ------------------------------------------------- chiamata 1: raggruppa
 $elenco = '';
@@ -66,19 +87,14 @@ $tokIn += $r['in']; $tokOut += $r['out'];
 
 if (!$r['ok'] || !isset($r['dati']['eventi'])) {
     allarme('raggruppamento fallito: ' . ($r['errore'] ?? 'risposta non conforme'), 'enrich');
-    $pdo->prepare('INSERT INTO ' . t('run_log') . '
-        (job, finito_il, esito, token_in, token_out, messaggio)
-        VALUES (?, NOW(), ?, ?, ?, ?)')
-        ->execute(['enrich', 'errore', $tokIn, $tokOut, $r['errore']]);
-    if (is_resource($lock)) { flock($lock, LOCK_UN); fclose($lock); }
-    exit(1);
+    $falliti++;
+    break;
 }
 
 $eventi = $r['dati']['eventi'];
 usort($eventi, fn($a, $b) => $b['rilevanza'] <=> $a['rilevanza']);
 
-$soglia = (int)(cfg('soglia_rilevanza') ?? 40);
-elog(sprintf('%d eventi individuati (soglia rilevanza: %d)', count($eventi), $soglia));
+elog(sprintf('  %d eventi individuati (soglia %d)', count($eventi), $soglia));
 foreach ($eventi as $e) {
     elog(sprintf('   %3d  %-12s %2d fonti  %s',
         $e['rilevanza'], $e['attendibilita'], count($e['item_ids']),
@@ -97,17 +113,7 @@ if ($soloProva) {
 $perId = [];
 foreach ($items as $it) { $perId[(int)$it['id']] = $it; }
 
-$scarta = $pdo->prepare('UPDATE ' . t('raw_items') . ' SET stato = ?, nota = ? WHERE id = ?');
-$segna  = $pdo->prepare('UPDATE ' . t('raw_items') . ' SET stato = \'elaborato\' WHERE id = ?');
-$salva  = $pdo->prepare(
-    'INSERT INTO ' . t('articles') . '
-       (raw_item_id, slug, titolo_it, sommario_it, categoria, tag, rilevanza,
-        attendibilita, fonte_nome, fonte_url, stato, modello, uso_token)
-     VALUES (?,?,?,?,?,?,?,?,?,?,\'draft\',?,?)'
-);
-
-$scritti = $sottoSoglia = $falliti = 0;
-$maxEventi = (int)(cfg('max_eventi_per_giro') ?? 8);
+$scrittiGiro = $sottoSogliaGiro = 0;
 
 foreach ($eventi as $e) {
     $ids = array_values(array_intersect(
@@ -121,11 +127,11 @@ foreach ($eventi as $e) {
             $scarta->execute(['scartato_keyword',
                 sprintf('rilevanza %d < %d — %s', $e['rilevanza'], $soglia, $e['descrizione']), $id]);
         }
-        $sottoSoglia++;
+        $sottoSoglia++; $sottoSogliaGiro++;
         continue;
     }
-    if ($scritti >= $maxEventi) {
-        elog('   raggiunto il tetto di eventi per giro, il resto al prossimo');
+    if ($scrittiGiro >= $maxEventi) {
+        elog('   tetto di eventi per giro raggiunto');
         break;
     }
 
@@ -191,9 +197,14 @@ foreach ($eventi as $e) {
     ]);
 
     foreach ($ids as $id) { $segna->execute([$id]); }
-    $scritti++;
+    $scritti++; $scrittiGiro++;
     elog(sprintf('   ✓ %s', mb_substr($d['titolo_it'], 0, 70)));
 }
+
+// il ciclo prosegue solo con --tutto, e solo se il giro ha prodotto
+// qualcosa: senza questa condizione una coda di soli eventi sotto soglia
+// girerebbe a vuoto fino al tetto
+} while ($tutto && $giro < $MAX_GIRI && ($scrittiGiro > 0 || $sottoSogliaGiro > 0));
 
 // ---------------------------------------------------------------- chiusura
 $costo = costoEuro($tokIn, $tokOut);
@@ -203,8 +214,9 @@ $pdo->prepare('INSERT INTO ' . t('run_log') . '
     ->execute(['enrich', $falliti ? 'parziale' : 'ok', $scritti, $tokIn, $tokOut,
                sprintf('%d bozze, %d eventi sotto soglia, %d falliti', $scritti, $sottoSoglia, $falliti)]);
 
-elog(sprintf('Fatto in %.1fs — %d bozze, %d sotto soglia, %d falliti · %d token in, %d out, circa %.3f €',
-    microtime(true) - $avvio, $scritti, $sottoSoglia, $falliti, $tokIn, $tokOut, $costo));
+elog(sprintf('Fatto in %.0fs · %d giri — %d bozze, %d sotto soglia, %d falliti · '
+    . '%d token in, %d out, circa %.2f €',
+    microtime(true) - $avvio, $giro, $scritti, $sottoSoglia, $falliti, $tokIn, $tokOut, $costo));
 elog(str_repeat('-', 60));
 
 if (is_resource($lock)) { flock($lock, LOCK_UN); fclose($lock); }
