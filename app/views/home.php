@@ -19,6 +19,7 @@
       <div class="hero-velo" aria-hidden="true"></div>
     <?php endif ?>
 
+    <div class="hero-interno">
     <div class="hero-testo">
       <div class="meta">
         <span class="etichetta et-<?= e($primo['categoria']) ?>"><?= e($primo['categoria']) ?></span>
@@ -31,15 +32,17 @@
       <p class="sommario"><?= e(mb_substr($primo['sommario_it'], 0, 260)) ?><?= mb_strlen($primo['sommario_it']) > 260 ? '…' : '' ?></p>
     </div>
 
-    <?= creditoImmagine($primo, 'p') ?>
-
     <div class="piede">
       <?php if ($primo['fonte_nome']): ?>
         <p class="fonte">Fonte: <?= e($primo['fonte_nome']) ?></p>
       <?php else: ?>
         <p class="fonte"><?= bollino() ?></p>
       <?php endif ?>
-      <?= condividiMini($primo['slug'], $primo['titolo_it']) ?>
+      <div class="piede-destra">
+        <?= creditoImmagine($primo, 'p') ?>
+        <?= condividiMini($primo['slug'], $primo['titolo_it']) ?>
+      </div>
+    </div>
     </div>
   </article>
 
