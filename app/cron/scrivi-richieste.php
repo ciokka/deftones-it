@@ -30,6 +30,20 @@ function qlog(string $m): void { logline($m, 'richieste'); }
 
 $pdo = db();
 
+// --- richieste rimaste appese ----------------------------------------
+// Lo stato passa a 'lavorazione' quando si comincia e a 'fatto' o
+// 'errore' quando si finisce. Se il processo muore nel mezzo — un fatal,
+// un limite di tempo dell'hosting — la richiesta resta in 'lavorazione'
+// e nessun giro successivo la riprende, perché cercano solo 'attesa'.
+// Mezz'ora è molto più di quanto serva anche alla ricerca più lunga:
+// oltre, è morto qualcosa.
+$appese = $pdo->exec('UPDATE ' . t('richieste') . "
+    SET stato = 'attesa',
+        nota = CONCAT('ripresa dopo un blocco del ', DATE_FORMAT(NOW(), '%d/%m %H:%i'))
+  WHERE stato = 'lavorazione'
+    AND creato_il < NOW() - INTERVAL 30 MINUTE");
+if ($appese) { qlog(sprintf('  %d richieste rimaste appese, rimesse in coda', $appese)); }
+
 $attesa = $pdo->query('SELECT * FROM ' . t('richieste') . "
                         WHERE stato = 'attesa' ORDER BY creato_il LIMIT "
                       . ($unaSola ? 1 : 5))->fetchAll();
@@ -111,8 +125,24 @@ $salva = $pdo->prepare('INSERT INTO ' . t('articles') . '
 
 $fatte = $fallite = 0;
 
+// Se il processo muore mentre lavora — fatal, memoria esaurita, il
+// gestore dell'hosting che lo termina — questa funzione scatta comunque
+// e lascia la richiesta in uno stato onesto invece che appesa.
+$inCorso = null;
+register_shutdown_function(function () use (&$inCorso, $pdo) {
+    if ($inCorso === null) { return; }
+    $e = error_get_last();
+    $motivo = $e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)
+        ? mb_substr($e['message'], 0, 300)
+        : 'il processo è terminato prima di finire';
+    $pdo->prepare('UPDATE ' . t('richieste') . "
+                      SET stato = 'errore', nota = ?, elaborato_il = NOW()
+                    WHERE id = ? AND stato = 'lavorazione'")->execute([$motivo, $inCorso]);
+});
+
 foreach ($attesa as $r) {
     $id = (int)$r['id'];
+    $inCorso = $id;
     $pdo->prepare('UPDATE ' . t('richieste') . " SET stato = 'lavorazione' WHERE id = ?")
         ->execute([$id]);
     qlog(sprintf('  [%d] %s', $id, mb_substr($r['richiesta'], 0, 60)));
@@ -129,7 +159,7 @@ foreach ($attesa as $r) {
             'ricerca fallita: ' . ($ric['errore'] ?? 'nessun risultato'),
             $ric['in'], $ric['out'], $id]);
         allarme(sprintf('richiesta %d: ricerca fallita — %s', $id, $ric['errore'] ?? '?'), 'richieste');
-        $fallite++;
+        $fallite++; $inCorso = null;
         continue;
     }
     qlog(sprintf('      ricerca: %d fonti, %d caratteri',
@@ -155,7 +185,7 @@ foreach ($attesa as $r) {
         $segnaStato->execute(['errore', null, json_encode($ric['fonti'], JSON_UNESCAPED_UNICODE),
             'scrittura fallita: ' . ($a['errore'] ?? 'risposta non conforme'), $tin, $tout, $id]);
         allarme(sprintf('richiesta %d: scrittura fallita', $id), 'richieste');
-        $fallite++;
+        $fallite++; $inCorso = null;
         continue;
     }
 
@@ -174,8 +204,10 @@ foreach ($attesa as $r) {
     $segnaStato->execute(['fatto', $articoloId,
         json_encode($ric['fonti'], JSON_UNESCAPED_UNICODE), null, $tin, $tout, $id]);
     $fatte++;
+    $inCorso = null;
     qlog(sprintf('      ✓ %s (%.2f €)', mb_substr($d['titolo_it'], 0, 60), costoEuro($tin, $tout)));
 }
+$inCorso = null;
 
 qlog(sprintf('Fatto — %d scritte, %d fallite', $fatte, $fallite));
 qlog(str_repeat('-', 60));
