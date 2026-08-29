@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=27">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=28">
 </head>
 <body>
 
@@ -212,6 +212,28 @@ $voci = [
   } else if (copia) {
     copia.remove();          // senza appunti il pulsante non farebbe nulla
   }
+})();
+
+// Le schede degli elenchi hanno un pulsante solo e muto: dove il browser
+// espone il pannello di sistema lo apre, dove non lo espone copia
+// l'indirizzo. Se non sa fare né l'una né l'altra cosa il pulsante
+// sparisce, invece di restare lì a non fare niente.
+(function () {
+  if (!navigator.share && !navigator.clipboard) {
+    var muti = document.querySelectorAll('.condividi-mini');
+    for (var i = 0; i < muti.length; i++) { muti[i].remove(); }
+    return;
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('.condividi-mini') : null;
+    if (!b) { return; }
+    var dati = { title: b.getAttribute('data-titolo'), url: b.getAttribute('data-url') };
+    if (navigator.share) { navigator.share(dati).catch(function () {}); return; }
+    navigator.clipboard.writeText(dati.url).then(function () {
+      b.classList.add('fatto');
+      setTimeout(function () { b.classList.remove('fatto'); }, 1600);
+    }).catch(function () {});
+  });
 })();
 
 // Un'immagine che non carica lascerebbe l'icona rotta del browser.

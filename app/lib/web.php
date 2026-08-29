@@ -156,3 +156,46 @@ function pagina404(): never
         'messaggio' => 'La pagina che cerchi non esiste.'], ['titolo' => 'Pagina non trovata']);
     exit;
 }
+
+/**
+ * Il sigillo delle cose nostre.
+ *
+ * Un articolo senza fonte esterna non è il riassunto di nessuno: o è
+ * stato commissionato dal pannello, o viene dall'archivio del vecchio
+ * sito. In entrambi i casi il testo è nostro, ed è giusto dirlo dove
+ * altrimenti resterebbe scritto "fonte:" seguito dal vuoto.
+ */
+function bollino(bool $esteso = false): string
+{
+    $svg = '<svg viewBox="0 0 16 16" width="' . ($esteso ? 17 : 15) . '" height="'
+         . ($esteso ? 17 : 15) . '" fill="none" stroke="currentColor" '
+         . 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+         . '<path stroke-width=".9" d="M8.00 1.10L9.68 2.29L11.73 2.20L12.50 4.10'
+         . 'L14.28 5.13L13.89 7.15L14.83 8.98L13.41 10.47L13.21 12.52L11.22 13.01'
+         . 'L9.94 14.62L8.00 13.95L6.06 14.62L4.78 13.01L2.79 12.52L2.59 10.47'
+         . 'L1.17 8.98L2.11 7.15L1.72 5.13L3.50 4.10L4.27 2.20L6.32 2.29Z"/>'
+         . '<path stroke-width="1.3" d="M5.4 8.2 7.1 9.9 10.7 6"/></svg>';
+
+    return '<span class="bollino">' . $svg . '<span>esclusiva deftones.it</span></span>'
+         . ($esteso ? ' <span class="bollino-nota">— scritta per questo sito</span>' : '');
+}
+
+/**
+ * Il pulsante di condivisione delle schede: uno solo, muto, che diventa
+ * il pannello di sistema dove il browser lo espone e la copia
+ * dell'indirizzo dove non lo espone. Vedi lo script in layout.php.
+ */
+function condividiMini(string $slug, string $titolo): string
+{
+    $svg = '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" '
+         . 'stroke="currentColor" stroke-width="1.15" stroke-linecap="round" '
+         . 'aria-hidden="true">'
+         . '<circle cx="12.2" cy="3.6" r="1.85"/>'
+         . '<circle cx="12.2" cy="12.4" r="1.85"/>'
+         . '<circle cx="4.2" cy="8" r="1.85"/>'
+         . '<path d="M5.82 7.11 10.58 4.49M5.82 8.89 10.58 11.51"/></svg>';
+
+    return '<button class="condividi-mini" type="button" aria-label="condividi"'
+         . ' data-url="' . e(cfg('site_url') . u('notizie/' . $slug . '/')) . '"'
+         . ' data-titolo="' . e($titolo) . '">' . $svg . '</button>';
+}

@@ -16,7 +16,14 @@
     </div>
     <h1><a href="<?= u('notizie/' . $primo['slug'] . '/') ?>"><?= e($primo['titolo_it']) ?></a></h1>
     <p class="sommario"><?= e(mb_substr($primo['sommario_it'], 0, 260)) ?><?= mb_strlen($primo['sommario_it']) > 260 ? '…' : '' ?></p>
-    <p class="fonte">Fonte: <?= e($primo['fonte_nome']) ?></p>
+    <div class="piede">
+      <?php if ($primo['fonte_nome']): ?>
+        <p class="fonte">Fonte: <?= e($primo['fonte_nome']) ?></p>
+      <?php else: ?>
+        <p class="fonte"><?= bollino() ?></p>
+      <?php endif ?>
+      <?= condividiMini($primo['slug'], $primo['titolo_it']) ?>
+    </div>
   </article>
 
   <?php if ($articoli): ?>
@@ -29,7 +36,10 @@
         </div>
         <h2><a href="<?= u('notizie/' . $a['slug'] . '/') ?>"><?= e($a['titolo_it']) ?></a></h2>
         <p class="sommario"><?= e(mb_substr($a['sommario_it'], 0, 150)) ?>…</p>
-        <p class="fonte"><?= e($a['fonte_nome']) ?></p>
+        <div class="piede">
+          <p class="fonte"><?= $a['fonte_nome'] ? e($a['fonte_nome']) : bollino() ?></p>
+          <?= condividiMini($a['slug'], $a['titolo_it']) ?>
+        </div>
       </article>
     <?php endforeach ?>
   </div>

@@ -12,7 +12,10 @@
         </div>
         <h2><a href="<?= u('notizie/' . $a['slug'] . '/') ?>"><?= e($a['titolo_it']) ?></a></h2>
         <p class="sommario"><?= e(mb_substr($a['sommario_it'], 0, 170)) ?>…</p>
-        <p class="fonte"><?= e($a['fonte_nome']) ?></p>
+        <div class="piede">
+          <p class="fonte"><?= $a['fonte_nome'] ? e($a['fonte_nome']) : bollino() ?></p>
+          <?= condividiMini($a['slug'], $a['titolo_it']) ?>
+        </div>
       </article>
     <?php endforeach ?>
   </div>

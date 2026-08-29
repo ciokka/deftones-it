@@ -342,6 +342,53 @@ a { color: inherit; }
   letter-spacing: .02em;
 }
 
+/* ------------------------------------------ firma e condivisione */
+
+/* Il piede di ogni scheda: da dove viene il pezzo a sinistra, il modo
+   per passarlo a qualcuno a destra. */
+.piede {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bollino {
+  display: inline-flex;
+  align-items: center;
+  gap: .45em;
+  color: var(--accento);
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+.bollino svg { flex: none; opacity: .92; }
+.bollino-nota { color: var(--testo-tenue); }
+
+.rimando-nostro { display: flex; align-items: center; gap: .45em; flex-wrap: wrap; }
+.rimando-nostro .bollino { font-size: 1rem; }
+
+.condividi-mini {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: .4em;
+  padding: .35rem;
+  margin: -.35rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--testo-tenue);
+  font: inherit;
+  font-size: .75rem;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: color .15s;
+}
+.condividi-mini:hover,
+.condividi-mini:focus-visible { color: var(--accento); }
+.condividi-mini.fatto { color: var(--accento); }
+.condividi-mini.fatto::after { content: 'copiato'; }
+
 /* ----------------------------------------------------------- elenco */
 
 .elenco { display: grid; }

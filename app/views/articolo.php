@@ -37,6 +37,10 @@
     <strong><?= e($a['fonte_nome']) ?></strong>:
     <a href="<?= e($a['fonte_url']) ?>" target="_blank" rel="noopener">leggilo lì <span aria-hidden="true">→</span></a>
   </p>
+  <?php else: ?>
+  <?php /* Senza fonte esterna non c'è nessun rimando da fare: il pezzo è
+           nostro, e al posto di una riga vuota ci va detto. */ ?>
+  <p class="rimando rimando-nostro"><?= bollino(true) ?></p>
   <?php endif ?>
 
   <?php
