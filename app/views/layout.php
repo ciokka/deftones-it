@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=26">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=27">
 </head>
 <body>
 
@@ -222,11 +222,11 @@ $voci = [
 (function () {
   var segnaposto = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">' +
-    '<rect width="640" height="360" fill="#0c0c0c"/>' +
-    '<rect x="0.5" y="0.5" width="639" height="359" fill="none" stroke="#262629"/>' +
-    '<text x="320" y="176" fill="#5a5856" font-family="system-ui,sans-serif" ' +
+    '<rect width="640" height="360" fill="#cbcac5"/>' +
+    '<rect x="0.5" y="0.5" width="639" height="359" fill="none" stroke="rgba(0,0,0,.16)"/>' +
+    '<text x="320" y="176" fill="#6b6a66" font-family="system-ui,sans-serif" ' +
     'font-size="17" text-anchor="middle">immagine non disponibile</text>' +
-    '<text x="320" y="202" fill="#403f3d" font-family="system-ui,sans-serif" ' +
+    '<text x="320" y="202" fill="#8d8c87" font-family="system-ui,sans-serif" ' +
     'font-size="13" text-anchor="middle">archivio 2002-2011</text></svg>'
   );
   document.addEventListener('error', function (e) {

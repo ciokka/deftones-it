@@ -25,6 +25,10 @@ RADICE = Path(__file__).resolve().parent.parent
 SORGENTE = RADICE / 'materiali' / 'lettere.svg'
 DESTINAZIONE = RADICE / 'web' / 'assets'
 
+# Colore del tratto. Cambia insieme al tema del sito: su fondo chiaro un
+# pattern bianco sarebbe invisibile.
+COLORE = '#1d1d1b'
+
 SEME = 20260828
 PIASTRELLA = 1000.0        # lo spazio si ripete ogni 1000 unità
 # Due serie di file, una per formato. Lo spessore del contorno è
@@ -188,7 +192,7 @@ def genera() -> None:
             # Lo spessore del contorno viene diviso per la scala, così dopo
             # la trasformazione resta uguale su tutti i piani: altrimenti le
             # lettere piccole sparirebbero e le grandi diventerebbero pesanti.
-            stile = (f'fill:none;stroke:#fff;stroke-miterlimit:10;'
+            stile = (f'fill:none;stroke:{COLORE};stroke-miterlimit:10;'
                      f'stroke-width:{tratto / k:.3f}px')
 
             # La stessa lettera viene ripetuta oltre i bordi che tocca:
