@@ -318,6 +318,13 @@ Non viene toccata da nessun deploy, ed è l'unica parte del sito che non
 sta in git: la sua copia buona è `wp-content/uploads/` dell'archivio
 WordPress. Da lì si ricostruisce in qualsiasi momento.
 
+**La sitemap si costruisce da sola.** `/sitemap.xml` è una rotta, non un
+file: legge il database a ogni richiesta e finisce in cache come le altre
+pagine. Non c'è niente da rigenerare quando pubblichi — l'indirizzo lo
+trova Google da `robots.txt`, e la data di ultima modifica gliela dà
+`aggiornato_il`. Le categorie e le raccolte ci entrano solo se hanno
+almeno un articolo pubblicato dentro.
+
 **Il primo accesso al pannello si chiude da solo.** La pagina che crea
 l'utente funziona solo finché la tabella è vuota. Non c'è un file di
 setup da ricordarsi di cancellare.

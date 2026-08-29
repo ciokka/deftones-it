@@ -42,6 +42,13 @@ $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 // Serviamo dalla cache solo le pagine pubbliche a visitatori non loggati.
 $cachabile = $metodo === 'GET' && !str_starts_with($percorso, '/admin') && !loggato();
 if ($cachabile && ($html = cacheLeggi($percorso)) !== null) {
+    // La cache conserva il corpo della pagina, non le sue intestazioni:
+    // il tipo di contenuto va rimesso a mano, altrimenti feed e sitemap
+    // escono da qui dichiarati come HTML.
+    if (str_ends_with($percorso, '.xml')) {
+        header('Content-Type: ' . ($percorso === '/feed.xml'
+            ? 'application/rss+xml' : 'application/xml') . '; charset=utf-8');
+    }
     header('X-Cache: hit');
     echo $html;
     exit;
@@ -63,6 +70,7 @@ if ($percorso === '/') {
     )->fetchAll();
 
     $html = render('home', ['articoli' => $articoli], [
+        'canonico'    => cfg('site_url') . u(''),
         'titolo'      => 'deftones.it — notizie sui Deftones in italiano',
         'descrizione' => 'Notizie sui Deftones in italiano, aggiornate ogni giorno: '
                        . 'tour, uscite, interviste. Riassunti con link alle fonti originali.',
@@ -97,6 +105,63 @@ elseif ($percorso === '/feed.xml') {
         $x .= "</item>\n";
     }
     $x .= "</channel></rss>\n";
+    if ($cachabile) { cacheScrivi($percorso, $x); }
+    echo $x;
+    exit;
+}
+
+// --- sitemap: la mappa per i motori di ricerca
+// Niente <priority> né <changefreq>: Google ha dichiarato di ignorarli, e
+// una mappa piena di indicazioni che nessuno legge è solo più lunga.
+// Restano l'indirizzo e la data dell'ultima modifica, che invece servono.
+elseif ($percorso === '/sitemap.xml') {
+    $sito = rtrim((string)cfg('site_url'), '/');
+
+    $articoli = $pdo->query(
+        'SELECT slug, pubblicato_il, aggiornato_il
+           FROM ' . t('articles') . " 
+          WHERE stato = 'pubblicato'
+          ORDER BY pubblicato_il DESC"
+    )->fetchAll();
+
+    // Solo le raccolte che hanno almeno un articolo pubblicato: una
+    // raccolta vuota è una pagina vuota, e non va segnalata a nessuno.
+    $raccolte = $pdo->query(
+        'SELECT t.slug, t.aggiornato_il
+           FROM ' . t('temi') . " t
+           JOIN " . t('articles') . " a
+             ON a.tema_id = t.id AND a.stato = 'pubblicato'
+          WHERE t.stato = 'pubblicato'
+          GROUP BY t.id, t.slug, t.aggiornato_il
+          ORDER BY t.slug"
+    )->fetchAll();
+
+    $categorie = $pdo->query(
+        'SELECT categoria, MAX(pubblicato_il) AS ultima
+           FROM ' . t('articles') . " 
+          WHERE stato = 'pubblicato'
+          GROUP BY categoria"
+    )->fetchAll();
+
+    $voci = [[u(''), $articoli[0]['pubblicato_il'] ?? null]];
+    if ($raccolte) { $voci[] = [u('raccolte/'), $raccolte[0]['aggiornato_il']]; }
+    foreach ($categorie as $c) { $voci[] = [u('categoria/' . $c['categoria'] . '/'), $c['ultima']]; }
+    foreach ($raccolte as $r) { $voci[] = [u('raccolte/' . $r['slug'] . '/'), $r['aggiornato_il']]; }
+    foreach ($articoli as $a) {
+        $voci[] = [u('notizie/' . $a['slug'] . '/'), $a['aggiornato_il'] ?: $a['pubblicato_il']];
+    }
+
+    header('Content-Type: application/xml; charset=utf-8');
+    $x  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    $x .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+    foreach ($voci as [$dove, $quando]) {
+        $x .= '<url><loc>' . e($sito . $dove) . '</loc>';
+        if ($quando) {
+            $x .= '<lastmod>' . date('c', (int)strtotime((string)$quando)) . '</lastmod>';
+        }
+        $x .= "</url>\n";
+    }
+    $x .= "</urlset>\n";
     if ($cachabile) { cacheScrivi($percorso, $x); }
     echo $x;
     exit;
@@ -151,7 +216,8 @@ elseif (preg_match('#^/categoria/([a-z]+)$#', $percorso, $m)) {
                          ORDER BY pubblicato_il DESC LIMIT 40');
     $q->execute([$m[1]]);
     $html = render('lista', ['articoli' => $q->fetchAll(), 'intestazione' => ucfirst($m[1])],
-        ['titolo' => ucfirst($m[1]) . ' — deftones.it']);
+        ['titolo'   => ucfirst($m[1]) . ' — deftones.it',
+         'canonico' => cfg('site_url') . u('categoria/' . $m[1] . '/')]);
 }
 
 // --- tag
@@ -165,7 +231,8 @@ elseif (preg_match('#^/tag/(.+)$#', $percorso, $m)) {
                          ORDER BY pubblicato_il DESC LIMIT 40');
     $q->execute([$tg]);
     $html = render('lista', ['articoli' => $q->fetchAll(), 'intestazione' => '#' . $tg],
-        ['titolo' => '#' . $tg . ' — deftones.it']);
+        ['titolo'   => '#' . $tg . ' — deftones.it',
+         'canonico' => cfg('site_url') . u('tag/' . rawurlencode($tg) . '/')]);
 }
 
 // --- indice delle raccolte
