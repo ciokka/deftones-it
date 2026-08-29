@@ -43,10 +43,13 @@ $giro = 0;
 $scarta = $pdo->prepare('UPDATE ' . t('raw_items') . ' SET stato = ?, nota = ? WHERE id = ?');
 $segna  = $pdo->prepare('UPDATE ' . t('raw_items') . ' SET stato = \'elaborato\' WHERE id = ?');
 $salva  = $pdo->prepare(
+    // pubblicato_il viene dalla fonte, non da adesso: la data
+    // dell'articolo è quella del fatto che racconta. Senza, un recupero
+    // di arretrato daterebbe a oggi notizie di un anno fa.
     'INSERT INTO ' . t('articles') . '
        (raw_item_id, slug, titolo_it, sommario_it, categoria, tag, rilevanza,
-        attendibilita, fonte_nome, fonte_url, stato, modello, uso_token)
-     VALUES (?,?,?,?,?,?,?,?,?,?,\'draft\',?,?)'
+        attendibilita, fonte_nome, fonte_url, pubblicato_il, stato, modello, uso_token)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,\'draft\',?,?)'
 );
 
 // ---------------------------------------------------------------- il ciclo
@@ -192,6 +195,7 @@ foreach ($eventi as $e) {
         $e['attendibilita'],
         mb_substr($fonteNome, 0, 120),
         mb_substr($fonteUrl, 0, 1000),
+        $princ['pubblicato_il'] ?: date('Y-m-d H:i:s'),
         cfg('modello') ?: 'claude-opus-5',
         json_encode(['in' => $a['in'], 'out' => $a['out']]),
     ]);
