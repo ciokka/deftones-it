@@ -22,6 +22,12 @@ RewriteRule ^ https://www.deftones.it%{REQUEST_URI} [R=301,L]
 RewriteRule ^v2/?$ / [R=301,L]
 RewriteRule ^v2/(.*)$ /$1 [R=301,L]
 
+# --- media/ contiene solo file caricati ----------------------------------
+# Dentro ci finiscono vent'anni di allegati del vecchio WordPress. Se là
+# in mezzo si nascondesse un .php, non deve poter girare: quella cartella
+# serve a servire immagini, non a eseguire codice.
+RewriteRule ^media/.*\.(?:php|phtml|phar|php[0-9])$ - [F,L]
+
 # --- il resto lo decide index.php ----------------------------------------
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

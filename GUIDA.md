@@ -310,9 +310,13 @@ il sito senza cookie e senza banner.
 
 **`media/` sta nella radice, non fra gli assets.** Gli articoli importati
 dal vecchio WordPress puntano a `/media/...` con percorso assoluto, perché
-è la riscrittura di `/wp-content/uploads/...`. Quella cartella non viene
-toccata da nessun deploy: se la sposti, le immagini di vent'anni di
-archivio spariscono tutte insieme.
+è la riscrittura di `/wp-content/uploads/...`: non passa da `base_url`,
+quindi la cartella deve stare esattamente lì e le cartelle degli anni
+devono essere il suo primo livello — `media/2012/03/foto.jpg`.
+
+Non viene toccata da nessun deploy, ed è l'unica parte del sito che non
+sta in git: la sua copia buona è `wp-content/uploads/` dell'archivio
+WordPress. Da lì si ricostruisce in qualsiasi momento.
 
 **Il primo accesso al pannello si chiude da solo.** La pagina che crea
 l'utente funziona solo finché la tabella è vuota. Non c'è un file di
