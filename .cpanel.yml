@@ -8,7 +8,7 @@
 deployment:
   tasks:
     - export APP=/home/bpdefton/deftones/app
-    - export WEB=/home/bpdefton/public_html/v2
+    - export WEB=/home/bpdefton/public_html
 
     - /bin/mkdir -p $APP/lib $APP/cron $APP/views $WEB/assets/fonts
 

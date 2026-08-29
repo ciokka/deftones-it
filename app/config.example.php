@@ -66,9 +66,9 @@ return [
     // --- sito ---------------------------------------------------------
     'site_name' => 'deftones.it',
     'site_url'  => 'https://www.deftones.it',
-    // Sottocartella in cui gira il sito. Adesso '/v2' per non toccare il
-    // vecchio WordPress; quando sposterai i file nella radice metti ''.
-    'base_url'  => '/v2',
+    // Sottocartella in cui gira il sito. Vuoto: il sito sta nella radice.
+    // Serviva '/v2' finché convivevamo con il vecchio WordPress.
+    'base_url'  => '',
     // Per quanti secondi una pagina resta in cache. La cache viene comunque
     // svuotata a ogni pubblicazione, quindi puoi tenerla alta.
     'cache_ttl' => 900,

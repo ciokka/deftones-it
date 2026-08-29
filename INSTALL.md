@@ -271,14 +271,18 @@ di chiuderla.
 Poi vedrai le bozze, con Pubblica e Scarta. Pubblicane una e apri
 **https://www.deftones.it/v2/** per vederla online.
 
-## Quando vorrai spostarlo nella radice
+## Il trasloco nella radice — fatto il 29/08/2026
 
-1. Backup completo da cPanel
-2. Sposta o cancella i file di WordPress da `public_html`
-3. Sposta il contenuto di `public_html/v2/` in `public_html/`
+1. Backup completo da cPanel (cartella home + database)
+2. Vecchi file di WordPress spostati fuori da `public_html`,
+   tenendo `media/`, `.well-known/` e `cgi-bin/`
+3. `.cpanel.yml` distribuisce in `public_html/` invece che in `public_html/v2/`
 4. In `config.php`, `'base_url' => ''`
-5. Svuota la cache dal pannello
-6. Elimina il cron del plugin SSL di WordPress
+5. MultiPHP Manager: dominio riportato a ea-php83, perché il deploy
+   sovrascrive `.htaccess` e con esso il gestore PHP scritto da cPanel
+6. Cache svuotata
+7. `public_html/v2/` eliminata — i vecchi link `/v2/...` sono
+   reindirizzati dalla radice
 
 ---
 

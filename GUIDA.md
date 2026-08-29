@@ -50,10 +50,11 @@ programma.
 │   ├── cache/                 pagine generate — si svuota da sé
 │   └── logs/                  un file per script, si ruota a 2 MB
 │
-├── public_html/v2/            ciò che il web può vedere
+├── public_html/               ciò che il web può vedere
 │   ├── index.php              unico punto d'ingresso
 │   ├── .htaccess              manda tutto a index.php
-│   └── assets/                CSS, font, pattern, immagini
+│   ├── assets/                CSS, font, pattern, immagini
+│   └── media/                 le immagini del vecchio WordPress
 │
 ├── repositories/deftones-it/  il clone git che cPanel aggiorna
 └── archivio-wp/               il vecchio WordPress, spento e fuori dal web
@@ -67,7 +68,7 @@ web nemmeno se un giorno PHP smettesse di funzionare.
 
 ```
 app/          → /home/bpdefton/deftones/app/
-web/          → /home/bpdefton/public_html/v2/
+web/          → /home/bpdefton/public_html/
 sql/          da eseguire a mano in phpMyAdmin, mai automatico
 strumenti/    script che girano sul Mac, non sul server
 materiali/    logo, pattern, immagine di anteprima
@@ -242,7 +243,7 @@ In `config.php`:
 | `keywords` | il filtro che tiene bassa la spesa: ciò che non le contiene non arriva mai al modello |
 | `modello`, `effort` | `claude-opus-5`, `medium` |
 | `cache_ttl` | 900 secondi. La cache si svuota comunque a ogni pubblicazione |
-| `base_url` | `/v2` finché il sito sta in sottocartella |
+| `base_url` | vuoto: il sito sta nella radice. Era `/v2` prima del trasloco |
 
 La soglia di rilevanza è la manopola che conta: regola insieme il rumore
 del sito e il conto di fine mese.
@@ -301,6 +302,12 @@ script che tracciano ogni visita anche di chi non condivide. I nostri
 sono link: non parte una richiesta finché non li premi. È ciò che tiene
 il sito senza cookie e senza banner.
 
+**`media/` sta nella radice, non fra gli assets.** Gli articoli importati
+dal vecchio WordPress puntano a `/media/...` con percorso assoluto, perché
+è la riscrittura di `/wp-content/uploads/...`. Quella cartella non viene
+toccata da nessun deploy: se la sposti, le immagini di vent'anni di
+archivio spariscono tutte insieme.
+
 **Il primo accesso al pannello si chiude da solo.** La pagina che crea
 l'utente funziona solo finché la tabella è vuota. Non c'è un file di
 setup da ricordarsi di cancellare.
@@ -319,10 +326,6 @@ otto raccolte pronte in bozza. Il consiglio è di procedere per raccolta:
 pubblichi gli articoli di un dossier, poi il dossier. Comincerei da *Il
 coma di Chi Cheng, giorno per giorno*.
 
-**Portare il sito nella radice.** Finché sta in `/v2`, `deftones.it`
-mostra un 403. I passaggi sono in fondo a `INSTALL.md`; l'unica modifica
-al codice è `'base_url' => ''`.
-
 **Riempire la discografia.** `df_albums` ha i 13 dischi con date e
 identificativi, ma descrizioni e tracklist sono vuote. Il posto giusto
 è `scrivi-richieste.php`, una scheda alla volta.
@@ -337,4 +340,4 @@ sole senza reimportare nulla.
 
 ---
 
-*Ultimo aggiornamento: 29 agosto 2026.*
+*Ultimo aggiornamento: 29 agosto 2026 — trasloco nella radice.*

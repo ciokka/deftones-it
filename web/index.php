@@ -6,8 +6,9 @@
 declare(strict_types=1);
 
 // Dove sta l'applicazione. Sul server i file pubblici sono in
-// public_html/v2/ mentre il codice è in /home/bpdefton/deftones/app/:
-// le due cartelle NON sono affiancate, quindi il percorso è esplicito.
+// public_html/ mentre il codice è in /home/bpdefton/deftones/app/, fuori
+// dalla portata del web: le due cartelle NON sono affiancate, quindi il
+// percorso è esplicito.
 $app = '/home/bpdefton/deftones/app';
 
 // Ripiego per lo sviluppo in locale, dove invece sono affiancate.
