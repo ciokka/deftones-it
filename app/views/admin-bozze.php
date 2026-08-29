@@ -20,6 +20,7 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
         <input type="hidden" name="che" value="svuota">
         <button class="bottone bottone-tenue" type="submit">svuota cache</button>
       </form>
+      <a class="bottone bottone-tenue" href="<?= u('admin/richieste') ?>">richieste</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/raccolte') ?>">raccolte</a>
       <a class="bottone bottone-tenue" href="<?= u('/') ?>">vedi il sito</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/esci') ?>">esci</a>

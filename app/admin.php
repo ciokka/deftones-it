@@ -75,6 +75,44 @@ if (preg_match('#^anteprima/(\d+)$#', $azione, $m)) {
     exit;
 }
 
+// ---------------------------------------------------------- richieste
+if ($azione === 'richieste') {
+    $msg = null;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrfValido($_POST['csrf'] ?? null)) {
+        $che = (string)($_POST['che'] ?? '');
+        if ($che === 'nuova') {
+            $testo = trim((string)($_POST['richiesta'] ?? ''));
+            if (mb_strlen($testo) < 10) {
+                $msg = ['ko', 'Scrivi almeno una frase: "la strumentazione di Stephen Carpenter" '
+                            . 'produce un articolo migliore di "Steph".'];
+            } else {
+                $pdo->prepare('INSERT INTO ' . t('richieste') . ' (richiesta, indicazioni) VALUES (?,?)')
+                    ->execute([mb_substr($testo, 0, 500),
+                               trim((string)($_POST['indicazioni'] ?? '')) ?: null]);
+                $msg = ['ok', 'Richiesta in coda. Verrà scritta al prossimo giro.'];
+            }
+        } elseif ($che === 'rifai') {
+            $pdo->prepare('UPDATE ' . t('richieste') . "
+                              SET stato = 'attesa', nota = NULL WHERE id = ?")
+                ->execute([(int)($_POST['id'] ?? 0)]);
+            $msg = ['ok', 'Rimessa in coda.'];
+        } elseif ($che === 'elimina') {
+            $pdo->prepare('DELETE FROM ' . t('richieste') . ' WHERE id = ?')
+                ->execute([(int)($_POST['id'] ?? 0)]);
+            $msg = ['ok', 'Richiesta eliminata. La bozza eventualmente prodotta resta.'];
+        }
+    }
+
+    $richieste = $pdo->query('SELECT r.*, a.slug, a.titolo_it, a.stato AS stato_articolo
+                                FROM ' . t('richieste') . ' r
+                                LEFT JOIN ' . t('articles') . ' a ON a.id = r.articolo_id
+                               ORDER BY r.creato_il DESC LIMIT 50')->fetchAll();
+
+    echo render('admin-richieste', ['richieste' => $richieste, 'messaggio' => $msg],
+        ['titolo' => 'Richieste — pannello']);
+    exit;
+}
+
 // ---------------------------------------------------------- raccolte
 if ($azione === 'raccolte') {
     $msg = null;

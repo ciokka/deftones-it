@@ -664,7 +664,13 @@ a { color: inherit; }
   background: transparent; border: 1px solid var(--bordo);
   color: var(--testo); font: inherit; font-size: .9375rem;
 }
-.campo input:focus { outline: none; border-color: var(--accento); }
+.campo textarea {
+  width: 100%; padding: .7rem .875rem;
+  background: transparent; border: 1px solid var(--bordo);
+  color: var(--testo); font: inherit; font-size: .9375rem;
+  resize: vertical; min-height: 4.5rem;
+}
+.campo input:focus, .campo textarea:focus { outline: none; border-color: var(--accento); }
 
 .avvisoOk, .avvisoKo { padding: .875rem 1.125rem; margin-bottom: 1.5rem; font-size: .875rem; }
 .avvisoOk { border: 1px solid var(--accento-scuro); color: var(--accento); }

@@ -100,7 +100,7 @@ function claude(array $corpo, int $tentativi = 3): array
         }
 
         return ['ok' => true, 'testo' => $testo, 'dati' => json_decode($testo, true),
-                'in' => $in, 'out' => $out, 'errore' => null];
+                'grezzo' => $dati, 'in' => $in, 'out' => $out, 'errore' => null];
     }
 
     return ['ok' => false, 'testo' => null, 'dati' => null, 'in' => 0, 'out' => 0,
@@ -122,3 +122,75 @@ function claudeJson(string $system, string $prompt, array $schema, int $maxToken
     ]);
 }
 
+/**
+ * Una chiamata in cui il modello cerca da sé sul web.
+ *
+ * Serve per i contenuti che devono durare: su una scheda che resta
+ * anni, la memoria del modello non basta — una data sbagliata resta lì
+ * e la copia qualcun altro. Con la ricerca attiva scrive da pagine che
+ * ha davvero letto, e ne riportiamo gli indirizzi.
+ *
+ * @return array{ok:bool, testo:string, fonti:array, in:int, out:int, errore:?string}
+ */
+function claudeConRicerca(string $sistema, string $prompt,
+                          int $maxRicerche = 8, int $maxRiprese = 4): array
+{
+    $messaggi = [['role' => 'user', 'content' => $prompt]];
+    $testo = '';
+    $fonti = [];
+    $in = $out = 0;
+
+    for ($ripresa = 0; $ripresa <= $maxRiprese; $ripresa++) {
+        $r = claude([
+            'model'      => cfg('modello') ?: 'claude-opus-5',
+            'max_tokens' => 16000,
+            'system'     => $sistema,
+            'messages'   => $messaggi,
+            'tools'      => [[
+                'type'     => 'web_search_20260209',
+                'name'     => 'web_search',
+                'max_uses' => $maxRicerche,
+            ]],
+            'output_config' => ['effort' => cfg('effort') ?: 'medium'],
+        ]);
+        $in += $r['in']; $out += $r['out'];
+
+        // claude() considera un errore la risposta senza blocchi di testo,
+        // ma qui è normale: un giro può contenere solo ricerche.
+        $grezzo = $r['grezzo'] ?? null;
+        if (!$grezzo) {
+            return ['ok' => false, 'testo' => '', 'fonti' => [],
+                    'in' => $in, 'out' => $out, 'errore' => $r['errore']];
+        }
+
+        foreach ($grezzo['content'] ?? [] as $b) {
+            if (($b['type'] ?? '') === 'text') {
+                $testo .= $b['text'];
+            } elseif (($b['type'] ?? '') === 'web_search_tool_result') {
+                // In caso di errore il contenuto è un oggetto, non una lista:
+                // va distinto prima di scorrerlo.
+                $c = $b['content'] ?? [];
+                if (is_array($c) && array_is_list($c)) {
+                    foreach ($c as $ris) {
+                        if (!empty($ris['url'])) {
+                            $fonti[$ris['url']] = $ris['title'] ?? $ris['url'];
+                        }
+                    }
+                }
+            }
+        }
+
+        // Il giro dei server tool si ferma a dieci passaggi: si riprende
+        // rimandando indietro i messaggi così come sono, senza aggiungere
+        // niente — il server riconosce la ricerca in coda e prosegue.
+        if (($grezzo['stop_reason'] ?? '') !== 'pause_turn') {
+            return ['ok' => true, 'testo' => $testo, 'fonti' => $fonti,
+                    'in' => $in, 'out' => $out, 'errore' => null];
+        }
+        $messaggi[] = ['role' => 'assistant', 'content' => $grezzo['content']];
+    }
+
+    return ['ok' => $testo !== '', 'testo' => $testo, 'fonti' => $fonti,
+            'in' => $in, 'out' => $out,
+            'errore' => $testo === '' ? 'esaurite le riprese senza risposta' : null];
+}
