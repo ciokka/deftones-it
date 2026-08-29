@@ -44,7 +44,16 @@
         <span class="etichetta <?= $r['stato'] === 'fatto' ? 'et-tour' : ($r['stato'] === 'errore' ? 'et-dubbio' : '') ?>">
           <?= e($etichette[$r['stato']] ?? $r['stato']) ?>
         </span>
-        <time><?= e(quandoIt($r['creato_il'])) ?></time>
+        <?php /* Quando è in lavorazione conta da quanto ci sta, non da
+                 quando è stata chiesta: erano due informazioni diverse
+                 mostrate come una sola. */ ?>
+        <?php if ($r['stato'] === 'lavorazione'): ?>
+          <time>chiesta <?= e(quandoIt($r['creato_il'])) ?></time>
+        <?php elseif ($r['elaborato_il']): ?>
+          <time><?= e(quandoIt($r['elaborato_il'])) ?></time>
+        <?php else: ?>
+          <time>chiesta <?= e(quandoIt($r['creato_il'])) ?></time>
+        <?php endif ?>
         <?php if ($fonti): ?><span><?= count($fonti) ?> fonti consultate</span><?php endif ?>
         <?php if ((int)$r['token_in'] > 0): ?>
           <span><?= number_format(costoEuro((int)$r['token_in'], (int)$r['token_out']), 2, ',', '.') ?> €</span>
