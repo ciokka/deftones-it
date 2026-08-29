@@ -8,84 +8,38 @@
 --  la stiamo mostrando.
 --
 --  Una foto CC BY è libera *a condizione* di citare l'autore. Senza un
---  posto dove tenere quel nome, la condizione non è rispettabile e la
+--  posto dove tenere quel nome la condizione non è rispettabile, e la
 --  foto non è libera. Da qui immagine_autore e immagine_licenza.
 --
---  Eseguire una volta sola, da phpMyAdmin. Le colonne che esistono già
---  vengono saltate: MySQL non conosce ADD COLUMN IF NOT EXISTS, quindi
---  si passa da information_schema.
+--  --- Da eseguire una volta sola, in phpMyAdmin. ---
+--
+--  Niente controlli preliminari su information_schema: phpMyAdmin si
+--  collega come utente cPanel, che su questo hosting lì dentro non può
+--  guardare (#1044). Se rilanci il file una seconda volta MySQL
+--  risponde "Duplicate column name" — è la stessa informazione che
+--  darebbe un controllo, detta dopo invece che prima, e non rompe
+--  niente.
 -- =====================================================================
 
-SET @db := DATABASE();
-SET @tb := 'df_articles';
+ALTER TABLE df_articles
+  ADD COLUMN immagine_autore VARCHAR(200) NULL
+      COMMENT 'chi va citato — per le CC BY non è facoltativo'
+      AFTER immagine_url,
+  ADD COLUMN immagine_licenza VARCHAR(80) NULL
+      COMMENT 'CC BY 2.0, CC BY-SA 4.0, pubblico dominio…'
+      AFTER immagine_autore,
+  ADD COLUMN immagine_licenza_url VARCHAR(400) NULL
+      AFTER immagine_licenza,
+  ADD COLUMN immagine_fonte_url VARCHAR(600) NULL
+      COMMENT 'la pagina del file su Commons, non il file'
+      AFTER immagine_licenza_url,
+  ADD COLUMN immagine_origine ENUM('commons','disco','generata','manuale') NULL
+      AFTER immagine_fonte_url,
+  ADD COLUMN immagine_cercata_il DATETIME NULL
+      COMMENT 'per non ricercare senza fine quelli che non hanno dato esito'
+      AFTER immagine_origine;
 
--- --- chi ha scattato la foto -----------------------------------------
-SET @c := 'immagine_autore';
-SET @s := (SELECT IF(COUNT(*) > 0, 'SELECT 1',
-  'ALTER TABLE df_articles ADD COLUMN immagine_autore VARCHAR(200) NULL
-     COMMENT "chi va citato — per le CC BY non è facoltativo" AFTER immagine_url')
-  FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = @tb AND COLUMN_NAME = @c);
-PREPARE q FROM @s; EXECUTE q; DEALLOCATE PREPARE q;
-
--- --- a quali condizioni ----------------------------------------------
-SET @c := 'immagine_licenza';
-SET @s := (SELECT IF(COUNT(*) > 0, 'SELECT 1',
-  'ALTER TABLE df_articles ADD COLUMN immagine_licenza VARCHAR(80) NULL
-     COMMENT "CC BY 2.0, CC BY-SA 4.0, pubblico dominio…" AFTER immagine_autore')
-  FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = @tb AND COLUMN_NAME = @c);
-PREPARE q FROM @s; EXECUTE q; DEALLOCATE PREPARE q;
-
-SET @c := 'immagine_licenza_url';
-SET @s := (SELECT IF(COUNT(*) > 0, 'SELECT 1',
-  'ALTER TABLE df_articles ADD COLUMN immagine_licenza_url VARCHAR(400) NULL
-     AFTER immagine_licenza')
-  FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = @tb AND COLUMN_NAME = @c);
-PREPARE q FROM @s; EXECUTE q; DEALLOCATE PREPARE q;
-
--- --- dov'è l'originale, per chi vuole risalire -----------------------
-SET @c := 'immagine_fonte_url';
-SET @s := (SELECT IF(COUNT(*) > 0, 'SELECT 1',
-  'ALTER TABLE df_articles ADD COLUMN immagine_fonte_url VARCHAR(600) NULL
-     COMMENT "la pagina del file su Commons, non il file" AFTER immagine_licenza_url')
-  FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = @tb AND COLUMN_NAME = @c);
-PREPARE q FROM @s; EXECUTE q; DEALLOCATE PREPARE q;
-
--- --- da dove viene, e quando abbiamo cercato -------------------------
-SET @c := 'immagine_origine';
-SET @s := (SELECT IF(COUNT(*) > 0, 'SELECT 1',
-  'ALTER TABLE df_articles ADD COLUMN immagine_origine
-     ENUM("commons","disco","generata","manuale") NULL AFTER immagine_fonte_url')
-  FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = @tb AND COLUMN_NAME = @c);
-PREPARE q FROM @s; EXECUTE q; DEALLOCATE PREPARE q;
-
--- Serve a non ricercare all'infinito gli articoli per cui non si è
--- trovato niente, e a poter dire "riprova quelli vecchi di un mese".
-SET @c := 'immagine_cercata_il';
-SET @s := (SELECT IF(COUNT(*) > 0, 'SELECT 1',
-  'ALTER TABLE df_articles ADD COLUMN immagine_cercata_il DATETIME NULL
-     AFTER immagine_origine')
-  FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = @tb AND COLUMN_NAME = @c);
-PREPARE q FROM @s; EXECUTE q; DEALLOCATE PREPARE q;
-
--- Per scegliere le foto meno usate senza scandire tutta la tabella.
-SET @c := 'idx_art_immagine';
-SET @s := (SELECT IF(COUNT(*) > 0, 'SELECT 1',
-  'CREATE INDEX idx_art_immagine ON df_articles (immagine_cercata_il, stato)')
-  FROM information_schema.STATISTICS
-  WHERE TABLE_SCHEMA = @db AND TABLE_NAME = @tb AND INDEX_NAME = @c);
-PREPARE q FROM @s; EXECUTE q; DEALLOCATE PREPARE q;
-
-SELECT COLUMN_NAME, COLUMN_TYPE
-  FROM information_schema.COLUMNS
- WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'df_articles'
-   AND COLUMN_NAME LIKE 'immagine%'
- ORDER BY ORDINAL_POSITION;
+CREATE INDEX idx_art_immagine ON df_articles (immagine_cercata_il, stato);
 
 -- =====================================================================
 --  Il catalogo delle immagini
@@ -118,6 +72,9 @@ CREATE TABLE IF NOT EXISTS df_immagini (
                COMMENT 'foto che non vuoi vedere: restano nel catalogo ma non vengono scelte',
   aggiunta_il  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_img_commons (commons),
+  -- 191 caratteri e non 300: in utf8mb4 ogni carattere ne occupa
+  -- quattro, e una chiave da 1200 byte passa solo col formato di riga
+  -- moderno. 191x4 sta sotto il limite vecchio e funziona ovunque.
+  UNIQUE KEY uq_img_commons (commons(191)),
   KEY idx_img_scelta (soggetto, scartata, usata)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

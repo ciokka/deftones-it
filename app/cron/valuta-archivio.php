@@ -34,10 +34,11 @@ $pdo = db();
 $tab = t('articles');
 
 // --- colonna per il motivo, se non c'è già ---------------------------
-$q = $pdo->prepare('SELECT 1 FROM information_schema.COLUMNS
-                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
-                       AND COLUMN_NAME = ? LIMIT 1');
-$q->execute([$tab, 'motivo']);
+// SHOW COLUMNS e non information_schema: l'accesso a information_schema
+// su questo hosting dipende da quale utente MySQL sei, e non vogliamo
+// che un controllo preliminare sia più fragile della cosa controllata.
+$q = $pdo->prepare('SHOW COLUMNS FROM `' . $tab . '` LIKE ?');
+$q->execute(['motivo']);
 if ($q->fetchColumn() === false && !$soloProva) {
     $pdo->exec("ALTER TABLE `$tab` ADD COLUMN motivo VARCHAR(300) NULL
                 COMMENT 'perché il modello lo ha tenuto o scartato'");

@@ -274,20 +274,21 @@ if ($soloAnalisi) {
 // Qui controlliamo prima, così funziona su entrambi ed è ripetibile.
 function colonnaEsiste(PDO $pdo, string $tabella, string $colonna): bool
 {
-    $q = $pdo->prepare('SELECT 1 FROM information_schema.COLUMNS
-                         WHERE TABLE_SCHEMA = DATABASE()
-                           AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1');
-    $q->execute([$tabella, $colonna]);
+    // SHOW COLUMNS e non information_schema: su questo hosting l'accesso
+    // a information_schema dipende da quale utente MySQL sei — quello
+    // del database ce l'ha, l'utente cPanel no. SHOW invece basta il
+    // permesso di lettura sulla tabella, che se sei qui ce l'hai.
+    $q = $pdo->prepare('SHOW COLUMNS FROM `' . $tabella . '` LIKE ?');
+    $q->execute([$colonna]);
     return $q->fetchColumn() !== false;
 }
 
 function indiceEsiste(PDO $pdo, string $tabella, string $indice): bool
 {
-    $q = $pdo->prepare('SELECT 1 FROM information_schema.STATISTICS
-                         WHERE TABLE_SCHEMA = DATABASE()
-                           AND TABLE_NAME = ? AND INDEX_NAME = ? LIMIT 1');
-    $q->execute([$tabella, $indice]);
-    return $q->fetchColumn() !== false;
+    foreach ($pdo->query('SHOW INDEX FROM `' . $tabella . '`') as $r) {
+        if (($r['Key_name'] ?? '') === $indice) { return true; }
+    }
+    return false;
 }
 
 $tab = t('articles');

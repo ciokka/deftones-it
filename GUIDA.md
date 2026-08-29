@@ -323,6 +323,15 @@ Non viene toccata da nessun deploy, ed è l'unica parte del sito che non
 sta in git: la sua copia buona è `wp-content/uploads/` dell'archivio
 WordPress. Da lì si ricostruisce in qualsiasi momento.
 
+**`information_schema` non si può usare nei file SQL.** phpMyAdmin si
+collega come utente cPanel — `bpdefton` — mentre gli script PHP usano
+l'utente del database, che è un altro e ha altri permessi. Il primo lì
+dentro non può guardare e risponde `#1044`. Nei file SQL si scrivono
+quindi `ALTER` e `CREATE` semplici: rilanciarli dà "Duplicate column
+name", che è la stessa informazione detta dopo invece che prima. Negli
+script PHP il controllo si fa con `SHOW COLUMNS`, che richiede solo il
+permesso di leggere la tabella.
+
 **Le copertine non si possono prendere dove capita.** Le foto che
 accompagnano gli articoli dei giornali sono di agenzia o dei fotografi
 accreditati. Prenderne l'`og:image` è quello che fa quasi ogni
