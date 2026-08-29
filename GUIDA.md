@@ -115,6 +115,7 @@ passato, e si può annullare a sua volta.
 | `5 */4` | raccolta | `ingest.php >/dev/null` |
 | `35 */4` | scrittura | `enrich.php >/dev/null` |
 | `15 9` | riepilogo | `riepilogo.php >/dev/null` |
+| `*/30` | richieste | `scrivi-richieste.php --una >/dev/null` |
 
 Percorso completo del PHP: `/opt/cpanel/ea-php83/root/usr/bin/php -q`
 seguito da `/home/bpdefton/deftones/app/cron/<script>.php`.
@@ -125,10 +126,15 @@ email. Aggiungendo `2>&1` spariscono anche quelli, e un guasto diventa
 silenzioso. Perché la mail parta, il campo email in cima alla pagina
 Processi Cron dev'essere compilato.
 
+Le richieste girano ogni mezz'ora perché a vuoto non costano niente: lo
+script prende un lock, non trova nulla in attesa ed esce. È la differenza
+fra ordinare un articolo e averlo entro mezz'ora, o il giorno dopo.
+
 Gli altri script sono **strumenti una tantum**: si lanciano a mano
 creando un cron temporaneo, non si programmano. Un `crea-temi.php`
 lasciato giornaliero rifarebbe le raccolte ogni notte, con nomi diversi
-ogni volta.
+ogni volta; un `enrich.php --tutto` quotidiano è una spesa senza tetto,
+perché `--tutto` ripete il ciclo finché la coda non è vuota.
 
 ---
 
