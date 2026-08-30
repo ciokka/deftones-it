@@ -23,13 +23,29 @@ Il flusso quotidiano:
   df_raw_items          scarta duplicati, fuori tema, troppo vecchi
       ↓  enrich.php · ogni 4 ore, ~6 centesimi
   df_articles (draft)   raggruppa per evento, scrive in italiano
+      ↓  copertine.php · ogni 4 ore, gratis
+  con la fotografia      da Wikimedia o dal Cover Art Archive
       ↓  TU, dal pannello
   online
 ```
 
+Ma non è solo un aggregatore. Sopra ci sono l'archivio del vecchio sito
+diviso in dossier, la discografia costruita da MusicBrainz, la ricerca a
+testo pieno, e uno strumento per commissionare un articolo su un
+argomento e farselo scrivere con ricerca sul web.
+
 Niente va online da solo. Ogni cosa nasce in bozza e aspetta la tua
 approvazione — è la scelta che tiene il sito tuo invece che di un
 programma.
+
+Tre regole che si ritrovano dappertutto, e che spiegano molte
+decisioni prese lungo la strada:
+
+- **i fatti si prendono dove sono registrati**, non dalla memoria di un
+  modello: le tracklist da MusicBrainz, le date dalle pubblicazioni;
+- **un testo senza fonti non si pubblica**, nemmeno se è scritto bene;
+- **niente si carica da server di altri** quando la pagina si apre: né
+  caratteri, né fotografie, né video. Per questo non serve un banner.
 
 ---
 
@@ -217,9 +233,93 @@ si giustifica solo sui contenuti che resteranno anni.
 
 - `--una` ne lavora una sola
 
+### copertine.php — illustra
+Assegna una copertina agli articoli che non ce l'hanno. Non spende
+niente: pesca da un catalogo locale di fotografie con licenza libera.
+
+Due mestieri distinti. `--raccogli` interroga Wikimedia Commons e riempie
+`df_immagini` — va fatto di rado, le foto libere dei Deftones non nascono
+al ritmo delle notizie. Senza opzioni, assegna.
+
+- `--prova` mostra cosa farebbe, simulando anche la rotazione
+- `--limite=N` quanti articoli per giro (40 di suo)
+- `--rifai` rimette in gioco anche i già fatti, tranne quelli scelti a mano
+
+La scelta vera sta in `assegnaCopertina()`, nella libreria: la usa anche
+il pulsante *pubblica con copertina* del pannello.
+
+### dischi.php — la discografia
+Tre mestieri separati, perché hanno costi e rischi diversi.
+
+- `--tracklist` prende da MusicBrainz brani, durate, data ed etichetta.
+  Gratis e verificabile
+- `--copertine` scarica le copertine dal Cover Art Archive. Gratis
+- `--schede` fa scrivere al modello il racconto del disco, cercando sul
+  web. **Costa circa 0,07 € a disco.** Ne fa uno per volta; `--tutte` li
+  fa tutti
+
+Con `--solo=slug` si lavora su un disco solo, con `--rifai` si rifà.
+
 ---
 
-## 6. Le tabelle
+## 6. Il sito
+
+| Indirizzo | Cosa c'è |
+|---|---|
+| `/` | l'apertura — le tre notizie in evidenza in un carosello — e sotto le ultime diciotto |
+| `/notizie` | l'archivio completo, filtrabile per anno e categoria, con *carica altro* |
+| `/notizie/{slug}` | l'articolo |
+| `/categoria/{cat}`, `/tag/{tag}` | tagli dell'archivio |
+| `/raccolte`, `/raccolte/{slug}` | i dossier tematici, in ordine cronologico |
+| `/discografia`, `/discografia/{slug}` | i dischi, con tracklist e scheda |
+| `/cerca` | ricerca a testo pieno; `/cerca.json` serve i suggerimenti |
+| `/privacy` | l'informativa |
+| `/feed.xml`, `/sitemap.xml`, `/robots.txt` | per chi legge da fuori |
+
+I vecchi indirizzi di WordPress — `/GG-MM-AAAA/slug` — reindirizzano
+all'articolo corrispondente, ma **solo se è pubblicato**: un 301 verso un
+404 è peggio di un 404 diretto. È un motivo in più per pubblicare
+l'archivio: ogni articolo riaccende i link che puntavano a lui da anni.
+
+L'apertura prende di suo le tre notizie più recenti. Dal pannello se ne
+possono fissare: quelle fissate vengono prima, le recenti completano.
+
+---
+
+## 7. Il pannello
+
+Sta in `/admin`. Il primo accesso crea l'utente e poi si chiude da solo.
+
+**L'elenco delle bozze** si filtra per parola, anno e categoria, e si
+ordina per rilevanza, lunghezza o data. Con le caselle si pubblica o si
+scarta in blocco — ma solo una selezione esplicita, mai "tutte quelle che
+vedi".
+
+**Su ogni bozza**: *leggi tutto* apre l'anteprima, *modifica* apre il
+modulo. Dall'anteprima si pubblica.
+
+**Pubblica con copertina** pubblica e cerca subito la foto, invece di
+aspettare il giro delle copertine che passa ogni quattro ore. Ci mette
+qualche secondo perché la scarica davvero.
+
+**Altra copertina** bandisce quella foto dal catalogo — così non ricompare
+su un altro pezzo — e rimette l'articolo in coda.
+
+**Modifica** cambia titolo, sommario, corpo, categoria, attendibilità,
+tag, fonte e data di pubblicazione. La data non è cosmetica: sposta
+l'articolo nell'ordine cronologico e negli archivi per anno.
+
+**Sulle pubblicate**: *in apertura* fissa l'articolo nel carosello,
+*ritira* lo rimanda in bozza.
+
+**Richieste** commissiona un articolo su un argomento; **raccolte**
+pubblica i dossier; **svuota cache** serve quando hai cambiato qualcosa
+fuori dal pannello — con una query diretta, per esempio — e il sito
+mostra ancora la versione vecchia.
+
+---
+
+## 8. Le tabelle
 
 | Tabella | Cosa contiene |
 |---|---|
@@ -228,7 +328,9 @@ si giustifica solo sui contenuti che resteranno anni.
 | `df_articles` | gli articoli in italiano: bozze, pubblicati, scartati |
 | `df_temi` | le raccolte tematiche |
 | `df_richieste` | gli articoli commissionati |
-| `df_albums`, `df_shows` | discografia e concerti (in gran parte da riempire) |
+| `df_immagini` | il catalogo delle foto con licenza libera, con autore e licenza |
+| `df_albums` | la discografia: date, etichette, tracklist, schede |
+| `df_shows` | i concerti — ancora da riempire |
 | `df_run_log` | cosa ha fatto ogni giro e quanto è costato |
 | `df_admin_users` | tu |
 
@@ -241,7 +343,7 @@ hosting consente **un solo database**, da cui il prefisso `df_`.
 
 ---
 
-## 7. Le manopole
+## 9. Le manopole
 
 In `config.php`:
 
@@ -255,13 +357,14 @@ In `config.php`:
 | `modello`, `effort` | `claude-opus-5`, `medium` |
 | `cache_ttl` | 900 secondi. La cache si svuota comunque a ogni pubblicazione |
 | `base_url` | vuoto: il sito sta nella radice. Era `/v2` prima del trasloco |
+| `media_dir` | dove stanno i file caricati sul disco: immagini del vecchio WordPress e copertine scaricate |
 
 La soglia di rilevanza è la manopola che conta: regola insieme il rumore
 del sito e il conto di fine mese.
 
 ---
 
-## 8. Quando qualcosa non va
+## 10. Quando qualcosa non va
 
 **Dove guardare, in ordine:**
 
@@ -287,7 +390,7 @@ traccia resta nell'error_log di Apache.
 
 ---
 
-## 9. Perché certe cose sono così
+## 11. Perché certe cose sono così
 
 **Raggruppare prima di scrivere.** Dodici testate coprono lo stesso
 concerto. Scrivendo un articolo per fonte il sito diventa illeggibile e
@@ -449,25 +552,33 @@ indirizzi veri.
 
 ---
 
-## 10. Cosa resta
+## 12. Cosa resta
 
 **Pubblicare l'archivio.** 265 bozze valutate e ordinate per rilevanza,
-otto raccolte pronte in bozza. Il consiglio è di procedere per raccolta:
+otto raccolte pronte. Il consiglio è di procedere per raccolta:
 pubblichi gli articoli di un dossier, poi il dossier. Comincerei da *Il
-coma di Chi Cheng, giorno per giorno*.
+coma di Chi Cheng, giorno per giorno*. Con *pubblica con copertina* è
+molto più svelto di quanto fosse.
 
-**Riempire la discografia.** `df_albums` ha i 13 dischi con date e
-identificativi, ma descrizioni e tracklist sono vuote. Il posto giusto
-è `scrivi-richieste.php`, una scheda alla volta.
-
-**Le date dei concerti.** `df_shows` è vuota. Servono le chiavi di
-Bandsintown e setlist.fm, entrambe gratuite.
+**Le date dei concerti.** `df_shows` è l'unica tabella ancora vuota.
+Servono le chiavi di Bandsintown e setlist.fm, entrambe gratuite.
 
 **Le immagini 2002-2011.** Perse, a meno che non salti fuori un backup.
 I riferimenti però sono conservati sotto `/media/legacy/`: se un giorno
 copi lì i file rispettando i percorsi originali, le immagini tornano da
 sole senza reimportare nulla.
 
+**Due dettagli della privacy** da verificare su Serverplan: per quanti
+giorni conservano i log, e se nel contratto c'è la nomina a responsabile
+del trattamento.
+
+**Il foglio di stile.** Ha passato le millecento righe e in una sola
+giornata ha prodotto tre collisioni — due di nomi di classe, una di
+specificità. Non è sfortuna: è cresciuto oltre la misura in cui si tiene
+a mente per intero. Prima o poi va diviso per blocchi con confini netti.
+
 ---
 
-*Ultimo aggiornamento: 30 agosto 2026 — copertine automatiche.*
+*Ultimo aggiornamento: 30 agosto 2026 — carosello in apertura, archivio
+notizie, ricerca, discografia, modifica dal pannello, informativa
+privacy.*
