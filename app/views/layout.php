@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=53">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=54">
 </head>
 <body>
 
@@ -450,6 +450,9 @@ $voci = [
 
   var lento = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var attivo = 0, fermo = false, attesa = null, inMoto = false;
+  // Di suo un comando cambia diapositiva; con l'aggancio attivo sposta
+  // invece la pagina, ed è lo scorrimento a cambiarla di conseguenza.
+  var portaA = null, agganciato = false;
 
   // L'asse dell'animazione segue il gesto: chi scorre col dito vede le
   // diapositive muoversi in orizzontale, nella direzione in cui ha
@@ -483,7 +486,12 @@ $voci = [
     poni(uscente, asse, avanti ? -100 : 100, 0, true);
 
     inMoto = true;
-    setTimeout(function () { inMoto = false; }, lento ? 0 : 780);
+    setTimeout(function () {
+      inMoto = false;
+      // Scorrendo in fretta si può essere già saltati oltre: appena la
+      // transizione finisce si recupera il ritardo.
+      if (agganciato && desiderato !== attivo) { applica(); }
+    }, lento ? 0 : 780);
 
     attivo = n;
     for (var i = 0; i < punti.length; i++) {
@@ -493,7 +501,10 @@ $voci = [
 
   for (var i = 0; i < punti.length; i++) {
     (function (n) {
-      punti[n].addEventListener('click', function () { basta(); vaiA(n); });
+      punti[n].addEventListener('click', function () {
+        basta();
+        if (portaA) { portaA(n); } else { vaiA(n); }
+      });
     })(i);
   }
   var frecce = box.querySelectorAll('.carosello-freccia');
@@ -501,7 +512,8 @@ $voci = [
     (function (f) {
       f.addEventListener('click', function () {
         basta();
-        vaiA(attivo + parseInt(f.getAttribute('data-vai'), 10));
+        var n = attivo + parseInt(f.getAttribute('data-vai'), 10);
+        if (portaA) { portaA(Math.min(quante - 1, Math.max(0, n))); } else { vaiA(n); }
       });
     })(frecce[j]);
   }
@@ -527,6 +539,58 @@ $voci = [
     vaiA(attivo + (dx < 0 ? 1 : -1), 'X');
   }, { passive: true });
 
+  // --- l'aggancio allo scorrimento -------------------------------
+  //
+  // Da schermo largo il carosello resta appiccicato in cima per un tratto
+  // di pagina, e la diapositiva segue la corsa percorsa. Non si
+  // intercetta niente: la rotella muove la pagina come sempre, e questo
+  // codice si limita a guardare a che punto è arrivata.
+  //
+  // Che l'aggancio sia attivo lo dice il CSS, non una soglia scritta qui:
+  // se l'involucro è più alto del carosello, c'è una corsa da percorrere.
+  // Una sola verità sul dove comincia il desktop.
+  var aggancio = box.parentNode;
+  var desiderato = 0;
+
+  function corsa() {
+    return aggancio ? aggancio.offsetHeight - box.offsetHeight : 0;
+  }
+
+  function applica() {
+    if (!inMoto && desiderato !== attivo) { vaiA(desiderato, 'Y'); }
+  }
+
+  var inAttesa = false;
+  function guarda() {
+    var totale = corsa();
+    if (totale < 50) { return; }              // niente aggancio: mobile
+    var fatto = Math.min(Math.max(-aggancio.getBoundingClientRect().top, 0), totale);
+    var n = Math.min(quante - 1, Math.floor(fatto / totale * quante));
+    if (n !== desiderato) { desiderato = n; applica(); }
+  }
+
+  if (corsa() >= 50) {
+    agganciato = true;
+    fermo = true;                             // qui comanda lo scorrimento
+    window.addEventListener('scroll', function () {
+      if (inAttesa) { return; }
+      inAttesa = true;
+      requestAnimationFrame(function () { inAttesa = false; guarda(); });
+    }, { passive: true });
+    window.addEventListener('resize', guarda, { passive: true });
+    guarda();
+
+    // Con l'aggancio attivo, indicatori e frecce non cambiano diapositiva
+    // di nascosto: portano la pagina al punto in cui quella diapositiva
+    // sta, altrimenti il primo movimento di rotella le rimetterebbe dove
+    // dice lo scorrimento.
+    portaA = function (n) {
+      var alto = aggancio.getBoundingClientRect().top + window.pageYOffset;
+      var passo = corsa() / quante;
+      window.scrollTo({ top: alto + passo * n + passo / 2, behavior: 'smooth' });
+    };
+  }
+
   // L'avanzamento automatico si ferma per sempre appena tocchi qualcosa:
   // una pagina che continua a muoversi mentre stai leggendo è la ragione
   // per cui i caroselli hanno la fama che hanno.
@@ -537,7 +601,9 @@ $voci = [
   // Niente movimento se il sistema chiede di non muovere niente, e niente
   // avanzamento mentre la scheda è in secondo piano: tornando alla pagina
   // troveresti la terza notizia al posto di quella che stavi guardando.
-  if (lento) { return; }
+  // Con l'aggancio attivo l'avanzamento a tempo non serve: a decidere
+  // quale notizia si vede è dove sei arrivato a scorrere.
+  if (lento || agganciato) { return; }
   attesa = setInterval(function () {
     if (fermo || document.hidden) { return; }
     vaiA(attivo + 1);

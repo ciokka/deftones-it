@@ -11,6 +11,10 @@
            gli indicatori, le frecce e l'avanzamento automatico. */ ?>
   <?php $primi = $apertura; ?>
 
+  <?php /* L'involucro non si vede: serve solo a dare al carosello una
+           corsa di scorrimento da percorrere mentre resta agganciato in
+           cima. Su mobile è alto quanto il carosello e non fa niente. */ ?>
+  <div class="carosello-aggancio">
   <div class="carosello"<?= count($primi) > 1 ? ' data-carosello' : '' ?>>
     <div class="carosello-piste">
       <?php foreach ($primi as $n => $primo): ?>
@@ -72,6 +76,7 @@
         </button>
       </div>
     <?php endif ?>
+  </div>
   </div>
 
   <?php if ($articoli): ?>

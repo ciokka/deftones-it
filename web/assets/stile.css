@@ -342,6 +342,20 @@ body { overflow-x: clip; }
 
 .apertura { padding: 4rem 0 3rem; border-bottom: 1px solid var(--bordo); }
 
+/* --------------------------------------------- carosello agganciato */
+/* Solo da schermo largo, e solo se il sistema non chiede di ridurre il
+   movimento: il carosello resta appiccicato in cima mentre scorri, e le
+   tre notizie avanzano seguendo la corsa. Poi si sgancia e la pagina
+   riprende normalmente.
+   Non è intercettazione dello scorrimento: la rotella continua sempre a
+   muovere la pagina, e quello che cambia è solo cosa si vede muovere.
+   Sotto i 64rem l'involucro non fa niente e il carosello si comporta
+   come prima, con l'avanzamento a tempo. */
+@media (min-width: 64rem) and (prefers-reduced-motion: no-preference) {
+  .carosello-aggancio { height: calc(var(--h-apertura) + 150vh); }
+  .carosello-aggancio > .carosello { position: sticky; top: 0; }
+}
+
 /* ----------------------------------------------------- il carosello */
 /* Le prime tre notizie in apertura. Le diapositive sono sovrapposte e si
    muovono in verticale: quella che esce sale, quella che entra arriva da
@@ -352,13 +366,14 @@ body { overflow-x: clip; }
    che nessuno lo avesse chiesto. Qui la rotella resta della pagina.
    Nessun margine in alto: comincia dove finisce la testata, e il -1px
    chiude il filo di fondo che resterebbe fra i due. */
-.carosello {
-  position: relative;
-  margin: -1px calc(50% - 50vw) 1.5rem;
-  --h-apertura: min(80vh, 33rem);
-}
-@media (min-width: 40rem) { .carosello { --h-apertura: min(70vh, 34rem); } }
-@media (min-width: 64rem) { .carosello { --h-apertura: min(72vh, 38rem); } }
+/* L'altezza sta sull'involucro e non sul carosello: le variabili CSS
+   scendono ai discendenti, non salgono al genitore, e l'involucro deve
+   poterci calcolare sopra la propria corsa. */
+.carosello-aggancio { --h-apertura: min(80vh, 33rem); }
+@media (min-width: 40rem) { .carosello-aggancio { --h-apertura: min(70vh, 34rem); } }
+@media (min-width: 64rem) { .carosello-aggancio { --h-apertura: min(72vh, 38rem); } }
+
+.carosello { position: relative; margin: -1px calc(50% - 50vw) 1.5rem; }
 
 .carosello-piste {
   position: relative;
