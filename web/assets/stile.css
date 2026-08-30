@@ -343,37 +343,49 @@ body { overflow-x: clip; }
 .apertura { padding: 4rem 0 3rem; border-bottom: 1px solid var(--bordo); }
 
 /* ----------------------------------------------------- il carosello */
-/* Le prime tre notizie in una pista che scorre. Lo scorrimento è del
-   browser — scroll-snap — quindi col dito funziona anche senza
-   JavaScript, con l'inerzia giusta di ogni sistema. Lo script aggiunge
-   soltanto gli indicatori, le frecce e l'avanzamento automatico.
+/* Le prime tre notizie in apertura. Le diapositive sono sovrapposte e si
+   muovono in verticale: quella che esce sale, quella che entra arriva da
+   sotto.
+   Non è un contenitore che scorre, ed è una scelta. Un contenitore con
+   overflow verticale si sarebbe preso la rotella del mouse e il dito sul
+   telefono, cioè avrebbe intercettato lo scorrimento della pagina senza
+   che nessuno lo avesse chiesto. Qui la rotella resta della pagina.
    Nessun margine in alto: comincia dove finisce la testata, e il -1px
    chiude il filo di fondo che resterebbe fra i due. */
-.carosello { position: relative; margin: -1px calc(50% - 50vw) 1.5rem; }
+.carosello {
+  position: relative;
+  margin: -1px calc(50% - 50vw) 1.5rem;
+  --h-apertura: min(80vh, 33rem);
+}
+@media (min-width: 40rem) { .carosello { --h-apertura: min(70vh, 34rem); } }
+@media (min-width: 64rem) { .carosello { --h-apertura: min(72vh, 38rem); } }
 
 .carosello-piste {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  scrollbar-width: none;              /* la barra qui è solo rumore */
-  overscroll-behavior-x: contain;     /* niente "indietro" del browser scorrendo */
+  position: relative;
+  height: var(--h-apertura);
+  min-height: 27rem;
+  overflow: hidden;
+  /* Il dito verticale resta alla pagina; quello orizzontale lo leggiamo
+     noi. Senza questa riga, su iOS uno scorrimento laterale può far
+     scattare il "torna indietro" del browser. pinch-zoom resta, che
+     toglierlo è un dispetto a chi ha bisogno di ingrandire. */
+  touch-action: pan-y pinch-zoom;
 }
-.carosello-piste::-webkit-scrollbar { display: none; }
-@media (prefers-reduced-motion: reduce) { .carosello-piste { scroll-behavior: auto; } }
+.carosello .apertura { position: absolute; inset: 0; }
 
-.carosello .apertura { flex: 0 0 100%; scroll-snap-align: start; }
-
-/* Una diapositiva senza fotografia tiene la stessa altezza delle altre,
-   o la pista si accorcerebbe scorrendo. Sotto resta il pattern del
-   fondo, che è meglio di un buco. */
+/* Una diapositiva senza fotografia non passa dalle regole del banner: le
+   serve comunque il testo appoggiato in basso, o resterebbe in cima a
+   un riquadro vuoto. */
 .carosello .apertura:not(.hero) {
   display: flex; flex-direction: column; justify-content: flex-end;
-  height: min(80vh, 33rem); min-height: 27rem;
   padding: 0; border-bottom: 0;
 }
-@media (min-width: 40rem) { .carosello .apertura:not(.hero) { height: min(70vh, 34rem); } }
-@media (min-width: 64rem) { .carosello .apertura:not(.hero) { height: min(72vh, 38rem); } }
+
+/* Senza JavaScript le diapositive resterebbero tutte una sopra l'altra e
+   si vedrebbe l'ultima: così invece si vede la prima, che è la notizia
+   più recente. Lo script prende il comando da qui. */
+.carosello .apertura { opacity: 0; transform: translateY(100%); }
+.carosello .apertura:first-child { opacity: 1; transform: none; }
 
 /* Gli indicatori stanno sotto la pista e dentro la colonna, non sopra la
    foto: là in mezzo darebbero fastidio al titolo e al credito. */
@@ -392,7 +404,7 @@ body { overflow-x: clip; }
 .carosello-punto:hover span { background: rgba(255,255,255,.45); }
 .carosello-punto.attivo span { background: var(--accento); }
 
-/* Le frecce servono a chi ha il mouse: col dito si scorre e basta. */
+/* Le frecce servono a chi ha il mouse: col dito bastano gli indicatori. */
 .carosello-freccia { display: none; }
 @media (min-width: 48rem) {
   .carosello-freccia {
@@ -421,13 +433,10 @@ body { overflow-x: clip; }
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  /* Altezza e non proporzione: a tutta larghezza un 2:1 su uno schermo
-     da 1920 sarebbe alto quasi mille pixel. */
-  height: min(80vh, 33rem);
-  min-height: 27rem;
+  /* L'altezza la detta la pista, che le contiene tutte: se stesse anche
+     qui le due misure potrebbero divergere, e la pagina salterebbe
+     cambiando notizia. */
 }
-@media (min-width: 40rem) { .apertura.hero { height: min(70vh, 34rem); } }
-@media (min-width: 64rem) { .apertura.hero { height: min(72vh, 38rem); } }
 
 /* La foto non finisce sul nero: si dissolve.
    Prima il fondo del banner sfumava verso il nero pieno, e quel nero

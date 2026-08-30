@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=49">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=50">
 </head>
 <body>
 
@@ -435,42 +435,61 @@ $voci = [
 
 // Il carosello dell'apertura.
 //
-// Lo scorrimento vero e proprio non lo fa questo codice: lo fa il
-// browser con scroll-snap, e col dito funziona anche se lo script non
-// arriva mai. Qui ci sono solo gli indicatori, le frecce e
-// l'avanzamento automatico.
+// Le diapositive sono sovrapposte e si muovono in verticale: quella che
+// esce sale, quella che entra arriva da sotto. Non c'è nessun
+// contenitore che scorre, quindi la rotella del mouse e il dito sul
+// telefono restano della pagina: il carosello non se li prende.
 (function () {
   var box = document.querySelector('[data-carosello]');
   if (!box) { return; }
   var pista = box.querySelector('.carosello-piste');
+  var diapo = pista.children;
   var punti = box.querySelectorAll('.carosello-punto');
-  var quante = pista.children.length;
+  var quante = diapo.length;
   if (quante < 2) { return; }
 
-  var attivo = 0, fermo = false, attesa = null;
+  var lento = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var attivo = 0, fermo = false, attesa = null, inMoto = false;
 
-  function vaiA(n) {
-    attivo = (n + quante) % quante;
-    pista.scrollTo({ left: pista.clientWidth * attivo, behavior: 'smooth' });
+  // L'asse dell'animazione segue il gesto: chi scorre col dito vede le
+  // diapositive muoversi in orizzontale, nella direzione in cui ha
+  // trascinato; l'avanzamento automatico e le frecce le fanno salire.
+  // conMoto: la diapositiva che entra va prima messa dalla parte giusta
+  // SENZA transizione, altrimenti scivolerebbe da dove si trovava prima.
+  function poni(el, asse, quanto, opacita, conMoto) {
+    el.style.transition = conMoto && !lento
+      ? 'transform .75s cubic-bezier(.22,.61,.36,1), opacity .5s ease'
+      : 'none';
+    el.style.transform = quanto ? 'translate' + asse + '(' + quanto + '%)' : 'none';
+    el.style.opacity = opacita;
+    el.style.pointerEvents = opacita ? 'auto' : 'none';
   }
 
-  function segna() {
-    var n = Math.round(pista.scrollLeft / pista.clientWidth);
-    if (n === attivo || n < 0 || n >= quante) { return; }
+  function vaiA(n, asse) {
+    asse = asse || 'Y';
+    n = ((n % quante) + quante) % quante;
+    if (n === attivo || inMoto) { return; }
+
+    // Avanti l'entrante arriva da sotto (o da destra), indietro dall'alto
+    // (o da sinistra). Il giro completo 2→0 conta come "avanti".
+    var avanti = n > attivo;
+    if (n === 0 && attivo === quante - 1) { avanti = true; }
+    else if (n === quante - 1 && attivo === 0) { avanti = false; }
+
+    var uscente = diapo[attivo], entrante = diapo[n];
+    poni(entrante, asse, avanti ? 100 : -100, 0, false);
+    void entrante.offsetHeight;                 // costringe il browser a prenderne atto
+    poni(entrante, asse, 0, 1, true);
+    poni(uscente, asse, avanti ? -100 : 100, 0, true);
+
+    inMoto = true;
+    setTimeout(function () { inMoto = false; }, lento ? 0 : 780);
+
     attivo = n;
     for (var i = 0; i < punti.length; i++) {
       punti[i].classList.toggle('attivo', i === attivo);
     }
   }
-
-  // Lo scorrimento genera decine di eventi al secondo: si aggiorna una
-  // volta per fotogramma invece che a ogni evento.
-  var inCoda = false;
-  pista.addEventListener('scroll', function () {
-    if (inCoda) { return; }
-    inCoda = true;
-    requestAnimationFrame(function () { inCoda = false; segna(); });
-  }, { passive: true });
 
   for (var i = 0; i < punti.length; i++) {
     (function (n) {
@@ -487,21 +506,38 @@ $voci = [
     })(frecce[j]);
   }
 
+  // Lo scorrimento col dito. Un gesto orizzontale non ha altri
+  // significati sul telefono — quello verticale è della pagina, e non lo
+  // tocchiamo — quindi si può leggere senza rubare niente a nessuno.
+  var pX = 0, pY = 0, valido = false;
+  pista.addEventListener('touchstart', function (e) {
+    if (e.touches.length !== 1) { valido = false; return; }
+    pX = e.touches[0].clientX; pY = e.touches[0].clientY; valido = true;
+  }, { passive: true });
+
+  pista.addEventListener('touchend', function (e) {
+    if (!valido) { return; }
+    valido = false;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - pX, dy = t.clientY - pY;
+    // Solo se il gesto è chiaramente orizzontale e abbastanza lungo: chi
+    // sta scorrendo la pagina in diagonale non deve cambiare notizia.
+    if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.5) { return; }
+    basta();
+    vaiA(attivo + (dx < 0 ? 1 : -1), 'X');
+  }, { passive: true });
+
   // L'avanzamento automatico si ferma per sempre appena tocchi qualcosa:
   // una pagina che continua a muoversi mentre stai leggendo è la ragione
   // per cui i caroselli hanno la fama che hanno.
-  function basta() {
-    fermo = true;
-    clearInterval(attesa);
-  }
-  ['pointerdown', 'touchstart', 'keydown', 'wheel'].forEach(function (e) {
-    box.addEventListener(e, basta, { passive: true, once: true });
-  });
+  function basta() { fermo = true; clearInterval(attesa); }
+  box.addEventListener('pointerdown', basta, { passive: true, once: true });
   box.addEventListener('focusin', basta);
 
-  // Niente movimento se il sistema dice di non muovere niente, e niente
-  // avanzamento mentre la scheda è in secondo piano.
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+  // Niente movimento se il sistema chiede di non muovere niente, e niente
+  // avanzamento mentre la scheda è in secondo piano: tornando alla pagina
+  // troveresti la terza notizia al posto di quella che stavi guardando.
+  if (lento) { return; }
   attesa = setInterval(function () {
     if (fermo || document.hidden) { return; }
     vaiA(attivo + 1);
