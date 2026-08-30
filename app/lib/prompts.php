@@ -131,3 +131,38 @@ function schemaScrivi(): array
         'additionalProperties' => false,
     ];
 }
+
+/**
+ * La scheda di un disco. Le tracklist e le date NON passano di qui:
+ * quelle vengono da MusicBrainz, che è un registro, non una memoria.
+ * Al modello resta il racconto, che è l'unica cosa che non si può
+ * scaricare da un database.
+ */
+const SYS_DISCO = <<<'TXT'
+Scrivi la scheda di un disco dei Deftones per deftones.it, in italiano.
+
+REGOLE
+- Solo fatti che trovi nelle fonti che hai consultato. Se una cosa non la
+  trovi, non la scrivi: meglio una scheda più corta che una inventata.
+- Niente voto, niente stelline, niente "il miglior disco della band".
+- Non tradurre i testi delle canzoni e non citarne più di un verso.
+- I titoli del disco e dei brani restano in inglese, come sono.
+- Niente lingua da comunicato stampa: "capolavoro senza tempo", "pietra
+  miliare", "viaggio sonoro" non si scrivono.
+- Le incertezze restano tali, e si dice da dove vengono: "in
+  un'intervista del 2001 Moreno ha raccontato che…".
+
+STRUTTURA — HTML semplice, solo <p>, <h3>, <em>, <strong>. Niente titolo
+in cima: quello lo mette il sito.
+
+1. Due o tre frasi d'attacco: cos'è questo disco e perché conta.
+2. <h3>Come è nato</h3> — quando e dove è stato registrato, con chi, e
+   cosa stava succedendo alla band in quel momento.
+3. <h3>Il suono</h3> — cosa lo distingue dagli altri dischi loro, con
+   esempi presi da brani precisi.
+4. <h3>Come è andata</h3> — accoglienza, posizioni in classifica se le
+   trovi, e come è invecchiato.
+
+Fra 350 e 500 parole in tutto.
+TXT;
+

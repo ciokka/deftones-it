@@ -541,6 +541,98 @@ body { overflow-x: clip; }
   text-transform: lowercase; letter-spacing: .03em;
 }
 
+/* ----------------------------------------------------- discografia */
+
+.titolo-gruppo {
+  margin: 3rem 0 1.25rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.6rem;
+  text-transform: lowercase;
+  color: var(--testo-tenue);
+}
+
+/* auto-fill e non auto-fit: con pochi dischi in una fila, auto-fit li
+   allargherebbe fino a farne due copertine giganti. */
+.griglia-dischi {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 1.5rem 1.25rem;
+  margin: 0 0 1rem;
+}
+.disco-carta { display: block; text-decoration: none; }
+.disco-copertina {
+  display: block;
+  aspect-ratio: 1;
+  margin-bottom: .6rem;
+  background: #0c0c0d;
+  border: 1px solid var(--bordo);
+  overflow: hidden;
+}
+.disco-copertina img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+  transition: opacity .25s;
+}
+.disco-carta:hover .disco-copertina img { opacity: .78; }
+
+/* Senza copertina, l'iniziale del titolo: un riquadro vuoto sembra un
+   errore, una lettera sembra una scelta. */
+.disco-senza {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  font-family: var(--display);
+  font-size: 3.5rem;
+  color: rgba(255,255,255,.13);
+}
+.disco-titolo { display: block; font-size: .9375rem; line-height: 1.3; }
+.disco-carta:hover .disco-titolo { color: var(--accento); }
+.disco-anno {
+  display: block; margin-top: .15rem;
+  font-size: .75rem; color: var(--testo-tenue);
+  text-transform: lowercase; letter-spacing: .03em;
+}
+
+.disco { padding: 3rem 0 1rem; max-width: 42rem; margin-inline: auto; }
+.disco-testa { display: flex; gap: 1.75rem; align-items: flex-start; margin-bottom: 2.5rem; }
+.disco-grande {
+  flex: none; width: 12rem; aspect-ratio: 1; object-fit: cover;
+  border: 1px solid var(--bordo);
+}
+.disco-dati { min-width: 0; }
+.disco h1 {
+  margin: .5rem 0 1rem;
+  font-family: var(--display); font-weight: 400;
+  font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1.05;
+}
+@media (max-width: 34rem) {
+  .disco-testa { flex-direction: column; gap: 1.25rem; }
+  .disco-grande { width: 100%; max-width: 16rem; }
+}
+
+.scheda-dati {
+  display: grid; grid-template-columns: auto 1fr;
+  gap: .3rem 1rem; margin: 0; font-size: .875rem;
+}
+.scheda-dati dt { color: var(--testo-tenue); text-transform: lowercase; letter-spacing: .03em; }
+.scheda-dati dd { margin: 0; }
+
+.tracklist { list-style: none; margin: 0; padding: 0; max-width: 34rem; }
+.tracklist li {
+  display: flex; align-items: baseline; gap: .9rem;
+  padding: .55rem 0;
+  border-bottom: 1px solid var(--bordo);
+}
+.traccia-n {
+  flex: none; width: 1.6rem;
+  font-size: .75rem; color: var(--testo-tenue);
+  font-variant-numeric: tabular-nums;
+}
+.traccia-titolo { flex: 1; min-width: 0; }
+.traccia-durata {
+  flex: none; font-size: .8125rem; color: var(--testo-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
 /* -------------------------------------------------------- copertina */
 
 /* Le foto di Commons hanno proporzioni tutte diverse — verticali,

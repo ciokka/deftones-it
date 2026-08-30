@@ -149,6 +149,10 @@ elseif ($percorso === '/sitemap.xml') {
           ORDER BY t.slug"
     )->fetchAll();
 
+    $dischi = $pdo->query('SELECT slug FROM ' . t('albums') . '
+                            WHERE descrizione_it IS NOT NULL
+                            ORDER BY ordine')->fetchAll();
+
     $categorie = $pdo->query(
         'SELECT categoria, MAX(pubblicato_il) AS ultima
            FROM ' . t('articles') . " 
@@ -158,6 +162,8 @@ elseif ($percorso === '/sitemap.xml') {
 
     $voci = [[u(''), $articoli[0]['pubblicato_il'] ?? null]];
     if ($raccolte) { $voci[] = [u('raccolte/'), $raccolte[0]['aggiornato_il']]; }
+    if ($dischi)   { $voci[] = [u('discografia/'), null]; }
+    foreach ($dischi as $x) { $voci[] = [u('discografia/' . $x['slug'] . '/'), null]; }
     foreach ($categorie as $c) { $voci[] = [u('categoria/' . $c['categoria'] . '/'), $c['ultima']]; }
     foreach ($raccolte as $r) { $voci[] = [u('raccolte/' . $r['slug'] . '/'), $r['aggiornato_il']]; }
     foreach ($articoli as $a) {
@@ -327,6 +333,46 @@ elseif (preg_match('#^/raccolte/([a-z0-9-]+)$#', $percorso, $m)) {
         'descrizione' => mb_substr((string)$r['sottotitolo'], 0, 160),
         'canonico'    => cfg('site_url') . u('raccolte/' . $r['slug'] . '/'),
     ]);
+}
+
+// --- discografia
+elseif ($percorso === '/discografia') {
+    $dischi = $pdo->query('SELECT slug, titolo, tipo, anno, copertina
+                             FROM ' . t('albums') . '
+                            ORDER BY ordine, anno')->fetchAll();
+
+    $html = render('discografia', ['dischi' => $dischi], [
+        'titolo'      => 'Discografia — deftones.it',
+        'descrizione' => 'Tutti i dischi dei Deftones, dal 1995 a oggi: date, '
+                       . 'etichette, tracklist e la storia di come sono nati.',
+        'canonico'    => cfg('site_url') . u('discografia/'),
+    ]);
+}
+
+elseif (preg_match('#^/discografia/([a-z0-9-]+)$#', $percorso, $m)) {
+    $q = $pdo->prepare('SELECT * FROM ' . t('albums') . ' WHERE slug = ? LIMIT 1');
+    $q->execute([$m[1]]);
+    $d = $q->fetch();
+    if (!$d) { pagina404(); }
+
+    // Gli articoli che parlano di questo disco: il titolo compare nel
+    // loro, che è lo stesso criterio con cui gli assegniamo la copertina.
+    $q = $pdo->prepare('SELECT slug, titolo_it, pubblicato_il
+                          FROM ' . t('articles') . "
+                         WHERE stato = 'pubblicato' AND titolo_it LIKE ?
+                         ORDER BY pubblicato_il DESC LIMIT 8");
+    $q->execute(['%' . $d['titolo'] . '%']);
+    $collegati = $q->fetchAll();
+
+    $meta = [
+        'titolo'      => $d['titolo'] . ' — Deftones — deftones.it',
+        'descrizione' => mb_substr(trim(strip_tags((string)$d['descrizione_it'])), 0, 160)
+                       ?: $d['titolo'] . ' dei Deftones' . ($d['anno'] ? ', ' . $d['anno'] : '') . '.',
+        'canonico'    => cfg('site_url') . u('discografia/' . $d['slug'] . '/'),
+    ];
+    if ($d['copertina']) { $meta['immagine'] = cfg('site_url') . $d['copertina']; }
+
+    $html = render('disco', ['d' => $d, 'collegati' => $collegati], $meta);
 }
 
 // --- vecchi indirizzi di WordPress: /GG-MM-AAAA/slug/

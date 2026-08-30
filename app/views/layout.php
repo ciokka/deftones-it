@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=38">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=39">
 </head>
 <body>
 
@@ -66,6 +66,7 @@
 $voci = [
     u('/')                  => 'Notizie',
     u('raccolte/')          => 'Raccolte',
+    u('discografia/')       => 'Dischi',
     u('categoria/tour/')    => 'Tour',
     u('feed.xml')           => 'RSS',
 ];
