@@ -372,16 +372,34 @@ body { overflow-x: clip; }
 /* L'altezza sta sull'involucro e non sul carosello: le variabili CSS
    scendono ai discendenti, non salgono al genitore, e l'involucro deve
    poterci calcolare sopra la propria corsa. */
-.carosello-aggancio { --h-apertura: min(80vh, 33rem); }
-@media (min-width: 40rem) { .carosello-aggancio { --h-apertura: min(70vh, 34rem); } }
-@media (min-width: 64rem) { .carosello-aggancio { --h-apertura: min(72vh, 38rem); } }
+/* L'apertura occupa lo schermo, meno quello che le sta sopra: sul
+   telefono la barra del menu, da 40rem in su la testata. Così alla prima
+   occhiata ci sta tutta, credito compreso, e quando il carosello si
+   aggancia in cima lascia intravedere un filo di quello che viene dopo —
+   che è l'invito a scorrere.
+
+   svh e non vh: sul telefono vh comprende lo spazio della barra degli
+   indirizzi anche quando è visibile, e l'apertura sborderebbe di
+   settanta pixel. La riga con vh resta per i browser che non conoscono
+   svh: la seconda sovrascrive la prima dove è capita. */
+.carosello-aggancio {
+  --h-apertura: calc(100vh - 3.5rem);
+  --h-apertura: calc(100svh - 3.5rem);
+  min-height: 24rem;
+}
+@media (min-width: 40rem) {
+  .carosello-aggancio {
+    --h-apertura: calc(100vh - 5rem);
+    --h-apertura: calc(100svh - 5rem);
+  }
+}
 
 .carosello { position: relative; margin: -1px calc(50% - 50vw) 1.5rem; }
 
 .carosello-piste {
   position: relative;
   height: var(--h-apertura);
-  min-height: 27rem;
+  min-height: 24rem;
   overflow: hidden;
   /* Il dito verticale resta alla pagina; quello orizzontale lo leggiamo
      noi. Senza questa riga, su iOS uno scorrimento laterale può far
