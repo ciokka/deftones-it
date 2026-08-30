@@ -459,6 +459,11 @@ body { overflow-x: clip; }
 .cercatore {
   position: fixed; inset: 0; z-index: 60;
   display: flex; justify-content: center;
+  /* flex-start e non lo stretch predefinito: senza, il riquadro si
+     allunga fino in fondo allo schermo e i suggerimenti, che si
+     posizionano al 100% della sua altezza, finiscono fuori dalla
+     finestra. Da fuori sembra che l'autocompletamento non funzioni. */
+  align-items: flex-start;
   padding: 14vh 1.5rem 1.5rem;
 }
 .cercatore[hidden] { display: none; }
@@ -474,7 +479,9 @@ body { overflow-x: clip; }
 /* L'involucro è il riferimento dei suggerimenti, che escono sopra il
    resto della pagina invece di spingerlo in basso a ogni tasto. */
 .ricerca-blocco { position: relative; max-width: 32rem; margin: 0 0 2rem; }
-.cercatore .ricerca-blocco { max-width: none; margin: 0; }
+/* Non "none": .ricerca-blocco e .cercatore-riquadro stanno sullo stesso
+   elemento, e un max-width tolto qui vince su quello del riquadro. */
+.cercatore .ricerca-blocco { max-width: 36rem; margin: 0; }
 
 .ricerca { display: flex; gap: .5rem; margin: 0; max-width: 32rem; }
 .ricerca input {
