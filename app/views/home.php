@@ -57,7 +57,7 @@
         <button class="carosello-freccia" type="button" data-vai="-1" aria-label="Notizia precedente">
           <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor"
                stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M10 2.5 4.5 8l5.5 5.5"/></svg>
+            <path d="M2.5 10 8 4.5l5.5 5.5"/></svg>
         </button>
         <div class="carosello-punti">
           <?php foreach ($primi as $n => $x): ?>
@@ -68,7 +68,7 @@
         <button class="carosello-freccia" type="button" data-vai="1" aria-label="Notizia successiva">
           <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor"
                stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M6 2.5 11.5 8 6 13.5"/></svg>
+            <path d="M2.5 6 8 11.5 13.5 6"/></svg>
         </button>
       </div>
     <?php endif ?>

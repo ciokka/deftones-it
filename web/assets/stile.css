@@ -371,7 +371,11 @@ body { overflow-x: clip; }
      toglierlo è un dispetto a chi ha bisogno di ingrandire. */
   touch-action: pan-y pinch-zoom;
 }
-.carosello .apertura { position: absolute; inset: 0; }
+/* Il selettore è più specifico del necessario, e serve: .apertura.hero
+   dichiara position: relative, pesa uguale a .carosello .apertura ed è
+   scritta più in basso — vinceva lei, le diapositive restavano nel flusso
+   e la pista si riempiva di vuoto con la foto schiacciata in fondo. */
+.carosello .carosello-piste > .apertura { position: absolute; inset: 0; }
 
 /* Una diapositiva senza fotografia non passa dalle regole del banner: le
    serve comunque il testo appoggiato in basso, o resterebbe in cima a
@@ -384,23 +388,30 @@ body { overflow-x: clip; }
 /* Senza JavaScript le diapositive resterebbero tutte una sopra l'altra e
    si vedrebbe l'ultima: così invece si vede la prima, che è la notizia
    più recente. Lo script prende il comando da qui. */
-.carosello .apertura { opacity: 0; transform: translateY(100%); }
-.carosello .apertura:first-child { opacity: 1; transform: none; }
+.carosello .carosello-piste > .apertura { opacity: 0; transform: translateY(100%); }
+.carosello .carosello-piste > .apertura:first-child { opacity: 1; transform: none; }
 
-/* Gli indicatori stanno sotto la pista e dentro la colonna, non sopra la
-   foto: là in mezzo darebbero fastidio al titolo e al credito. */
+/* I comandi in colonna sul fianco destro, allineati al bordo della
+   colonna di testo. Verticali perché verticale è il movimento: frecce su
+   e giù, e le stanghette dell'indicatore in piedi.
+   Il calc allinea la fila al bordo destro del contenitore: .carosello è
+   largo quanto lo schermo, quindi il suo 50% è mezzo schermo, e da lì si
+   torna indietro di metà contenitore più il suo margine. */
 .carosello-guida {
-  display: flex; align-items: center; justify-content: flex-end; gap: .5rem;
-  width: 100%; max-width: var(--larghezza);
-  margin: .75rem auto 0; padding: 0 1.5rem;
+  position: absolute; z-index: 3;
+  top: 50%; transform: translateY(-50%);
+  right: max(1.25rem, calc(50% - var(--larghezza) / 2 + 1.5rem));
+  display: flex; flex-direction: column; align-items: center; gap: .5rem;
 }
-.carosello-punti { display: flex; gap: .3rem; }
-.carosello-punto { border: 0; background: none; padding: .6rem .25rem; cursor: pointer; }
+.carosello-punti { display: flex; flex-direction: column; gap: .3rem; }
+.carosello-punto { border: 0; background: none; cursor: pointer; }
+.carosello-punto { padding: .25rem .6rem; }
 .carosello-punto span {
-  display: block; width: 2.2rem; height: 2px;
-  background: rgba(255,255,255,.22);
-  transition: background .25s;
+  display: block; width: 2px; height: 2rem;
+  background: rgba(255,255,255,.28);
+  transition: background .25s, height .25s;
 }
+.carosello-punto.attivo span { height: 2.6rem; }
 .carosello-punto:hover span { background: rgba(255,255,255,.45); }
 .carosello-punto.attivo span { background: var(--accento); }
 
@@ -484,6 +495,10 @@ body { overflow-x: clip; }
   margin: 0 auto;
   padding: 0 1.5rem;
 }
+/* Sul telefono i comandi del carosello stanno sul bordo destro, dove
+   non c'è margine da avanzare: il testo si tira indietro per non
+   finirci sotto. */
+@media (max-width: 62rem) { .hero-interno { padding-right: 3rem; } }
 .hero-testo { max-width: 44rem; }
 .hero-testo .meta { margin-bottom: .55rem; }
 /* Nel banner il titolo resta lo stesso serif, solo un po' più raccolto:
