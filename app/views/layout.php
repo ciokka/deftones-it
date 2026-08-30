@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=54">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=55">
 </head>
 <body>
 
@@ -556,6 +556,21 @@ $voci = [
     return aggancio ? aggancio.offsetHeight - box.offsetHeight : 0;
   }
 
+  /**
+   * Da quale punto della pagina si comincia a contare.
+   *
+   * Il carosello sta sotto la testata, quindi prima di agganciarsi deve
+   * salire dell'altezza della testata stessa. Contando dalla posizione
+   * dell'involucro, quel tratto risultava a zero: si scorreva, l'immagine
+   * saliva, e non cambiava niente — un ritardo di ottanta pixel che si
+   * sente tutto perché è il primo gesto.
+   */
+  function inizio() {
+    var testata = document.querySelector('.testata');
+    var alto = aggancio.getBoundingClientRect().top + window.pageYOffset;
+    return Math.max(0, alto - (testata ? testata.offsetHeight : 0));
+  }
+
   function applica() {
     if (!inMoto && desiderato !== attivo) { vaiA(desiderato, 'Y'); }
   }
@@ -564,7 +579,7 @@ $voci = [
   function guarda() {
     var totale = corsa();
     if (totale < 50) { return; }              // niente aggancio: mobile
-    var fatto = Math.min(Math.max(-aggancio.getBoundingClientRect().top, 0), totale);
+    var fatto = Math.min(Math.max(window.pageYOffset - inizio(), 0), totale);
     var n = Math.min(quante - 1, Math.floor(fatto / totale * quante));
     if (n !== desiderato) { desiderato = n; applica(); }
   }
@@ -585,9 +600,8 @@ $voci = [
     // sta, altrimenti il primo movimento di rotella le rimetterebbe dove
     // dice lo scorrimento.
     portaA = function (n) {
-      var alto = aggancio.getBoundingClientRect().top + window.pageYOffset;
       var passo = corsa() / quante;
-      window.scrollTo({ top: alto + passo * n + passo / 2, behavior: 'smooth' });
+      window.scrollTo({ top: inizio() + passo * n + passo / 2, behavior: 'smooth' });
     };
   }
 
