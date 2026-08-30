@@ -546,7 +546,15 @@ body { overflow-x: clip; }
 
 /* --------------------------------------------------------- filtri */
 
-.filtri { margin: 0 0 2rem; display: flex; flex-direction: column; gap: .6rem; }
+/* .filtri-archivio e non .filtri: il pannello di amministrazione aveva
+   già una classe .filtri, e le due si sovrapponevano in un modo
+   particolarmente sgradevole. La regola del pannello sta più in basso e
+   vinceva su display, gap e align-items — ma non dichiarava
+   flex-direction, quindi il column di questa regola sopravviveva e il
+   modulo dei filtri si incolonnava. Due componenti diversi non devono
+   condividere un nome di classe, e non basta che le regole "sembrino"
+   compatibili. */
+.filtri-archivio { margin: 0 0 2rem; display: flex; flex-direction: column; gap: .6rem; }
 .filtro-riga {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem .55rem;
 }

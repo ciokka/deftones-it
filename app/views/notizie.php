@@ -11,7 +11,7 @@ $conFiltro = function (array $cambia) use ($anno, $cat): string {
 };
 ?>
 
-<div class="filtri">
+<div class="filtri-archivio">
   <div class="filtro-riga">
     <span class="filtro-nome">categoria</span>
     <a class="filtro-voce<?= $cat === null ? ' attivo' : '' ?>" href="<?= e($conFiltro(['cat' => null])) ?>">tutte</a>
