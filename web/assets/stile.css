@@ -303,6 +303,14 @@ body { overflow-x: clip; }
 }
 .menu a:hover { color: var(--accento); }
 
+/* Con cinque voci, sul telefono la barra andava a capo e occupava due
+   righe fisse in cima allo schermo. Meno spazio fra le lettere e un
+   corpo appena più piccolo la rimettono su una riga sola. */
+@media (max-width: 26rem) {
+  .menu { gap: .9rem; }
+  .menu a { font-size: .75rem; letter-spacing: .07em; }
+}
+
 /* ------------------------------------------------------------- meta */
 
 .meta {
@@ -354,8 +362,8 @@ body { overflow-x: clip; }
   justify-content: flex-end;
   /* Altezza e non proporzione: a tutta larghezza un 2:1 su uno schermo
      da 1920 sarebbe alto quasi mille pixel. */
-  height: min(76vh, 30rem);
-  min-height: 25rem;
+  height: min(80vh, 33rem);
+  min-height: 27rem;
 }
 @media (min-width: 40rem) { .apertura.hero { height: min(70vh, 34rem); } }
 @media (min-width: 64rem) { .apertura.hero { height: min(72vh, 38rem); } }
@@ -389,9 +397,26 @@ body { overflow-x: clip; }
 .hero-testo .meta { margin-bottom: .55rem; }
 /* Nel banner il titolo resta lo stesso serif, solo un po' più raccolto:
    sopra una fotografia una misura da manifesto diventa illeggibile. */
-.apertura.hero h1 { margin: 0 0 .8rem; font-size: clamp(1.9rem, 5.4vw, 3rem); }
+/* Sul telefono il titolo del banner è la pagina: 12vw sono quarantasette
+   pixel su un iPhone, contro i trenta di prima. Da 40rem in su torna a
+   una misura da colonna, perché lì accanto al titolo c'è dell'altro. */
+.apertura.hero h1 { margin: 0 0 .7rem; font-size: clamp(2.75rem, 12vw, 3.4rem); }
+@media (min-width: 40rem) {
+  .apertura.hero h1 { font-size: clamp(2.4rem, 4.6vw, 3.2rem); }
+}
 .apertura.hero h1 a::after { content: ""; position: absolute; inset: 0; z-index: 1; }
 .hero .sommario { margin: 0 0 1.25rem; color: rgba(255,255,255,.84); }
+
+/* Con un titolo da quarantasette pixel il sommario non ci sta per
+   intero: tre righe e poi si taglia, invece di far traboccare il banner. */
+@media (max-width: 39.99rem) {
+  .hero .sommario {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
 
 /* Sopra il collegamento steso, o non ci si potrebbe cliccare. */
 .hero .piede { position: relative; z-index: 2; padding-bottom: 1.25rem; }
@@ -420,6 +445,43 @@ body { overflow-x: clip; }
   text-transform: lowercase;
   letter-spacing: .02em;
 }
+
+/* --------------------------------------------------------- ricerca */
+
+.ricerca { display: flex; gap: .5rem; margin: 0 0 2rem; max-width: 32rem; }
+.ricerca input {
+  flex: 1;
+  min-width: 0;                /* o un campo lungo sfonda il flex */
+  -webkit-appearance: none;
+  appearance: none;
+  padding: .7rem .9rem;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--bordo);
+  border-radius: 2px;
+  color: var(--testo);
+  font: inherit;
+  font-size: 1rem;             /* meno di 16px e iOS zooma da solo */
+}
+.ricerca input::placeholder { color: rgba(255,255,255,.34); }
+.ricerca input:focus {
+  outline: none;
+  border-color: var(--accento-scuro);
+  background: rgba(255,255,255,.07);
+}
+.ricerca button {
+  padding: .7rem 1.15rem;
+  background: none;
+  border: 1px solid var(--bordo);
+  border-radius: 2px;
+  color: var(--testo-tenue);
+  font: inherit;
+  font-size: .8125rem;
+  text-transform: lowercase;
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.ricerca button:hover { color: var(--accento); border-color: var(--accento-scuro); }
 
 /* -------------------------------------------------------- copertina */
 

@@ -2,6 +2,9 @@
 
 User-agent: *
 Disallow: /admin
+# Le pagine di ricerca sono contenuto sottile e duplicato: non servono
+# a nessuno in un indice.
+Disallow: /cerca
 
 Sitemap: https://www.deftones.it/sitemap.xml
 

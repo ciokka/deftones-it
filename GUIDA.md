@@ -361,6 +361,18 @@ l'uso pubblicitario, non quello editoriale, e scartare su quello buttava
 via il materiale migliore — intere serie di concerti. `trademarked` e
 `insignia` invece fanno scartare: quelli sono marchi.
 
+**La ricerca sta fuori dalla cache.** La chiave della cache è il
+percorso, e `/cerca?q=milano` e `/cerca?q=chi` hanno lo stesso percorso:
+si servirebbero i risultati a vicenda. È l'unica pagina pubblica esclusa.
+
+Cerca in modalità booleana con `+parola*`: tutte le parole devono
+esserci — altrimenti "deftones milano" restituisce mezzo sito — e ognuna
+vale anche come prefisso. I caratteri che in quella modalità hanno un
+significato vengono tolti prima, o una parentesi storta farebbe fallire
+la query. L'indice è su titolo, sommario **e corpo**: senza il corpo,
+cercare una parola che compare a metà di un articolo dell'archivio non
+trovava niente.
+
 **La sitemap si costruisce da sola.** `/sitemap.xml` è una rotta, non un
 file: legge il database a ogni richiesta e finisce in cache come le altre
 pagine. Non c'è niente da rigenerare quando pubblichi — l'indirizzo lo

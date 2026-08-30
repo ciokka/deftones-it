@@ -40,7 +40,11 @@ $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 // ------------------------------------------------------- cache pubblica
 // Serviamo dalla cache solo le pagine pubbliche a visitatori non loggati.
-$cachabile = $metodo === 'GET' && !str_starts_with($percorso, '/admin') && !loggato();
+// La ricerca resta fuori dalla cache: la chiave è il percorso, e
+// /cerca?q=milano e /cerca?q=chi hanno lo stesso percorso — si
+// servirebbero i risultati l'uno dell'altro.
+$cachabile = $metodo === 'GET' && $percorso !== '/cerca'
+          && !str_starts_with($percorso, '/admin') && !loggato();
 if ($cachabile && ($html = cacheLeggi($percorso)) !== null) {
     // La cache conserva il corpo della pagina, non le sue intestazioni:
     // il tipo di contenuto va rimesso a mano, altrimenti feed e sitemap
@@ -238,6 +242,65 @@ elseif (preg_match('#^/tag/(.+)$#', $percorso, $m)) {
     $html = render('lista', ['articoli' => $q->fetchAll(), 'intestazione' => '#' . $tg],
         ['titolo'   => '#' . $tg . ' — deftones.it',
          'canonico' => cfg('site_url') . u('tag/' . rawurlencode($tg) . '/')]);
+}
+
+// --- ricerca
+elseif ($percorso === '/cerca') {
+    $q = trim((string)($_GET['q'] ?? ''));
+    $q = mb_substr($q, 0, 80);
+    $articoli = [];
+    $errore = null;
+
+    if ($q !== '') {
+        // Modalità booleana con +parola*: tutte le parole devono esserci
+        // (altrimenti "deftones milano" restituisce mezzo sito) e ognuna
+        // vale anche come prefisso, così "chitarr" trova "chitarre" e
+        // "chitarrista". I caratteri che in questa modalità hanno un
+        // significato — + - * " ( ) ~ < > @ — vengono tolti prima, o
+        // basterebbe una parentesi storta per far fallire la query.
+        $parole = preg_split('/[^\p{L}\p{N}]+/u', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $parole = array_slice(array_filter($parole, fn($p) => mb_strlen($p) >= 3), 0, 6);
+
+        if (!$parole) {
+            $errore = 'Cerca una parola di almeno tre lettere.';
+        } else {
+            $espressione = implode(' ', array_map(fn($p) => '+' . $p . '*', $parole));
+            $st = $pdo->prepare(
+                'SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
+                        fonte_nome, pubblicato_il,
+                        MATCH(titolo_it, sommario_it, corpo_it)
+                          AGAINST (? IN BOOLEAN MODE) AS punti
+                   FROM ' . t('articles') . "
+                  WHERE stato = 'pubblicato'
+                    AND MATCH(titolo_it, sommario_it, corpo_it)
+                        AGAINST (? IN BOOLEAN MODE)
+                  ORDER BY punti DESC, pubblicato_il DESC
+                  LIMIT 60");
+            try {
+                $st->execute([$espressione, $espressione]);
+                $articoli = $st->fetchAll();
+            } catch (Throwable) {
+                // L'indice su tre colonne potrebbe non essere ancora
+                // stato creato: si ripiega su quello dello schema
+                // iniziale, che c'è di sicuro.
+                $st = $pdo->prepare(
+                    'SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
+                            fonte_nome, pubblicato_il,
+                            MATCH(titolo_it, sommario_it) AGAINST (? IN BOOLEAN MODE) AS punti
+                       FROM ' . t('articles') . "
+                      WHERE stato = 'pubblicato'
+                        AND MATCH(titolo_it, sommario_it) AGAINST (? IN BOOLEAN MODE)
+                      ORDER BY punti DESC, pubblicato_il DESC
+                      LIMIT 60");
+                $st->execute([$espressione, $espressione]);
+                $articoli = $st->fetchAll();
+            }
+        }
+    }
+
+    $html = render('cerca', ['q' => $q, 'articoli' => $articoli, 'errore' => $errore], [
+        'titolo' => ($q !== '' ? '"' . $q . '" — ' : '') . 'Cerca su deftones.it',
+    ]);
 }
 
 // --- indice delle raccolte
