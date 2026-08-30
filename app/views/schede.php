@@ -2,10 +2,16 @@
 /**
  * Le schede di un elenco, nude: nessun contenitore, nessun titolo.
  *
- * Sta in un file suo perché lo rendono in due modi diversi — la pagina
- * intera e il pezzo che arriva col "carica altro" — e due copie dello
- * stesso markup sarebbero divergute alla prima modifica.
+ * Sta in un file suo perché la rendono in quattro posti — la home,
+ * l'archivio delle notizie, le liste di categoria e tag, e il pezzo che
+ * arriva col "carica altro". Erano quattro copie dello stesso markup, e
+ * si è visto subito cosa comporta: aggiungendo il bollo "hot" alla
+ * copia condivisa, nella home non compariva perché lì ce n'era un'altra.
+ *
+ * $taglio, se impostato prima del require, cambia dove si tronca il
+ * sommario: nella home le schede stanno in colonne più strette.
  */
+$taglio = $taglio ?? 170;
 ?>
 <?php foreach ($articoli as $a): ?>
   <article class="scheda">
@@ -15,7 +21,7 @@
       <?= etichettaHot($a['rilevanza'] ?? null) ?>
     </div>
     <h2><a href="<?= u('notizie/' . $a['slug'] . '/') ?>"><?= e($a['titolo_it']) ?></a></h2>
-    <p class="sommario"><?= e(mb_substr($a['sommario_it'], 0, 170)) ?>…</p>
+    <p class="sommario"><?= e(mb_substr($a['sommario_it'], 0, $taglio)) ?>…</p>
     <div class="piede">
       <p class="fonte"><?= $a['fonte_nome'] ? e($a['fonte_nome']) : bollino() ?></p>
       <?= condividiMini($a['slug'], $a['titolo_it']) ?>

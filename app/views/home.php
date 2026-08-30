@@ -49,20 +49,7 @@
 
   <?php if ($articoli): ?>
   <div class="elenco">
-    <?php foreach ($articoli as $a): ?>
-      <article class="scheda">
-        <div class="meta">
-          <span class="etichetta et-<?= e($a['categoria']) ?>"><?= e($a['categoria']) ?></span>
-          <time datetime="<?= e($a['pubblicato_il']) ?>"><?= e(quandoIt($a['pubblicato_il'])) ?></time>
-        </div>
-        <h2><a href="<?= u('notizie/' . $a['slug'] . '/') ?>"><?= e($a['titolo_it']) ?></a></h2>
-        <p class="sommario"><?= e(mb_substr($a['sommario_it'], 0, 150)) ?>…</p>
-        <div class="piede">
-          <p class="fonte"><?= $a['fonte_nome'] ? e($a['fonte_nome']) : bollino() ?></p>
-          <?= condividiMini($a['slug'], $a['titolo_it']) ?>
-        </div>
-      </article>
-    <?php endforeach ?>
+    <?php $taglio = 150; require __DIR__ . '/schede.php'; ?>
   </div>
   <?php endif ?>
 
