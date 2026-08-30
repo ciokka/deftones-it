@@ -409,9 +409,24 @@ body { overflow-x: clip; }
 .carosello-punto span {
   display: block; width: 2px; height: 2rem;
   background: rgba(255,255,255,.28);
-  transition: background .25s, height .25s;
+  transition: background .25s, height .25s, width .25s;
 }
 .carosello-punto.attivo span { height: 2.6rem; }
+
+/* Sul telefono le frecce non ci sono e la colonna sul fianco stringerebbe
+   il titolo, che lì è la pagina: gli indicatori scendono sotto il banner,
+   in riga, e le stanghette tornano coricate. */
+@media (max-width: 47.99rem) {
+  .carosello-guida {
+    position: static; transform: none;
+    flex-direction: row; justify-content: center;
+    margin: .75rem auto 0; padding: 0 1.5rem;
+  }
+  .carosello-punti { flex-direction: row; }
+  .carosello-punto { padding: .6rem .25rem; }
+  .carosello-punto span { width: 2.2rem; height: 2px; }
+  .carosello-punto.attivo span { width: 2.8rem; height: 2px; }
+}
 .carosello-punto:hover span { background: rgba(255,255,255,.45); }
 .carosello-punto.attivo span { background: var(--accento); }
 
@@ -495,10 +510,13 @@ body { overflow-x: clip; }
   margin: 0 auto;
   padding: 0 1.5rem;
 }
-/* Sul telefono i comandi del carosello stanno sul bordo destro, dove
-   non c'è margine da avanzare: il testo si tira indietro per non
-   finirci sotto. */
-@media (max-width: 62rem) { .hero-interno { padding-right: 3rem; } }
+/* Fra i 48 e i 62rem i comandi stanno sul fianco destro ma il
+   contenitore non ha ancora margine da avanzare: lì, e solo lì, il testo
+   si tira indietro per non finirci sotto. Più stretto scendono sotto il
+   banner, più largo c'è spazio di suo. */
+@media (min-width: 48rem) and (max-width: 62rem) {
+  .hero-interno { padding-right: 3rem; }
+}
 .hero-testo { max-width: 44rem; }
 .hero-testo .meta { margin-bottom: .55rem; }
 /* Nel banner il titolo resta lo stesso serif, solo un po' più raccolto:
