@@ -332,6 +332,23 @@ name", che è la stessa informazione detta dopo invece che prima. Negli
 script PHP il controllo si fa con `SHOW COLUMNS`, che richiede solo il
 permesso di leggere la tabella.
 
+**Il sito è senza cookie, e non per caso.** Nessuna pagina pubblica manda
+un `Set-Cookie`, e nessuna carica niente da server di altri: i caratteri
+sono ospitati qui e non su Google Fonts, le fotografie di Wikimedia sono
+copiate sul server e non richiamate da lì, i pulsanti di condivisione
+sono collegamenti e non widget. Aprendo una pagina il browser di chi
+legge contatta solo deftones.it.
+
+Sono le due cose — font remoti e immagini richiamate da terzi — che di
+solito fanno perdere le cause sul GDPR, e la conseguenza pratica è che
+**non serve nessun banner**. Vale la pena non rovinarlo: il giorno che si
+aggiunge uno strumento di statistica, un video incorporato o un pulsante
+ufficiale di un social, il banner diventa obbligatorio e con lui tutto
+quello che si porta dietro.
+
+L'informativa in /privacy resta comunque necessaria, perché i log del
+server registrano gli indirizzi IP.
+
 **Un testo senza fonti non si pubblica.** Gli strumenti che scrivono
 cercando sul web — le schede dei dischi e gli articoli su richiesta —
 scartano il risultato se il modello non ha consultato nessuna fonte. Non

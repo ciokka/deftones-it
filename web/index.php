@@ -165,6 +165,7 @@ elseif ($percorso === '/sitemap.xml') {
     $voci = [[u(''), $articoli[0]['pubblicato_il'] ?? null]];
     if ($raccolte) { $voci[] = [u('raccolte/'), $raccolte[0]['aggiornato_il']]; }
     $voci[] = [u('notizie'), $articoli[0]['pubblicato_il'] ?? null];
+    $voci[] = [u('privacy'), null];
     if ($dischi)   { $voci[] = [u('discografia/'), null]; }
     foreach ($dischi as $x) { $voci[] = [u('discografia/' . $x['slug'] . '/'), null]; }
     foreach ($categorie as $c) { $voci[] = [u('categoria/' . $c['categoria'] . '/'), $c['ultima']]; }
@@ -187,6 +188,16 @@ elseif ($percorso === '/sitemap.xml') {
     if ($cachabile) { cacheScrivi($percorso, $x); }
     echo $x;
     exit;
+}
+
+// --- privacy
+elseif ($percorso === '/privacy') {
+    $html = render('privacy', ['aggiornata' => '2026-08-30'], [
+        'titolo'      => 'Privacy — deftones.it',
+        'descrizione' => 'Questo sito non usa cookie e non carica niente da server '
+                       . 'di altri. Cosa viene raccolto e cosa no.',
+        'canonico'    => cfg('site_url') . u('privacy'),
+    ]);
 }
 
 // --- archivio delle notizie, con filtri e pagine

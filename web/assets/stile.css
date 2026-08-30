@@ -468,6 +468,13 @@ body { overflow-x: clip; }
   letter-spacing: .02em;
 }
 
+/* ------------------------------------------------- pagine di testo */
+
+.pagina-testo h1 { margin-bottom: 2rem; }
+.pagina-testo .occhiello { max-width: none; margin-bottom: 2.5rem; font-size: 1.0625rem; }
+.pagina-testo h3 { margin-top: 2.5rem; }
+.aggiornata { margin-top: 3rem; font-size: .8125rem; color: var(--testo-tenue); }
+
 /* ------------------------------------------------------------- hot */
 /* Il bollo delle notizie che contano. Ambra e non verde: il verde è già
    l'accento di tutto il sito e non spiccherebbe, mentre il rosso su
