@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=58">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=59">
 </head>
 <body>
 
@@ -468,10 +468,14 @@ $voci = [
     el.style.pointerEvents = opacita ? 'auto' : 'none';
   }
 
-  function vaiA(n, asse) {
+  function vaiA(n, asse, forza) {
     asse = asse || 'Y';
     n = ((n % quante) + quante) % quante;
-    if (n === attivo || inMoto) { return; }
+    // Il blocco durante la transizione serve ai comandi, non allo
+    // scorrimento: lì la posizione è già decisa dal dito, e aspettare
+    // significa perdere il turno alla diapositiva di mezzo, che a
+    // scorrere svelti veniva saltata in tutt'e due i sensi.
+    if (n === attivo || (inMoto && !forza)) { return; }
 
     // Avanti l'entrante arriva da sotto (o da destra), indietro dall'alto
     // (o da sinistra). Il giro completo 2→0 conta come "avanti".
@@ -572,7 +576,7 @@ $voci = [
   }
 
   function applica() {
-    if (!inMoto && desiderato !== attivo) { vaiA(desiderato, 'Y'); }
+    if (desiderato !== attivo) { vaiA(desiderato, 'Y', true); }
   }
 
   var inAttesa = false;
@@ -580,7 +584,15 @@ $voci = [
     var totale = corsa();
     if (totale < 50) { return; }              // niente aggancio: mobile
     var fatto = Math.min(Math.max(window.pageYOffset - inizio(), 0), totale);
-    var n = Math.min(quante - 1, Math.floor(fatto / totale * quante));
+    var p = fatto / totale;
+
+    // Le fette non sono uguali. La prima notizia si vede già prima di
+    // scorrere, quindi le basta un quinto della corsa: così il primo
+    // cambio arriva presto. Le altre si dividono il resto in parti
+    // uguali, e ne hanno abbastanza per farsi leggere.
+    var n;
+    if (p < 0.2) { n = 0; }
+    else { n = Math.min(quante - 1, 1 + Math.floor((p - 0.2) / 0.8 * (quante - 1))); }
     if (n !== desiderato) { desiderato = n; applica(); }
   }
 
@@ -600,8 +612,10 @@ $voci = [
     // sta, altrimenti il primo movimento di rotella le rimetterebbe dove
     // dice lo scorrimento.
     portaA = function (n) {
-      var passo = corsa() / quante;
-      window.scrollTo({ top: inizio() + passo * n + passo / 2, behavior: 'smooth' });
+      // Il centro della fetta che spetta a quella diapositiva, con le
+      // stesse proporzioni usate qui sopra.
+      var p = n === 0 ? 0.1 : 0.2 + 0.8 * ((n - 0.5) / (quante - 1));
+      window.scrollTo({ top: inizio() + corsa() * p, behavior: 'smooth' });
     };
   }
 
