@@ -342,6 +342,69 @@ body { overflow-x: clip; }
 
 .apertura { padding: 4rem 0 3rem; border-bottom: 1px solid var(--bordo); }
 
+/* ----------------------------------------------------- il carosello */
+/* Le prime tre notizie in una pista che scorre. Lo scorrimento è del
+   browser — scroll-snap — quindi col dito funziona anche senza
+   JavaScript, con l'inerzia giusta di ogni sistema. Lo script aggiunge
+   soltanto gli indicatori, le frecce e l'avanzamento automatico.
+   Nessun margine in alto: comincia dove finisce la testata, e il -1px
+   chiude il filo di fondo che resterebbe fra i due. */
+.carosello { position: relative; margin: -1px calc(50% - 50vw) 1.5rem; }
+
+.carosello-piste {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;              /* la barra qui è solo rumore */
+  overscroll-behavior-x: contain;     /* niente "indietro" del browser scorrendo */
+}
+.carosello-piste::-webkit-scrollbar { display: none; }
+@media (prefers-reduced-motion: reduce) { .carosello-piste { scroll-behavior: auto; } }
+
+.carosello .apertura { flex: 0 0 100%; scroll-snap-align: start; }
+
+/* Una diapositiva senza fotografia tiene la stessa altezza delle altre,
+   o la pista si accorcerebbe scorrendo. Sotto resta il pattern del
+   fondo, che è meglio di un buco. */
+.carosello .apertura:not(.hero) {
+  display: flex; flex-direction: column; justify-content: flex-end;
+  height: min(80vh, 33rem); min-height: 27rem;
+  padding: 0; border-bottom: 0;
+}
+@media (min-width: 40rem) { .carosello .apertura:not(.hero) { height: min(70vh, 34rem); } }
+@media (min-width: 64rem) { .carosello .apertura:not(.hero) { height: min(72vh, 38rem); } }
+
+/* Gli indicatori stanno sotto la pista e dentro la colonna, non sopra la
+   foto: là in mezzo darebbero fastidio al titolo e al credito. */
+.carosello-guida {
+  display: flex; align-items: center; justify-content: flex-end; gap: .5rem;
+  width: 100%; max-width: var(--larghezza);
+  margin: .75rem auto 0; padding: 0 1.5rem;
+}
+.carosello-punti { display: flex; gap: .3rem; }
+.carosello-punto { border: 0; background: none; padding: .6rem .25rem; cursor: pointer; }
+.carosello-punto span {
+  display: block; width: 2.2rem; height: 2px;
+  background: rgba(255,255,255,.22);
+  transition: background .25s;
+}
+.carosello-punto:hover span { background: rgba(255,255,255,.45); }
+.carosello-punto.attivo span { background: var(--accento); }
+
+/* Le frecce servono a chi ha il mouse: col dito si scorre e basta. */
+.carosello-freccia { display: none; }
+@media (min-width: 48rem) {
+  .carosello-freccia {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem;
+    border: 1px solid var(--bordo); border-radius: 2px;
+    background: none; color: var(--testo-tenue); cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  .carosello-freccia:hover { color: var(--accento); border-color: var(--accento-scuro); }
+}
+
 /* ------------------------------------------------------- il banner */
 /* Il primo articolo della home, quando ha una foto: l'immagine esce dal
    contenitore e va da bordo a bordo, il testo resta nella colonna.
@@ -352,9 +415,7 @@ body { overflow-x: clip; }
   position: relative;
   isolation: isolate;          /* i piani negativi restano dentro al banner */
   overflow: hidden;
-  /* Nessun margine in alto: il banner comincia dove finisce la testata.
-     Il -1px chiude il filo di fondo che resterebbe fra i due. */
-  margin: -1px calc(50% - 50vw) 1.5rem;
+  margin: 0;   /* a uscire dal contenitore ci pensa .carosello */
   padding: 0;
   border-bottom: 0;
   display: flex;

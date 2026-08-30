@@ -5,47 +5,74 @@
   </div>
 <?php else: ?>
 
-  <?php $primo = array_shift($articoli); ?>
-  <?php $conFoto = copertinaImg($primo, true); ?>
+  <?php /* Le prime tre notizie diventano le diapositive dell'apertura.
+           La pista scorre con scroll-snap, che è del browser: col dito
+           funziona anche senza JavaScript, e lo script aggiunge soltanto
+           gli indicatori, le frecce e l'avanzamento automatico. */ ?>
+  <?php $primi = array_splice($articoli, 0, 3); ?>
 
-  <article class="apertura<?= $conFoto ? ' hero' : '' ?>">
-    <?php if ($conFoto): ?>
-      <?php /* Il banner: la foto riempie il riquadro, il testo ci sta
-               sopra. Non avvolgo tutto in un <a> perché dentro ci va il
-               credito, che è a sua volta un link e non può stare dentro
-               un altro link: il collegamento lo stende il titolo, con un
-               ::after che copre tutto il banner. */ ?>
-      <div class="hero-foto"><?= $conFoto ?></div>
-      <div class="hero-velo" aria-hidden="true"></div>
+  <div class="carosello"<?= count($primi) > 1 ? ' data-carosello' : '' ?>>
+    <div class="carosello-piste">
+      <?php foreach ($primi as $n => $primo): ?>
+        <?php $conFoto = copertinaImg($primo, $n === 0); ?>
+        <article class="apertura<?= $conFoto ? ' hero' : '' ?>"
+                 aria-label="Apertura <?= $n + 1 ?> di <?= count($primi) ?>">
+          <?php if ($conFoto): ?>
+            <div class="hero-foto"><?= $conFoto ?></div>
+            <div class="hero-velo" aria-hidden="true"></div>
+          <?php endif ?>
+
+          <div class="hero-interno">
+            <div class="hero-testo">
+              <div class="meta">
+                <span class="etichetta et-<?= e($primo['categoria']) ?>"><?= e($primo['categoria']) ?></span>
+                <?php if ($primo['attendibilita'] !== 'confermato'): ?>
+                  <span class="etichetta et-dubbio"><?= e($primo['attendibilita']) ?></span>
+                <?php endif ?>
+                <time datetime="<?= e($primo['pubblicato_il']) ?>"><?= e(quandoIt($primo['pubblicato_il'])) ?></time>
+                <?= etichettaHot($primo['rilevanza'] ?? null) ?>
+              </div>
+              <h1><a href="<?= u('notizie/' . $primo['slug'] . '/') ?>"><?= e($primo['titolo_it']) ?></a></h1>
+              <p class="sommario"><?= e(mb_substr($primo['sommario_it'], 0, 260)) ?><?= mb_strlen($primo['sommario_it']) > 260 ? '…' : '' ?></p>
+            </div>
+
+            <div class="piede">
+              <?php if ($primo['fonte_nome']): ?>
+                <p class="fonte">Fonte: <?= e($primo['fonte_nome']) ?></p>
+              <?php else: ?>
+                <p class="fonte"><?= bollino() ?></p>
+              <?php endif ?>
+              <div class="piede-destra">
+                <?= creditoImmagine($primo, 'p') ?>
+                <?= condividiMini($primo['slug'], $primo['titolo_it']) ?>
+              </div>
+            </div>
+          </div>
+        </article>
+      <?php endforeach ?>
+    </div>
+
+    <?php if (count($primi) > 1): ?>
+      <div class="carosello-guida">
+        <button class="carosello-freccia" type="button" data-vai="-1" aria-label="Notizia precedente">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor"
+               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 2.5 4.5 8l5.5 5.5"/></svg>
+        </button>
+        <div class="carosello-punti">
+          <?php foreach ($primi as $n => $x): ?>
+            <button class="carosello-punto<?= $n === 0 ? ' attivo' : '' ?>" type="button"
+                    data-punto="<?= $n ?>" aria-label="Vai alla notizia <?= $n + 1 ?>"><span></span></button>
+          <?php endforeach ?>
+        </div>
+        <button class="carosello-freccia" type="button" data-vai="1" aria-label="Notizia successiva">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor"
+               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 2.5 11.5 8 6 13.5"/></svg>
+        </button>
+      </div>
     <?php endif ?>
-
-    <div class="hero-interno">
-    <div class="hero-testo">
-      <div class="meta">
-        <span class="etichetta et-<?= e($primo['categoria']) ?>"><?= e($primo['categoria']) ?></span>
-        <?php if ($primo['attendibilita'] !== 'confermato'): ?>
-          <span class="etichetta et-dubbio"><?= e($primo['attendibilita']) ?></span>
-        <?php endif ?>
-        <time datetime="<?= e($primo['pubblicato_il']) ?>"><?= e(quandoIt($primo['pubblicato_il'])) ?></time>
-        <?= etichettaHot($primo['rilevanza'] ?? null) ?>
-      </div>
-      <h1><a href="<?= u('notizie/' . $primo['slug'] . '/') ?>"><?= e($primo['titolo_it']) ?></a></h1>
-      <p class="sommario"><?= e(mb_substr($primo['sommario_it'], 0, 260)) ?><?= mb_strlen($primo['sommario_it']) > 260 ? '…' : '' ?></p>
-    </div>
-
-    <div class="piede">
-      <?php if ($primo['fonte_nome']): ?>
-        <p class="fonte">Fonte: <?= e($primo['fonte_nome']) ?></p>
-      <?php else: ?>
-        <p class="fonte"><?= bollino() ?></p>
-      <?php endif ?>
-      <div class="piede-destra">
-        <?= creditoImmagine($primo, 'p') ?>
-        <?= condividiMini($primo['slug'], $primo['titolo_it']) ?>
-      </div>
-    </div>
-    </div>
-  </article>
+  </div>
 
   <?php if ($articoli): ?>
   <div class="elenco">

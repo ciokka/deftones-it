@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=48">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=49">
 </head>
 <body>
 
@@ -431,6 +431,81 @@ $voci = [
         delete b.dataset.occupato;
       });
   });
+})();
+
+// Il carosello dell'apertura.
+//
+// Lo scorrimento vero e proprio non lo fa questo codice: lo fa il
+// browser con scroll-snap, e col dito funziona anche se lo script non
+// arriva mai. Qui ci sono solo gli indicatori, le frecce e
+// l'avanzamento automatico.
+(function () {
+  var box = document.querySelector('[data-carosello]');
+  if (!box) { return; }
+  var pista = box.querySelector('.carosello-piste');
+  var punti = box.querySelectorAll('.carosello-punto');
+  var quante = pista.children.length;
+  if (quante < 2) { return; }
+
+  var attivo = 0, fermo = false, attesa = null;
+
+  function vaiA(n) {
+    attivo = (n + quante) % quante;
+    pista.scrollTo({ left: pista.clientWidth * attivo, behavior: 'smooth' });
+  }
+
+  function segna() {
+    var n = Math.round(pista.scrollLeft / pista.clientWidth);
+    if (n === attivo || n < 0 || n >= quante) { return; }
+    attivo = n;
+    for (var i = 0; i < punti.length; i++) {
+      punti[i].classList.toggle('attivo', i === attivo);
+    }
+  }
+
+  // Lo scorrimento genera decine di eventi al secondo: si aggiorna una
+  // volta per fotogramma invece che a ogni evento.
+  var inCoda = false;
+  pista.addEventListener('scroll', function () {
+    if (inCoda) { return; }
+    inCoda = true;
+    requestAnimationFrame(function () { inCoda = false; segna(); });
+  }, { passive: true });
+
+  for (var i = 0; i < punti.length; i++) {
+    (function (n) {
+      punti[n].addEventListener('click', function () { basta(); vaiA(n); });
+    })(i);
+  }
+  var frecce = box.querySelectorAll('.carosello-freccia');
+  for (var j = 0; j < frecce.length; j++) {
+    (function (f) {
+      f.addEventListener('click', function () {
+        basta();
+        vaiA(attivo + parseInt(f.getAttribute('data-vai'), 10));
+      });
+    })(frecce[j]);
+  }
+
+  // L'avanzamento automatico si ferma per sempre appena tocchi qualcosa:
+  // una pagina che continua a muoversi mentre stai leggendo è la ragione
+  // per cui i caroselli hanno la fama che hanno.
+  function basta() {
+    fermo = true;
+    clearInterval(attesa);
+  }
+  ['pointerdown', 'touchstart', 'keydown', 'wheel'].forEach(function (e) {
+    box.addEventListener(e, basta, { passive: true, once: true });
+  });
+  box.addEventListener('focusin', basta);
+
+  // Niente movimento se il sistema dice di non muovere niente, e niente
+  // avanzamento mentre la scheda è in secondo piano.
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+  attesa = setInterval(function () {
+    if (fermo || document.hidden) { return; }
+    vaiA(attivo + 1);
+  }, 7000);
 })();
 
 // Il clic sulla facciata di un video la sostituisce col video vero.
