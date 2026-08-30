@@ -368,19 +368,41 @@ body { overflow-x: clip; }
 @media (min-width: 40rem) { .apertura.hero { height: min(70vh, 34rem); } }
 @media (min-width: 64rem) { .apertura.hero { height: min(72vh, 38rem); } }
 
-.hero-foto, .hero-velo { position: absolute; inset: 0; z-index: -1; }
+/* La foto non finisce sul nero: si dissolve.
+   Prima il fondo del banner sfumava verso il nero pieno, e quel nero
+   COPRIVA le lettere dello sfondo — si vedeva una fascia scura netta con
+   il pattern tagliato di sotto. Adesso a sfumare è l'immagine stessa,
+   con una maschera: dove l'immagine si dirada, le lettere che si muovono
+   ricompaiono attraverso. Nessuno stacco, perché non c'è più niente che
+   copra.
+   Molte tappe ravvicinate invece di poche: una sfumatura con tre punti
+   mostra le fasce, con sette scende senza che si veda il salto. */
+.apertura.hero {
+  --sfuma-banner: linear-gradient(to bottom,
+      rgba(0,0,0,1) 0%,  rgba(0,0,0,.98) 30%, rgba(0,0,0,.88) 46%,
+      rgba(0,0,0,.66) 62%, rgba(0,0,0,.38) 78%, rgba(0,0,0,.14) 90%,
+      rgba(0,0,0,0) 100%);
+}
+.hero-foto, .hero-velo {
+  position: absolute; inset: 0; z-index: -1;
+  -webkit-mask-image: var(--sfuma-banner);
+  mask-image: var(--sfuma-banner);
+}
 .hero-foto img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; }
 .hero-foto svg { display: block; width: 100%; height: 100%; }
 
 /* In basso la velatura arriva al nero pieno, non a un grigio: così la
    foto sfuma nella pagina invece di finire con un taglio netto. E si
    ferma a metà altezza — più su laverebbe l'immagine. */
+/* La velatura non arriva più al nero pieno: quel compito ora ce l'ha la
+   maschera. Le resta il suo mestiere vero, tenere leggibile il testo
+   sopra la parte di foto ancora visibile. */
 .hero-velo {
   background:
     linear-gradient(to top,
-      #000 0%, rgba(0,0,0,.88) 14%, rgba(0,0,0,.55) 30%,
-      rgba(0,0,0,.18) 44%, rgba(0,0,0,0) 58%),
-    linear-gradient(to bottom, rgba(0,0,0,.5) 0%, rgba(0,0,0,0) 26%);
+      rgba(0,0,0,.84) 0%, rgba(0,0,0,.62) 26%, rgba(0,0,0,.3) 50%,
+      rgba(0,0,0,.08) 72%, rgba(0,0,0,0) 88%),
+    linear-gradient(to bottom, rgba(0,0,0,.45) 0%, rgba(0,0,0,0) 24%);
 }
 
 /* Il testo torna nella colonna del resto della pagina. Volutamente NON
