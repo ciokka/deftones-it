@@ -135,6 +135,7 @@ function claudeJson(string $system, string $prompt, array $schema, int $maxToken
 function claudeConRicerca(string $sistema, string $prompt,
                           int $maxRicerche = 8, int $maxRiprese = 4): array
 {
+    $erroriRicerca = [];
     $messaggi = [['role' => 'user', 'content' => $prompt]];
     $testo = '';
     $fonti = [];
@@ -170,6 +171,7 @@ function claudeConRicerca(string $sistema, string $prompt,
         $grezzo = $r['grezzo'] ?? null;
         if (!$grezzo) {
             return ['ok' => false, 'testo' => '', 'fonti' => [],
+            'errori_ricerca' => $erroriRicerca,
                     'in' => $in, 'out' => $out, 'errore' => $r['errore']];
         }
 
@@ -193,6 +195,14 @@ function claudeConRicerca(string $sistema, string $prompt,
                             $fonti[$ris['url']] = $ris['title'] ?? $ris['url'];
                         }
                     }
+                } elseif (is_array($c)) {
+                    // Una ricerca fallita — limite di utilizzo esaurito,
+                    // servizio non raggiungibile — arriva come oggetto e
+                    // non come lista. Prima veniva ignorata in silenzio,
+                    // e il modello finiva per scrivere una spiegazione al
+                    // posto del testo richiesto. Adesso chi ha chiamato
+                    // lo viene a sapere.
+                    $erroriRicerca[] = (string)($c['error_code'] ?? 'errore sconosciuto');
                 }
             }
         }
@@ -202,6 +212,7 @@ function claudeConRicerca(string $sistema, string $prompt,
         // niente — il server riconosce la ricerca in coda e prosegue.
         if (($grezzo['stop_reason'] ?? '') !== 'pause_turn') {
             return ['ok' => true, 'testo' => $testo, 'fonti' => $fonti,
+            'errori_ricerca' => $erroriRicerca,
                     'in' => $in, 'out' => $out,
                     'cache_letti' => $letti, 'cache_scritti' => $scritti,
                     'errore' => null];
@@ -210,6 +221,7 @@ function claudeConRicerca(string $sistema, string $prompt,
     }
 
     return ['ok' => $testo !== '', 'testo' => $testo, 'fonti' => $fonti,
+            'errori_ricerca' => $erroriRicerca,
             'in' => $in, 'out' => $out,
             'errore' => $testo === '' ? 'esaurite le riprese senza risposta' : null];
 }

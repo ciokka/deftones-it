@@ -119,7 +119,22 @@ function dataDiConsenso(array $rel): ?string
     return $vincitrice;
 }
 
-/** La pubblicazione da cui prendere tracklist ed etichetta. */
+/**
+ * La pubblicazione da cui prendere tracklist ed etichetta.
+ *
+ * A parità di data vince quella con MENO brani. Delle sette stampe di
+ * White Pony datate 20 giugno 2000, quattro ne hanno dodici e tre undici:
+ * la dodicesima è una bonus track, e il disco sono undici. Le bonus track
+ * si aggiungono a un album, non lo compongono, quindi il minimo è il
+ * disco vero.
+ */
+function quantiBrani(array $r): int
+{
+    $n = 0;
+    foreach ($r['media'] ?? [] as $m) { $n += (int)($m['track-count'] ?? 0); }
+    return $n ?: 999;
+}
+
 function pubblicazioneMigliore(array $rel, ?string $data): ?array
 {
     $filtra = function (array $r) use ($data): bool {
@@ -133,7 +148,8 @@ function pubblicazioneMigliore(array $rel, ?string $data): ?array
     ] as $regola) {
         $buone = array_values(array_filter($rel, $regola));
         if ($buone) {
-            usort($buone, fn($a, $b) => strcmp((string)($a['date'] ?? '9999'), (string)($b['date'] ?? '9999')));
+            usort($buone, fn($a, $b) => quantiBrani($a) <=> quantiBrani($b)
+                                     ?: strcmp((string)($a['date'] ?? '9999'), (string)($b['date'] ?? '9999')));
             return $buone[0];
         }
     }
@@ -160,7 +176,7 @@ if ($faiTrack) {
         if (empty($d['mbid']))                      { dlog('  senza mbid: ' . $d['slug']); $saltati++; continue; }
         if ($d['tracklist'] && !$rifai)             { $saltati++; continue; }
 
-        $rg = mb('release?release-group=' . $d['mbid'] . '&fmt=json&limit=100&inc=labels');
+        $rg = mb('release?release-group=' . $d['mbid'] . '&fmt=json&limit=100&inc=labels+media');
         $data = dataDiConsenso($rg['releases'] ?? []);
         $scelta = pubblicazioneMigliore($rg['releases'] ?? [], $data);
         if (!$scelta) { dlog('  nessuna pubblicazione: ' . $d['titolo']); $saltati++; continue; }
@@ -246,6 +262,20 @@ if ($faiSchede) {
 
         if (!$r['ok'] || trim($r['testo']) === '') {
             allarme('Scheda fallita per ' . $d['titolo'] . ': ' . ($r['errore'] ?? 'testo vuoto'), 'dischi');
+            continue;
+        }
+
+        // Nessuna fonte consultata, nessuna scheda. Non è una precauzione
+        // teorica: quando il limite del tool di ricerca si è esaurito, il
+        // modello ha scritto una spiegazione del perché non poteva farlo
+        // — e quella spiegazione è finita pubblicata come scheda di White
+        // Pony. Un testo che doveva poggiare su fonti e non ne ha nessuna
+        // non è una scheda corta: è un'altra cosa.
+        if (!$r['fonti']) {
+            allarme(sprintf('Scheda scartata per %s: nessuna fonte consultata%s',
+                $d['titolo'],
+                $r['errori_ricerca'] ? ' (ricerca: ' . implode(', ', array_unique($r['errori_ricerca'])) . ')' : ''
+            ), 'dischi');
             continue;
         }
         $c = costoEuro($r['in'], $r['out']);

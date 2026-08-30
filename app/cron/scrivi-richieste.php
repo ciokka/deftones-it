@@ -171,6 +171,16 @@ foreach ($attesa as $r) {
     $pdo = db(true);
     $segnaStato = $preparaSegna($pdo);
 
+    // Una ricerca che non ha consultato niente non è una ricerca. Se il
+    // limite del tool si è esaurito, il modello scrive volentieri una
+    // spiegazione del perché non ce l'ha fatta, e senza questo controllo
+    // quella spiegazione diventa un articolo.
+    if ($ric['ok'] && !$ric['fonti']) {
+        $ric['ok'] = false;
+        $ric['errore'] = 'nessuna fonte consultata'
+            . ($ric['errori_ricerca'] ? ' (' . implode(', ', array_unique($ric['errori_ricerca'])) . ')' : '');
+    }
+
     if (!$ric['ok'] || trim($ric['testo']) === '') {
         $segnaStato->execute(['errore', null, null,
             'ricerca fallita: ' . ($ric['errore'] ?? 'nessun risultato'),

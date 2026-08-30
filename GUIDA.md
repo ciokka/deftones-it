@@ -332,6 +332,23 @@ name", che è la stessa informazione detta dopo invece che prima. Negli
 script PHP il controllo si fa con `SHOW COLUMNS`, che richiede solo il
 permesso di leggere la tabella.
 
+**Un testo senza fonti non si pubblica.** Gli strumenti che scrivono
+cercando sul web — le schede dei dischi e gli articoli su richiesta —
+scartano il risultato se il modello non ha consultato nessuna fonte. Non
+è una precauzione teorica: quando il limite del tool di ricerca si è
+esaurito, il modello ha scritto una spiegazione del perché non poteva
+farcela, e quella spiegazione è finita pubblicata come scheda di White
+Pony. Un testo che doveva poggiare su fonti e non ne ha nessuna non è un
+testo corto: è un'altra cosa.
+
+**MusicBrainz è un registro, ma compilato da volontari.** Per White Pony
+dichiara come data d'uscita il 27 aprile 2000, sulla fede di una sola
+pubblicazione, mentre sette portano il 20 giugno — che è la data vera.
+Per questo la data si sceglie per consenso, e non prendendo la più
+vecchia. Stesso criterio per la tracklist: fra le stampe della stessa
+data vince quella con meno brani, perché le bonus track si aggiungono a
+un album e non lo compongono.
+
 **Le copertine non si possono prendere dove capita.** Le foto che
 accompagnano gli articoli dei giornali sono di agenzia o dei fotografi
 accreditati. Prenderne l'`og:image` è quello che fa quasi ogni
