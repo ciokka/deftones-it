@@ -1100,6 +1100,23 @@ figure:has(> img.img-mancante) { display: none; }
 .pieDiPagina a { color: var(--testo-tenue); }
 .pieDiPagina a:hover { color: var(--accento); }
 
+.colofone {
+  display: flex; align-items: center; gap: 1.25rem;
+  margin: 1.5rem 0 0;
+}
+/* Il margine negativo è solo sul contenitore, per riallineare la prima
+   icona col testo sopra: metterlo su ogni collegamento farebbe
+   sovrapporre le aree cliccabili, che è il difetto che si sente col dito
+   e non si vede con gli occhi. */
+.social { display: flex; align-items: center; gap: .35rem; margin-left: -.7rem; }
+.social a {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.5rem; height: 2.5rem;      /* bersaglio da quaranta pixel */
+  color: var(--testo-tenue);
+  transition: color .2s;
+}
+.social a:hover { color: var(--accento); }
+
 /* ----------------------------------------------------------- admin */
 
 .pannello { padding: 3rem 0; }
