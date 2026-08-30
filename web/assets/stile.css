@@ -660,11 +660,10 @@ body { overflow-x: clip; }
 
 /* Immagine sostituita dal segnaposto: niente ombre né bordi doppi, il
    disegno se li porta già dentro. */
-.corpo img.img-mancante {
-  width: 100%;
-  max-width: 32rem;
-  opacity: .8;
-}
+/* Un'immagine che non carica sparisce, con tutto quello che le sta
+   intorno: didascalie e cornici vuote sarebbero peggio del buco. */
+img.img-mancante { display: none; }
+figure:has(> img.img-mancante) { display: none; }
 
 /* Da qui in giù: l'archivio 2002-2021. Vent'anni di HTML scritto da mani
    diverse, quindi lo stile deve reggere qualunque cosa arrivi. */
