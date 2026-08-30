@@ -24,7 +24,13 @@
   </article>
 
   <div class="barra-azioni">
-    <?php foreach ([['pubblica', 'pubblica', ''], ['scarta', 'scarta', ' bottone-tenue']] as [$che, $et, $cl]): ?>
+    <?php /* "con copertina" per prima: è quella che si usa quasi sempre.
+             Ci mette qualche secondo perché scarica davvero la foto. */ ?>
+    <?php foreach ([
+        ['pubblica-copertina', 'pubblica con copertina', ''],
+        ['pubblica',           'pubblica',               ' bottone-tenue'],
+        ['scarta',             'scarta',                 ' bottone-tenue'],
+    ] as [$che, $et, $cl]): ?>
       <form method="post" action="<?= u('admin/azione') ?>" style="display:inline">
         <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
         <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">

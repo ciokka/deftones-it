@@ -253,3 +253,145 @@ function soggettoArticolo(string $titolo, array $tag, array $dischi): array
 
     return ['tipo' => 'foto', 'chiave' => 'band', 'nome' => 'la band'];
 }
+
+// =====================================================================
+//  Assegnare una copertina
+// =====================================================================
+
+/**
+ * Oltre quante volte la stessa busta di un disco non si riusa.
+ * Senza un tetto la home diventa un muro della stessa immagine.
+ */
+const MAX_PER_DISCO = 4;
+
+/** Dove finiscono i file scaricati, sul disco. */
+function cartellaCopertine(): string
+{
+    return rtrim((string)(cfg('media_dir') ?: '/home/bpdefton/public_html/media'), '/')
+         . '/copertine';
+}
+
+/**
+ * Assegna una copertina a un articolo e la scrive nel database.
+ *
+ * Sta qui e non dentro il cron perché la usano in due: il giro
+ * automatico ogni quattro ore, e il pulsante "pubblica con copertina" del
+ * pannello, che la vuole subito su un articolo solo. Due copie della
+ * stessa logica sarebbero divergute — è già successo tre volte in questo
+ * progetto, e ogni volta il sintomo è comparso da tutt'altra parte.
+ *
+ * $a deve contenere almeno id, slug, titolo_it, tag.
+ * Torna ['origine' => 'disco'|'commons'|null, 'nota' => string].
+ */
+function assegnaCopertina(PDO $pdo, array $a, array $dischi, bool $prova = false): array
+{
+    // Le copertine dei dischi si scaricano una volta sola per processo:
+    // venti articoli su 'private music' chiederebbero venti volte lo
+    // stesso file al Cover Art Archive.
+    static $copertineDisco = [];
+    // In prova i contatori del database non avanzano: senza questo ogni
+    // articolo ripescherebbe la stessa foto, e il giro a vuoto mostrerebbe
+    // una monotonia che nella realtà non c'è.
+    static $giaScelte = [];
+
+    $cartella = cartellaCopertine();
+    // Il cron controlla la cartella e si ferma se manca; qui no, perché
+    // chiamata dal pannello questa funzione deve solo fare del suo meglio.
+    if (!$prova && !is_dir($cartella)) { @mkdir($cartella, 0755, true); }
+    $file = $cartella . '/' . $a['slug'] . '.jpg';
+    $tag = json_decode((string)($a['tag'] ?? ''), true) ?: [];
+    $s = soggettoArticolo((string)$a['titolo_it'], $tag, $dischi);
+    $esito = null;
+
+    // --- 1. la copertina del disco, se il titolo nomina un disco ------
+    if ($s['tipo'] === 'disco' && $s['chiave'] !== '') {
+        $rif = 'https://musicbrainz.org/release-group/' . $s['chiave'];
+        $q = $pdo->prepare('SELECT COUNT(*) FROM ' . t('articles') . "
+                             WHERE immagine_origine = 'disco' AND immagine_fonte_url = ?");
+        $q->execute([$rif]);
+
+        if ((int)$q->fetchColumn() < MAX_PER_DISCO) {
+            if (!array_key_exists($s['chiave'], $copertineDisco)) {
+                $copertineDisco[$s['chiave']] = copertinaDisco((string)$s['chiave']);
+            }
+            $dati = $copertineDisco[$s['chiave']];
+            if ($dati !== null && ($prova || @file_put_contents($file, $dati) !== false)) {
+                $esito = [
+                    'url' => '/media/copertine/' . $a['slug'] . '.jpg',
+                    'autore' => null, 'licenza' => 'copertina di ' . $s['nome'],
+                    'licenza_url' => null, 'fonte' => $rif,
+                    'origine' => 'disco', 'img' => null, 'nota' => $s['nome'],
+                ];
+            }
+        }
+    }
+
+    // --- 2. una foto libera dal catalogo ------------------------------
+    if ($esito === null) {
+        $soggetto = $s['tipo'] === 'foto' ? $s['chiave'] : 'band';
+        // Il soggetto giusto ha la precedenza solo finché le sue foto sono
+        // state usate meno di tre volte: di Stephen Carpenter ce ne sono
+        // quattro, e senza quel limite ogni articolo che lo nomina se le
+        // riprenderebbe in giro all'infinito mentre centoventisei foto di
+        // gruppo mai usate stanno lì.
+        // RAND() alla fine perché gli id sono raggruppati per concerto:
+        // ordinando per id, articoli vicini prenderebbero foto della
+        // stessa sera, tutte uguali fra loro.
+        $fuori = $giaScelte ? ' AND id NOT IN (' . implode(',', $giaScelte) . ')' : '';
+        $q = $pdo->prepare('SELECT * FROM ' . t('immagini') . "
+                             WHERE scartata = 0 AND soggetto IN (?, ?) $fuori
+                             ORDER BY (soggetto = ? AND usata < 3) DESC, usata ASC, RAND()
+                             LIMIT 1");
+        $q->execute([$soggetto, 'band', $soggetto]);
+        $img = $q->fetch();
+
+        if ($img) {
+            $dati = $prova ? 'x' : (httpGet((string)$img['url_file'])['body'] ?? null);
+            if ($dati !== null && ($prova || strlen($dati) > 5000)) {
+                if ($prova || @file_put_contents($file, $dati) !== false) {
+                    if ($prova) { $giaScelte[] = (int)$img['id']; }
+                    $esito = [
+                        'url' => '/media/copertine/' . $a['slug'] . '.jpg',
+                        'autore' => $img['autore'], 'licenza' => $img['licenza'],
+                        'licenza_url' => $img['licenza_url'], 'fonte' => $img['url_pagina'],
+                        'origine' => 'commons', 'img' => (int)$img['id'],
+                        'nota' => (string)$img['autore'],
+                    ];
+                }
+            }
+        }
+    }
+
+    // --- 3. niente. Nessun ripiego: si annota solo che si è cercato. ---
+    if ($esito === null) {
+        $esito = ['url' => null, 'autore' => null, 'licenza' => null,
+                  'licenza_url' => null, 'fonte' => null,
+                  'origine' => null, 'img' => null, 'nota' => ''];
+    }
+
+    if (!$prova) {
+        $pdo->prepare('UPDATE ' . t('articles') . '
+             SET immagine_url = ?, immagine_autore = ?, immagine_licenza = ?,
+                 immagine_licenza_url = ?, immagine_fonte_url = ?,
+                 immagine_origine = ?, immagine_cercata_il = NOW()
+           WHERE id = ?')->execute([
+            $esito['url'], $esito['autore'], $esito['licenza'], $esito['licenza_url'],
+            $esito['fonte'], $esito['origine'], $a['id'],
+        ]);
+        if ($esito['img'] !== null) {
+            $pdo->prepare('UPDATE ' . t('immagini') . '
+                 SET usata = usata + 1 WHERE id = ?')->execute([$esito['img']]);
+        }
+    }
+
+    return ['origine' => $esito['origine'], 'nota' => (string)$esito['nota']];
+}
+
+/** I dischi con un mbid, dal più lungo di titolo: serve a soggettoArticolo(). */
+function dischiPerTitolo(PDO $pdo): array
+{
+    return $pdo->query('SELECT titolo, mbid FROM ' . t('albums') . '
+                         WHERE mbid IS NOT NULL
+                         ORDER BY CHAR_LENGTH(titolo) DESC')->fetchAll();
+}
+

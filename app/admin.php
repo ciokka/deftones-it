@@ -158,6 +158,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {
                             WHERE id = ? AND stato = \'draft\'')->execute([$id]);
             $n = cacheSvuota();
             $messaggio = ['ok', "Pubblicata. Cache svuotata ($n pagine)."];
+        } elseif ($che === 'pubblica-copertina') {
+            // Pubblica e illustra in un gesto solo. Senza, l'articolo
+            // restava spaiato fino al giro delle copertine, che passa
+            // ogni quattro ore: proprio nel momento in cui lo si va a
+            // guardare, appena pubblicato.
+            $pdo->prepare('UPDATE ' . t('articles') . '
+                              SET stato = \'pubblicato\', pubblicato_il = COALESCE(pubblicato_il, NOW())
+                            WHERE id = ? AND stato = \'draft\'')->execute([$id]);
+
+            require_once __DIR__ . '/lib/copertine.php';
+            $q = $pdo->prepare('SELECT id, slug, titolo_it, tag, immagine_url
+                                  FROM ' . t('articles') . ' WHERE id = ?');
+            $q->execute([$id]);
+            $art = $q->fetch();
+
+            if (!$art) {
+                $nota = 'articolo non trovato';
+            } elseif (!empty($art['immagine_url'])) {
+                $nota = 'aveva già una copertina';
+            } else {
+                // Qui si scarica un file: qualche secondo di attesa è
+                // normale, ed è il motivo per cui questo pulsante è
+                // separato da "pubblica" invece di sostituirlo.
+                $r = assegnaCopertina($pdo, $art, dischiPerTitolo($pdo));
+                $nota = match ($r['origine']) {
+                    'disco'   => 'copertina di ' . $r['nota'],
+                    'commons' => 'foto di ' . $r['nota'],
+                    default   => 'nessuna foto adatta trovata',
+                };
+            }
+
+            $n = cacheSvuota();
+            $messaggio = ['ok', "Pubblicata — $nota. Cache svuotata ($n pagine)."];
         } elseif ($che === 'scarta') {
             $pdo->prepare('UPDATE ' . t('articles') . ' SET stato = \'scartato\' WHERE id = ?')
                 ->execute([$id]);

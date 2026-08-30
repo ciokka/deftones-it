@@ -357,6 +357,13 @@ quello che si porta dietro.
 L'informativa in /privacy resta comunque necessaria, perché i log del
 server registrano gli indirizzi IP.
 
+**"Pubblica con copertina" fa il lavoro del cron su un articolo solo.**
+Il giro delle copertine passa ogni quattro ore, e un pezzo appena
+pubblicato resterebbe spaiato proprio nel momento in cui lo vai a
+guardare. Il pulsante scarica la foto subito, quindi ci mette qualche
+secondo: per questo è separato da "pubblica" e non lo sostituisce. La
+scelta è la stessa, perché è la stessa funzione — `assegnaCopertina()`.
+
 **Un testo senza fonti non si pubblica.** Gli strumenti che scrivono
 cercando sul web — le schede dei dischi e gli articoli su richiesta —
 scartano il risultato se il modello non ha consultato nessuna fonte. Non
