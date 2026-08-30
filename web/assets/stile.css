@@ -356,7 +356,11 @@ body { overflow-x: clip; }
      ciascuna, cioè tre o quattro scatti di rotella. È il numero da
      girare se il cambio sembra troppo pronto o troppo pigro. */
   .carosello-aggancio { height: calc(var(--h-apertura) + 105vh); }
-  .carosello-aggancio > .carosello { position: sticky; top: 0; }
+  /* Si aggancia SOTTO la testata, non dietro: l'apertura è alta quanto
+     lo schermo meno la testata, quindi da lì in giù riempie esattamente
+     quello che resta. Con top: 0 sarebbe scivolata sotto, e in fondo
+     sarebbe comparsa una striscia della pagina. */
+  .carosello-aggancio > .carosello { position: sticky; top: var(--h-testata); }
 }
 
 /* ----------------------------------------------------- il carosello */
@@ -383,16 +387,17 @@ body { overflow-x: clip; }
    settanta pixel. La riga con vh resta per i browser che non conoscono
    svh: la seconda sovrascrive la prima dove è capita. */
 .carosello-aggancio {
-  --h-apertura: calc(100vh - 3.5rem);
-  --h-apertura: calc(100svh - 3.5rem);
+  /* Quanto occupa quello che sta sopra l'apertura: la barra del menu sul
+     telefono, la testata da 40rem in su. Una misura sola, usata sia per
+     l'altezza sia per il punto in cui il carosello si aggancia — se
+     fossero due numeri, il giorno che la testata cambia altezza uno dei
+     due resterebbe indietro e comparirebbe una fessura. */
+  --h-testata: 3.5rem;
+  --h-apertura: calc(100vh - var(--h-testata));
+  --h-apertura: calc(100svh - var(--h-testata));
   min-height: 24rem;
 }
-@media (min-width: 40rem) {
-  .carosello-aggancio {
-    --h-apertura: calc(100vh - 5rem);
-    --h-apertura: calc(100svh - 5rem);
-  }
-}
+@media (min-width: 40rem) { .carosello-aggancio { --h-testata: 5rem; } }
 
 .carosello { position: relative; margin: -1px calc(50% - 50vw) 1.5rem; }
 
