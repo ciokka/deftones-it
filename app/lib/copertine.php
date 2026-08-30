@@ -12,16 +12,14 @@
  * Quindi si pesca in tre posti, in quest'ordine:
  *
  *   1. la copertina del disco, quando l'articolo parla di un disco;
- *   2. una foto di Wikimedia Commons con licenza libera;
- *   3. un'immagine generata dalle lettere del pattern del sito.
+ *   2. una foto di Wikimedia Commons con licenza libera.
  *
- * Il terzo non è un ripiego triste: è la garanzia che nessun articolo
- * resti spaiato, e che non si sia mai tentati di prendere una foto che
- * non si può prendere solo perché la pagina veniva brutta.
+ * Se non si trova né l'una né l'altra, l'articolo resta senza copertina.
+ * Non c'è un ripiego: un'immagine generata riempirebbe lo spazio senza
+ * dire niente, e messa accanto a una foto vera si vedrebbe subito che è
+ * un tappabuchi.
  */
 declare(strict_types=1);
-
-require_once __DIR__ . '/copertina-generata.php';
 
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
 

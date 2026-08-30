@@ -212,7 +212,7 @@ $salva = $pdo->prepare('UPDATE ' . t('articles') . '
 $segnaUsata = $pdo->prepare('UPDATE ' . t('immagini') . '
      SET usata = usata + 1 WHERE id = ?');
 
-$conti = ['disco' => 0, 'commons' => 0, 'generata' => 0];
+$conti = ['disco' => 0, 'commons' => 0, 'senza' => 0];
 
 foreach ($articoli as $a) {
     $tag = json_decode((string)$a['tag'], true) ?: [];
@@ -262,15 +262,19 @@ foreach ($articoli as $a) {
         }
     }
 
-    // --- 3. il ripiego: le lettere del pattern ------------------------
+    // --- 3. nessuna copertina ----------------------------------------
+    // Non c'è un ripiego. Un'immagine generata riempirebbe lo spazio
+    // senza dire niente, e accanto a una foto vera si vedrebbe che è un
+    // tappabuchi. immagine_cercata_il resta valorizzata, così l'articolo
+    // non viene ricercato a ogni giro: per riprovarci si usa --rifai.
     if ($esito === null) {
         $esito = ['url' => null, 'autore' => null, 'licenza' => null,
                   'licenza_url' => null, 'fonte' => null,
-                  'origine' => 'generata', 'img' => null, 'nota' => ''];
+                  'origine' => null, 'img' => null, 'nota' => ''];
     }
 
-    $conti[$esito['origine']]++;
-    logline(sprintf('  %-9s %-52s %s', $esito['origine'],
+    $conti[$esito['origine'] ?? 'senza']++;
+    logline(sprintf('  %-9s %-52s %s', $esito['origine'] ?? 'senza',
         mb_substr((string)$a['titolo_it'], 0, 52),
         mb_substr((string)$esito['nota'], 0, 40)), 'copertine');
 
@@ -283,8 +287,8 @@ foreach ($articoli as $a) {
 // La cache va svuotata o le pagine continuerebbero a uscire senza foto.
 if (!$soloProva && array_sum($conti) > 0) { cacheSvuota(); }
 
-logline(sprintf('Fatto in %.1fs — %d da disco, %d da Commons, %d generate',
-    microtime(true) - $avvio, $conti['disco'], $conti['commons'], $conti['generata']), 'copertine');
+logline(sprintf('Fatto in %.1fs — %d da disco, %d da Commons, %d senza',
+    microtime(true) - $avvio, $conti['disco'], $conti['commons'], $conti['senza']), 'copertine');
 logline(str_repeat('-', 60), 'copertine');
 
 if (is_resource($lock)) { flock($lock, LOCK_UN); fclose($lock); }

@@ -220,11 +220,10 @@ function condividiMini(string $slug, string $titolo): string
 /**
  * La copertina di un articolo.
  *
- * Tre casi, che il database distingue con immagine_origine:
- * una foto vera salvata sul nostro disco, l'immagine generata dalle
- * lettere del pattern, o niente. Le foto arrivano da Commons con
- * proporzioni tutte diverse: il ritaglio a 16:9 lo fa il CSS, così una
- * verticale non sfonda la pagina e la fascia resta sempre la stessa.
+ * Due casi: una foto vera salvata sul nostro disco, oppure niente. Le
+ * foto arrivano da Commons con proporzioni tutte diverse: il ritaglio a
+ * 16:9 lo fa il CSS, così una verticale non sfonda la pagina e la fascia
+ * resta sempre la stessa.
  */
 function copertina(array $a, bool $subito = false): string
 {
@@ -236,14 +235,14 @@ function copertina(array $a, bool $subito = false): string
 /**
  * Solo l'immagine, senza cornice né credito. Il banner della home li
  * dispone per conto suo, perché lì il credito va sopra la foto e non
- * sotto.
+ * sotto. Vuoto se l'articolo non ha una copertina: chi la usa deve
+ * saperlo gestire, e la home lo fa disattivando il banner.
  */
 function copertinaImg(array $a, bool $subito = false): string
 {
-    if ((string)($a['immagine_origine'] ?? '') === 'generata') {
-        require_once __DIR__ . '/copertina-generata.php';
-        return copertinaGenerata((string)$a['slug']);
-    }
+    // Nessun ripiego: un articolo senza fotografia vera non ha copertina.
+    // Un'immagine generata riempie lo spazio ma non dice niente, e messa
+    // accanto a una foto vera si vede subito che è un tappabuchi.
     if (empty($a['immagine_url'])) { return ''; }
 
     return '<img src="' . e((string)$a['immagine_url']) . '" alt=""'
@@ -261,6 +260,8 @@ function copertinaImg(array $a, bool $subito = false): string
 function creditoImmagine(array $a, string $tag = 'figcaption'): string
 {
     $o = (string)($a['immagine_origine'] ?? '');
+    // 'generata' non si produce più, ma qualche riga vecchia può ancora
+    // averlo: senza questo controllo mostrerebbe un credito vuoto.
     if ($o === '' || $o === 'generata') { return ''; }
 
     if ($o === 'disco') {

@@ -194,8 +194,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {
             // Due cose insieme, perché è quello che serve davvero: la
             // foto sbagliata sparisce da questo articolo *e* dal
             // catalogo, così il prossimo giro non te la ripropone su un
-            // altro pezzo. Se invece era generata, l'articolo torna solo
-            // in coda e riprova a cercarne una vera.
+            // altro pezzo. E l'articolo torna in coda, così al giro
+            // successivo ne cerca un'altra.
             $q = $pdo->prepare('SELECT slug, immagine_fonte_url, immagine_origine
                                   FROM ' . t('articles') . ' WHERE id = ?');
             $q->execute([$id]);

@@ -379,9 +379,11 @@ accompagnano gli articoli dei giornali sono di agenzia o dei fotografi
 accreditati. Prenderne l'`og:image` è quello che fa quasi ogni
 aggregatore, ed è anche il motivo per cui ogni tanto a qualcuno arriva
 una richiesta di danni a quattro cifre. Quindi si pesca in tre posti, in
-quest'ordine: la copertina del disco se l'articolo parla di un disco, una
-foto libera di Wikimedia Commons, e in mancanza d'altro un'immagine
-generata dalle lettere del pattern.
+quest'ordine: la copertina del disco se l'articolo parla di un disco, e
+una foto libera di Wikimedia Commons. Se non si trova né l'una né
+l'altra, l'articolo resta senza copertina: non c'è un ripiego, perché
+un'immagine generata riempie lo spazio senza dire niente e accanto a una
+foto vera si vede che è un tappabuchi.
 
 Il credito sotto la foto non è una cortesia. Una foto CC BY è libera *a
 condizione* che l'autore sia citato: senza quella riga non stiamo usando
