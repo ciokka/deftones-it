@@ -1096,7 +1096,6 @@ figure:has(> img.img-mancante) { display: none; }
   color: var(--testo-tenue);
 }
 .avviso { margin: 0 0 1.25rem; max-width: 44rem; line-height: 1.7; }
-.colofone { margin: 0; }
 .pieDiPagina a { color: var(--testo-tenue); }
 .pieDiPagina a:hover { color: var(--accento); }
 
