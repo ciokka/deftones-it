@@ -151,6 +151,12 @@ REGOLE
   miliare", "viaggio sonoro" non si scrivono.
 - Le incertezze restano tali, e si dice da dove vengono: "in
   un'intervista del 2001 Moreno ha raccontato che…".
+- NON ripetere la data d'uscita esatta, l'etichetta e il numero di
+  brani: stanno già nella scheda dei dati di fianco alla copertina, e
+  se le due cose non coincidono la pagina si contraddice da sola.
+  L'anno si può nominare, il giorno no.
+- Niente frasi di servizio prima di cominciare. La prima parola che
+  scrivi è già la prima parola della scheda.
 
 STRUTTURA — HTML semplice, solo <p>, <h3>, <em>, <strong>. Niente titolo
 in cima: quello lo mette il sito.

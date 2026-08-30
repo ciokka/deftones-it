@@ -83,18 +83,61 @@ function mb(string $percorso): ?array
 }
 
 /**
- * Fra venticinque pubblicazioni dello stesso disco — ristampe, promo,
- * edizioni giapponesi con due bonus track — si sceglie la più vicina
- * all'originale: ufficiale, la più vecchia, e senza il minimo di tracce
- * di un campionario promozionale.
+ * Fra le venticinque pubblicazioni dello stesso disco — ristampe, promo,
+ * edizioni giapponesi con due bonus track — si sceglie quella giusta
+ * per CONSENSO, non prendendo la più vecchia.
+ *
+ * Il motivo sta in White Pony. MusicBrainz dichiara come first-release-date
+ * il 27 aprile 2000, sulla fede di una sola pubblicazione; altre sette
+ * dicono 20 giugno 2000, che è la data vera. Prendere la più vecchia
+ * significava mettere in pagina la data sbagliata — e infatti la scheda
+ * scritta cercando sul web diceva un'altra cosa dell'intestazione.
+ *
+ * Quindi: si guardano solo le date complete dell'anno più antico, si
+ * conta quante pubblicazioni portano ciascuna, e vince quella su cui
+ * sono d'accordo in più. A parità, la più vecchia.
  */
-function pubblicazioneMigliore(array $rel): ?array
+function dataDiConsenso(array $rel): ?string
 {
-    $buone = array_filter($rel, fn($r) => ($r['status'] ?? '') === 'Official' && !empty($r['date']));
-    if (!$buone) { $buone = array_filter($rel, fn($r) => !empty($r['date'])); }
-    if (!$buone) { $buone = $rel; }
-    usort($buone, fn($a, $b) => strcmp((string)($a['date'] ?? '9999'), (string)($b['date'] ?? '9999')));
-    return $buone[0] ?? null;
+    $conta = [];
+    foreach ($rel as $r) {
+        $d = (string)($r['date'] ?? '');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) { continue; }
+        $conta[$d] = ($conta[$d] ?? 0) + 1;
+    }
+    if (!$conta) { return null; }
+
+    // Solo l'anno d'uscita: le ristampe del 2020 non devono entrare nel
+    // conteggio di un disco del 2000.
+    $anno = mb_substr(min(array_keys($conta)), 0, 4);
+    $conta = array_filter($conta, fn($d) => str_starts_with($d, $anno), ARRAY_FILTER_USE_KEY);
+
+    $vincitrice = null; $max = 0;
+    foreach ($conta as $d => $n) {
+        if ($n > $max || ($n === $max && $d < $vincitrice)) { $vincitrice = $d; $max = $n; }
+    }
+    return $vincitrice;
+}
+
+/** La pubblicazione da cui prendere tracklist ed etichetta. */
+function pubblicazioneMigliore(array $rel, ?string $data): ?array
+{
+    $filtra = function (array $r) use ($data): bool {
+        return $data === null || (string)($r['date'] ?? '') === $data;
+    };
+    foreach ([
+        fn(array $r) => $filtra($r) && ($r['status'] ?? '') === 'Official',
+        fn(array $r) => $filtra($r),
+        fn(array $r) => ($r['status'] ?? '') === 'Official' && !empty($r['date']),
+        fn(array $r) => !empty($r['date']),
+    ] as $regola) {
+        $buone = array_values(array_filter($rel, $regola));
+        if ($buone) {
+            usort($buone, fn($a, $b) => strcmp((string)($a['date'] ?? '9999'), (string)($b['date'] ?? '9999')));
+            return $buone[0];
+        }
+    }
+    return $rel[0] ?? null;
 }
 
 function durataIt(?int $ms): ?string
@@ -105,9 +148,11 @@ function durataIt(?int $ms): ?string
 
 // =====================================================================
 if ($faiTrack) {
+    // La data la sovrascriviamo: quella del seed veniva dal
+    // first-release-date di MusicBrainz, che per White Pony è sbagliato.
     $agg = $pdo->prepare('UPDATE ' . t('albums') . '
-         SET tracklist = ?, data_uscita = COALESCE(data_uscita, ?),
-             etichetta = COALESCE(etichetta, ?)
+         SET tracklist = ?, data_uscita = COALESCE(?, data_uscita),
+             anno = COALESCE(?, anno), etichetta = COALESCE(?, etichetta)
        WHERE id = ?');
     $fatti = $saltati = 0;
 
@@ -115,8 +160,9 @@ if ($faiTrack) {
         if (empty($d['mbid']))                      { dlog('  senza mbid: ' . $d['slug']); $saltati++; continue; }
         if ($d['tracklist'] && !$rifai)             { $saltati++; continue; }
 
-        $rg = mb('release?release-group=' . $d['mbid'] . '&fmt=json&limit=50&inc=labels');
-        $scelta = pubblicazioneMigliore($rg['releases'] ?? []);
+        $rg = mb('release?release-group=' . $d['mbid'] . '&fmt=json&limit=100&inc=labels');
+        $data = dataDiConsenso($rg['releases'] ?? []);
+        $scelta = pubblicazioneMigliore($rg['releases'] ?? [], $data);
         if (!$scelta) { dlog('  nessuna pubblicazione: ' . $d['titolo']); $saltati++; continue; }
 
         $piena = mb('release/' . $scelta['id'] . '?inc=recordings+labels&fmt=json');
@@ -133,13 +179,15 @@ if ($faiTrack) {
         if (!$brani) { dlog('  tracklist vuota: ' . $d['titolo']); $saltati++; continue; }
 
         $etichetta = $piena['label-info'][0]['label']['name'] ?? null;
-        dlog(sprintf('  %-26s %2d brani   %s   %s', mb_substr($d['titolo'], 0, 26),
-            count($brani), $piena['date'] ?? '?', $etichetta ?? ''));
+        dlog(sprintf('  %-26s %2d brani   %s%s   %s', mb_substr($d['titolo'], 0, 26),
+            count($brani), $data ?? '?',
+            ($data && $d['data_uscita'] && $data !== $d['data_uscita']) ? ' (era ' . $d['data_uscita'] . ')' : '',
+            $etichetta ?? ''));
 
         if (!$soloProva) {
             $agg->execute([
                 json_encode($brani, JSON_UNESCAPED_UNICODE),
-                $piena['date'] ?? null, $etichetta, $d['id'],
+                $data, $data ? (int)mb_substr($data, 0, 4) : null, $etichetta, $d['id'],
             ]);
         }
         $fatti++;

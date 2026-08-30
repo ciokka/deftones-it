@@ -176,6 +176,13 @@ function claudeConRicerca(string $sistema, string $prompt,
         foreach ($grezzo['content'] ?? [] as $b) {
             if (($b['type'] ?? '') === 'text') {
                 $testo .= $b['text'];
+            } elseif (($b['type'] ?? '') === 'server_tool_use') {
+                // Prima di cercare il modello annuncia cosa sta per fare
+                // — "I'll research White Pony before writing" — e quella
+                // riga finiva in cima all'articolo. Tutto il testo
+                // scritto prima di una ricerca è preambolo: la risposta
+                // vera è quella che viene dopo l'ultima.
+                $testo = '';
             } elseif (($b['type'] ?? '') === 'web_search_tool_result') {
                 // In caso di errore il contenuto è un oggetto, non una lista:
                 // va distinto prima di scorrerlo.
