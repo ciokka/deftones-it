@@ -335,7 +335,7 @@ function cercaArticoli(PDO $pdo, string $q, int $limite = 60): array
  * Se il bollo comincia a comparire ovunque perde il suo senso — è un
  * numero solo, si alza qui.
  */
-const HOT_DA = 80;
+const HOT_DA = 70;
 
 /** Il bollo, con la fiammella. Vuoto quando non serve. */
 function etichettaHot(mixed $rilevanza): string
