@@ -299,7 +299,7 @@ function cercaArticoli(PDO $pdo, string $q, int $limite = 60): array
     $limite = max(1, min(60, $limite));
 
     $campi = 'slug, titolo_it, sommario_it, categoria, attendibilita,
-              fonte_nome, pubblicato_il';
+              fonte_nome, pubblicato_il, rilevanza';
 
     // Il primo indice comprende il corpo dell'articolo; se non è ancora
     // stato creato si ripiega su quello dello schema iniziale, che c'è
@@ -324,5 +324,28 @@ function cercaArticoli(PDO $pdo, string $q, int $limite = 60): array
     }
     logline('Ricerca fallita: ' . $ultimo->getMessage(), 'web');
     return ['articoli' => [], 'errore' => 'La ricerca non è disponibile in questo momento.'];
+}
+
+/**
+ * Da quale punteggio una notizia è "hot".
+ *
+ * La rilevanza la assegna il modello quando scrive il pezzo, da 0 a 100.
+ * Ottanta è la soglia sopra la quale una notizia non è solo pertinente
+ * ma conta davvero: un disco nuovo, un tour annunciato, una perdita.
+ * Se il bollo comincia a comparire ovunque perde il suo senso — è un
+ * numero solo, si alza qui.
+ */
+const HOT_DA = 80;
+
+/** Il bollo, con la fiammella. Vuoto quando non serve. */
+function etichettaHot(mixed $rilevanza): string
+{
+    if (!is_numeric($rilevanza) || (int)$rilevanza < HOT_DA) { return ''; }
+
+    return '<span class="hot" title="notizia di rilievo">'
+         . '<svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor" aria-hidden="true">'
+         . '<path d="M8 1.5c2.5 2.5 4.4 4.1 4.4 6.9a4.4 4.4 0 0 1-8.8 0'
+         . 'c0-1.5.7-2.7 1.8-3.7.1 1 .5 1.7 1.1 2.1C6.2 5.2 6.7 3.2 8 1.5Z"/>'
+         . '</svg>hot</span>';
 }
 

@@ -75,7 +75,8 @@ $html = null;
 if ($percorso === '/') {
     $articoli = $pdo->query(
         'SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
-                fonte_nome, pubblicato_il, immagine_url, immagine_origine,
+                fonte_nome, pubblicato_il, rilevanza,
+                immagine_url, immagine_origine,
                 immagine_autore, immagine_licenza, immagine_licenza_url,
                 immagine_fonte_url
            FROM ' . t('articles') . '
@@ -215,7 +216,7 @@ elseif ($percorso === '/notizie') {
 
     $salto = ($pag - 1) * $perPagina;
     $st = $pdo->prepare('SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
-                                fonte_nome, pubblicato_il
+                                fonte_nome, pubblicato_il, rilevanza
                            FROM ' . t('articles') . "
                           WHERE $where
                           ORDER BY pubblicato_il DESC
@@ -309,7 +310,7 @@ elseif (preg_match('#^/notizie/([a-z0-9-]+)$#', $percorso, $m)) {
 // --- categoria
 elseif (preg_match('#^/categoria/([a-z]+)$#', $percorso, $m)) {
     $q = $pdo->prepare('SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
-                               fonte_nome, pubblicato_il
+                               fonte_nome, pubblicato_il, rilevanza
                           FROM ' . t('articles') . '
                          WHERE stato = \'pubblicato\' AND categoria = ?
                          ORDER BY pubblicato_il DESC LIMIT 40');
@@ -323,7 +324,7 @@ elseif (preg_match('#^/categoria/([a-z]+)$#', $percorso, $m)) {
 elseif (preg_match('#^/tag/(.+)$#', $percorso, $m)) {
     $tg = mb_substr($m[1], 0, 60);
     $q = $pdo->prepare('SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
-                               fonte_nome, pubblicato_il
+                               fonte_nome, pubblicato_il, rilevanza
                           FROM ' . t('articles') . '
                          WHERE stato = \'pubblicato\'
                            AND JSON_CONTAINS(tag, JSON_QUOTE(?))

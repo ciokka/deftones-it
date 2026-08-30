@@ -468,6 +468,29 @@ body { overflow-x: clip; }
   letter-spacing: .02em;
 }
 
+/* ------------------------------------------------------------- hot */
+/* Il bollo delle notizie che contano. Ambra e non verde: il verde è già
+   l'accento di tutto il sito e non spiccherebbe, mentre il rosso su
+   fondo nero grida troppo per un sito che non urla. */
+.hot {
+  display: inline-flex;
+  align-items: center;
+  gap: .25em;
+  padding: .1rem .4rem .1rem .3rem;
+  border: 1px solid rgba(216,180,74,.4);
+  border-radius: 2px;
+  color: var(--avviso);
+  font-size: .625rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  line-height: 1.4;
+}
+.hot svg { flex: none; margin-top: -1px; }
+
+/* Nel banner tutto è un po' più grande, anche questo. */
+.hero .hot { font-size: .6875rem; }
+
 /* --------------------------------------------------------- filtri */
 
 .filtri { margin: 0 0 2rem; display: flex; flex-direction: column; gap: .6rem; }
