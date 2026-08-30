@@ -566,7 +566,7 @@ body { overflow-x: clip; }
   margin: 0 auto;
   /* Il fondo tiene il testo staccato dal bordo: appoggiato alla base
      dello schermo sembra caduto lì, non messo. */
-  padding: 0 1.5rem 1.75rem;
+  padding: 0 1.5rem 3.75rem;
 }
 /* Fra i 48 e i 62rem i comandi stanno sul fianco destro ma il
    contenitore non ha ancora margine da avanzare: lì, e solo lì, il testo
