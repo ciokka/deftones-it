@@ -38,6 +38,7 @@
         <button class="bottone<?= $cl ?>" type="submit"><?= $et ?></button>
       </form>
     <?php endforeach ?>
+    <a class="bottone bottone-tenue" href="<?= u('admin/modifica/' . (int)$a['id']) ?>">modifica</a>
     <?php if (!empty($a['immagine_origine'])): ?>
       <form method="post" action="<?= u('admin/azione') ?>" style="display:inline">
         <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">

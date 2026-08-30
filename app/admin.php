@@ -195,6 +195,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {
             $pdo->prepare('UPDATE ' . t('articles') . ' SET stato = \'scartato\' WHERE id = ?')
                 ->execute([$id]);
             $messaggio = ['ok', 'Bozza scartata.'];
+        } elseif ($che === 'apertura') {
+            // Un interruttore, non due azioni: il pulsante dice sempre
+            // il contrario di com'è adesso, e premerlo lo rovescia.
+            $pdo->prepare('UPDATE ' . t('articles') . '
+                              SET in_apertura = 1 - in_apertura WHERE id = ?')->execute([$id]);
+            $q = $pdo->prepare('SELECT in_apertura FROM ' . t('articles') . ' WHERE id = ?');
+            $q->execute([$id]);
+            cacheSvuota();
+            $messaggio = ['ok', $q->fetchColumn()
+                ? 'Fissata in apertura: resta nel carosello anche quando escono notizie nuove.'
+                : 'Tolta dall\'apertura: torna a contare solo la data.'];
         } elseif ($che === 'ritira') {
             $pdo->prepare('UPDATE ' . t('articles') . ' SET stato = \'draft\' WHERE id = ?')
                 ->execute([$id]);
@@ -261,6 +272,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {
     }
 }
 
+// ------------------------------------------------------------ modifica
+
+/** I valori ammessi da una colonna ENUM, letti dalla colonna stessa. */
+function valoriEnum(PDO $pdo, string $tabella, string $colonna): array
+{
+    $q = $pdo->prepare('SHOW COLUMNS FROM `' . $tabella . '` LIKE ?');
+    $q->execute([$colonna]);
+    $r = $q->fetch();
+    preg_match_all("/'([^']*)'/", (string)($r['Type'] ?? ''), $m);
+    return $m[1] ?? [];
+}
+
+if (preg_match('#^modifica/(\d+)$#', $azione, $m)) {
+    $id = (int)$m[1];
+    $msg = null;
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!csrfValido($_POST['csrf'] ?? null)) {
+            $msg = ['ko', 'Sessione scaduta, riprova.'];
+        } else {
+            // I tag si scrivono separati da virgola e si salvano come
+            // JSON, che è il formato in cui li mette il modello.
+            $tag = array_values(array_filter(array_map(
+                fn($t) => trim(mb_strtolower($t)),
+                explode(',', (string)($_POST['tag'] ?? ''))
+            )));
+
+            $quando = trim((string)($_POST['pubblicato_il'] ?? ''));
+            $quando = $quando !== '' ? str_replace('T', ' ', $quando) . ':00' : null;
+
+            $cat = (string)($_POST['categoria'] ?? '');
+            $att = (string)($_POST['attendibilita'] ?? '');
+            $catOk = valoriEnum($pdo, t('articles'), 'categoria');
+            $attOk = valoriEnum($pdo, t('articles'), 'attendibilita');
+
+            $q = $pdo->prepare('UPDATE ' . t('articles') . '
+                 SET titolo_it = ?, sommario_it = ?, corpo_it = ?,
+                     categoria = ?, attendibilita = ?, tag = ?,
+                     fonte_nome = ?, fonte_url = ?, pubblicato_il = ?
+               WHERE id = ?');
+            $q->execute([
+                mb_substr(trim((string)($_POST['titolo_it'] ?? '')), 0, 300),
+                trim((string)($_POST['sommario_it'] ?? '')),
+                trim((string)($_POST['corpo_it'] ?? '')) ?: null,
+                in_array($cat, $catOk, true) ? $cat : 'news',
+                in_array($att, $attOk, true) ? $att : 'confermato',
+                $tag ? json_encode($tag, JSON_UNESCAPED_UNICODE) : null,
+                trim((string)($_POST['fonte_nome'] ?? '')) ?: null,
+                trim((string)($_POST['fonte_url'] ?? '')) ?: null,
+                $quando,
+                $id,
+            ]);
+            $n = cacheSvuota();
+            $msg = ['ok', "Salvato. Cache svuotata ($n pagine)."];
+        }
+    }
+
+    $q = $pdo->prepare('SELECT * FROM ' . t('articles') . ' WHERE id = ? LIMIT 1');
+    $q->execute([$id]);
+    $a = $q->fetch();
+    if (!$a) { pagina404(); }
+
+    echo render('admin-modifica', [
+        'a'          => $a,
+        'categorie'  => valoriEnum($pdo, t('articles'), 'categoria'),
+        'attendib'   => valoriEnum($pdo, t('articles'), 'attendibilita'),
+        'messaggio'  => $msg,
+    ], ['titolo' => 'Modifica — pannello']);
+    exit;
+}
+
 // ------------------------------------------------------------- elenco
 //
 // Dopo l'importazione dell'archivio le bozze sono quasi seicento: senza
@@ -316,7 +398,7 @@ $categorie = $pdo->query('SELECT categoria, COUNT(*) AS n
                             FROM ' . t('articles') . " WHERE stato = 'draft'
                            GROUP BY categoria ORDER BY n DESC")->fetchAll();
 
-$pubblicate = $pdo->query('SELECT id, slug, titolo_it, pubblicato_il, fonte_nome
+$pubblicate = $pdo->query('SELECT id, slug, titolo_it, pubblicato_il, fonte_nome, in_apertura
                              FROM ' . t('articles') . '
                             WHERE stato = \'pubblicato\'
                             ORDER BY pubblicato_il DESC LIMIT 15')->fetchAll();

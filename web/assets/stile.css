@@ -1335,6 +1335,53 @@ figure:has(> img.img-mancante) { display: none; }
 .filtri option { background: #111; color: var(--testo); }
 .filtri input:focus, .filtri select:focus { outline: none; border-color: var(--accento); }
 
+/* ------------------------------------------- modulo di modifica */
+
+.modulo { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1.5rem; }
+.modulo label { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+.modulo label > span {
+  font-size: .75rem; color: var(--testo-tenue);
+  text-transform: uppercase; letter-spacing: .1em;
+}
+.modulo label > span em {
+  text-transform: none; letter-spacing: 0; font-style: normal; opacity: .75;
+}
+.modulo input, .modulo textarea, .modulo select {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--bordo);
+  border-radius: 0;
+  color: var(--testo);
+  font: inherit;
+  font-size: 1rem;                 /* meno di 16px e iOS zooma da solo */
+  padding: .6rem .75rem;
+  width: 100%;
+}
+.modulo textarea {
+  /* Il corpo è HTML: a spaziatura fissa si vedono i tag e l'indentazione,
+     e non si confonde una virgoletta storta con una dritta. */
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .875rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+.modulo input:focus, .modulo textarea:focus, .modulo select:focus {
+  outline: none; border-color: var(--accento-scuro);
+  background: rgba(255,255,255,.06);
+}
+.modulo option { background: #111; color: var(--testo); }
+.modulo-riga { display: flex; flex-wrap: wrap; gap: 1rem; }
+.modulo-riga > label { flex: 0 1 14rem; }
+.modulo-riga > label.cresce { flex: 1 1 20rem; }
+.modulo-nota { font-size: .75rem; color: var(--testo-tenue); }
+
+/* Un pulsante acceso dice che quello stato è attivo adesso. */
+.bottone-acceso {
+  color: var(--accento);
+  border-color: var(--accento-scuro);
+  background: rgba(62,168,75,.08);
+}
+.riga-azioni { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+
 .scelta { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; }
 .scelta input { accent-color: var(--accento); width: 1rem; height: 1rem; }
 

@@ -73,18 +73,29 @@ $html = null;
 
 // --- home
 if ($percorso === '/') {
-    $articoli = $pdo->query(
-        'SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
-                fonte_nome, pubblicato_il, rilevanza,
-                immagine_url, immagine_origine,
-                immagine_autore, immagine_licenza, immagine_licenza_url,
-                immagine_fonte_url
-           FROM ' . t('articles') . '
-          WHERE stato = \'pubblicato\'
-          ORDER BY pubblicato_il DESC LIMIT 21'
+    $campi = 'id, slug, titolo_it, sommario_it, categoria, attendibilita,
+              fonte_nome, pubblicato_il, rilevanza,
+              immagine_url, immagine_origine, immagine_autore,
+              immagine_licenza, immagine_licenza_url, immagine_fonte_url';
+
+    // Le tre in apertura: prima quelle fissate dal pannello, poi le più
+    // recenti a completare. Fissarne nessuna lascia il comportamento
+    // naturale, cioè le ultime tre pubblicate.
+    $apertura = $pdo->query(
+        "SELECT $campi FROM " . t('articles') . "
+          WHERE stato = 'pubblicato'
+          ORDER BY in_apertura DESC, pubblicato_il DESC LIMIT 3"
     )->fetchAll();
 
-    $html = render('home', ['articoli' => $articoli], [
+    // Il resto in ordine di data, senza ripetere quelle già in apertura.
+    $fuori = array_map('intval', array_column($apertura, 'id')) ?: [0];
+    $articoli = $pdo->query(
+        "SELECT $campi FROM " . t('articles') . "
+          WHERE stato = 'pubblicato' AND id NOT IN (" . implode(',', $fuori) . ")
+          ORDER BY pubblicato_il DESC LIMIT 18"
+    )->fetchAll();
+
+    $html = render('home', ['apertura' => $apertura, 'articoli' => $articoli], [
         'canonico'    => cfg('site_url') . u(''),
         'titolo'      => 'deftones.it — notizie sui Deftones in italiano',
         'descrizione' => 'Notizie sui Deftones in italiano, aggiornate ogni giorno: '

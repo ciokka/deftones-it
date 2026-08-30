@@ -1,4 +1,4 @@
-<?php if (!$articoli): ?>
+<?php if (!$apertura && !$articoli): ?>
   <div class="vuoto">
     <h1>Ancora niente</h1>
     <p>Le prime notizie compariranno appena verranno approvate.</p>
@@ -9,7 +9,7 @@
            La pista scorre con scroll-snap, che è del browser: col dito
            funziona anche senza JavaScript, e lo script aggiunge soltanto
            gli indicatori, le frecce e l'avanzamento automatico. */ ?>
-  <?php $primi = array_splice($articoli, 0, 3); ?>
+  <?php $primi = $apertura; ?>
 
   <div class="carosello"<?= count($primi) > 1 ? ' data-carosello' : '' ?>>
     <div class="carosello-piste">

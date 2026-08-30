@@ -93,6 +93,7 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
 
         <div class="azioni">
           <a class="bottone bottone-tenue" href="<?= u('admin/anteprima/' . (int)$b['id']) ?>">leggi tutto</a>
+          <a class="bottone bottone-tenue" href="<?= u('admin/modifica/' . (int)$b['id']) ?>">modifica</a>
           <?php if ($b['fonte_url']): ?>
             <a class="bottone bottone-tenue" href="<?= e($b['fonte_url']) ?>" target="_blank" rel="noopener">fonte</a>
           <?php endif ?>
@@ -125,12 +126,25 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
           <?php if ($p['fonte_nome']): ?><span><?= e($p['fonte_nome']) ?></span><?php endif ?></div>
         <div class="riga">
           <a href="<?= u('notizie/' . $p['slug'] . '/') ?>"><?= e($p['titolo_it']) ?></a>
-          <form method="post" action="<?= u('admin/azione') ?>">
-            <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
-            <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
-            <input type="hidden" name="che" value="ritira">
-            <button class="bottone bottone-tenue piccolo" type="submit">ritira</button>
-          </form>
+          <div class="riga-azioni">
+            <?php /* L'interruttore dice sempre cosa succede premendolo,
+                     non com'è adesso: "in apertura" fissa, "libera"
+                     toglie. Lo stato si legge dal colore. */ ?>
+            <form method="post" action="<?= u('admin/azione') ?>">
+              <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
+              <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+              <input type="hidden" name="che" value="apertura">
+              <button class="bottone piccolo <?= $p['in_apertura'] ? 'bottone-acceso' : 'bottone-tenue' ?>"
+                      type="submit"><?= $p['in_apertura'] ? 'libera' : 'in apertura' ?></button>
+            </form>
+            <a class="bottone bottone-tenue piccolo" href="<?= u('admin/modifica/' . (int)$p['id']) ?>">modifica</a>
+            <form method="post" action="<?= u('admin/azione') ?>">
+              <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
+              <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+              <input type="hidden" name="che" value="ritira">
+              <button class="bottone bottone-tenue piccolo" type="submit">ritira</button>
+            </form>
+          </div>
         </div>
       </article>
     <?php endforeach ?>

@@ -364,6 +364,13 @@ guardare. Il pulsante scarica la foto subito, quindi ci mette qualche
 secondo: per questo è separato da "pubblica" e non lo sostituisce. La
 scelta è la stessa, perché è la stessa funzione — `assegnaCopertina()`.
 
+**L'apertura si può fissare.** Il carosello della home prende di suo le
+tre notizie più recenti. Dal pannello, sulle pubblicate, l'interruttore
+*in apertura* ne fissa una: quelle fissate vengono prima, e le più
+recenti completano fino a tre. Se non ne fissi nessuna il comportamento
+è quello naturale, quindi la colonna non va gestita — esiste per le
+eccezioni.
+
 **Un testo senza fonti non si pubblica.** Gli strumenti che scrivono
 cercando sul web — le schede dei dischi e gli articoli su richiesta —
 scartano il risultato se il modello non ha consultato nessuna fonte. Non
