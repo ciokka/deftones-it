@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=44">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=45">
 </head>
 <body>
 
@@ -418,6 +418,28 @@ $voci = [
         b.textContent = prima;
         delete b.dataset.occupato;
       });
+  });
+})();
+
+// Il clic sulla facciata di un video la sostituisce col video vero.
+// Fino a quel momento nessuna richiesta è partita verso Google.
+(function () {
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('.video-avvia') : null;
+    if (!b) { return; }
+    var box = b.parentNode;
+    var id = box.getAttribute('data-video');
+    if (!id) { return; }
+
+    var f = document.createElement('iframe');
+    f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id)
+          + '?autoplay=1&rel=0';
+    f.title = 'Video YouTube';
+    f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    f.setAttribute('allowfullscreen', '');
+    f.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    box.textContent = '';
+    box.appendChild(f);
   });
 })();
 

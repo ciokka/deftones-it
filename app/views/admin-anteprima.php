@@ -16,7 +16,7 @@
     <?= copertina($a, true) ?>
     <div class="corpo">
       <?php if (!empty($a['corpo_it'])): ?>
-        <?= $a['corpo_it'] ?>
+        <?= facciateVideo((string)$a['corpo_it']) ?>
       <?php else: ?>
         <p><?= nl2br(e($a['sommario_it'])) ?></p>
       <?php endif ?>

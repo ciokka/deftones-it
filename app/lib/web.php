@@ -349,3 +349,49 @@ function etichettaHot(mixed $rilevanza): string
          . '</svg>hot</span>';
 }
 
+/**
+ * I video incorporati diventano una facciata: si caricano al clic.
+ *
+ * Quarantacinque articoli dell'archivio contengono cento iframe di
+ * YouTube. Anche nella versione "nocookie", un iframe contatta i server
+ * di Google appena la pagina si apre, e gli manda l'indirizzo IP di chi
+ * legge — che è esattamente il trattamento su cui si sono perse le cause
+ * dei Google Fonts. Un sito senza banner con dentro un iframe di YouTube
+ * non è un sito senza banner.
+ *
+ * Al posto dell'iframe mettiamo quindi un riquadro nostro, che non
+ * chiede niente a nessuno. Chi vuole vedere il video ci clicca, e in quel
+ * momento — con un gesto suo, consapevole — il video arriva.
+ *
+ * La trasformazione avviene al momento di mostrare la pagina e non nel
+ * database: gli articoli restano come sono stati importati, e il giorno
+ * che questa scelta cambia si cambia qui.
+ */
+function facciateVideo(string $html): string
+{
+    $fatto = preg_replace_callback(
+        '#<iframe\b[^>]*\bsrc=["\']([^"\']+)["\'][^>]*>\s*</iframe>#i',
+        function (array $m): string {
+            $url = $m[1];
+            if (!preg_match('#(?:youtube(?:-nocookie)?\.com/embed/|youtu\.be/)([A-Za-z0-9_-]{6,24})#i',
+                            $url, $v)) {
+                // Non è YouTube: un collegamento è più onesto di un
+                // riquadro che carica qualcosa che non sappiamo cos'è.
+                return '<p class="video-altrove"><a href="' . e($url) . '" target="_blank"'
+                     . ' rel="noopener">apri il contenuto incorporato</a></p>';
+            }
+
+            return '<div class="video" data-video="' . e($v[1]) . '">'
+                 . '<button type="button" class="video-avvia">'
+                 . '<span class="video-play" aria-hidden="true">'
+                 . '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">'
+                 . '<path d="M8.4 5.6 19 12 8.4 18.4Z"/></svg></span>'
+                 . '<span class="video-nota">guarda il video'
+                 . '<em>arriva da YouTube, e solo se lo chiedi tu</em></span>'
+                 . '</button></div>';
+        },
+        $html
+    );
+    return $fatto ?? $html;
+}
+

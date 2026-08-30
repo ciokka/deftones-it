@@ -341,7 +341,15 @@ legge contatta solo deftones.it.
 
 Sono le due cose — font remoti e immagini richiamate da terzi — che di
 solito fanno perdere le cause sul GDPR, e la conseguenza pratica è che
-**non serve nessun banner**. Vale la pena non rovinarlo: il giorno che si
+**non serve nessun banner**.
+
+I video di YouTube dell'archivio — cento iframe in quarantacinque
+articoli — sarebbero stati la terza. Anche nella versione "nocookie" un
+iframe contatta Google appena la pagina si apre. Per questo vengono
+sostituiti al momento di mostrare la pagina con una facciata: un riquadro
+nostro, e il video arriva solo al clic. La sostituzione avviene in
+`facciateVideo()` e non nel database, così gli articoli restano come sono
+stati importati. Vale la pena non rovinarlo: il giorno che si
 aggiunge uno strumento di statistica, un video incorporato o un pulsante
 ufficiale di un social, il banner diventa obbligatorio e con lui tutto
 quello che si porta dietro.

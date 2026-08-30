@@ -10,8 +10,9 @@
 
     <h3>Chi tratta i dati</h3>
     <p>
-      deftones.it è un sito amatoriale, non ufficiale, gestito da una
-      persona sola. Per qualsiasi questione riguardi questa pagina:
+      Il titolare del trattamento è <strong>Cristiano Ciocchetti</strong>,
+      che gestisce deftones.it come sito amatoriale e non ufficiale. Per
+      qualsiasi questione riguardi questa pagina:
       <a href="mailto:deftones.it@gmail.com">deftones.it@gmail.com</a>.
     </p>
 
@@ -52,6 +53,14 @@
       degli articoli, i profili Facebook e Instagram, le pagine delle
       licenze delle fotografie. Si aprono solo se ci clicchi, e da quel
       momento in poi vale la privacy di quei siti, non questa.
+    </p>
+    <p>
+      <strong>I video.</strong> Diversi articoli dell'archivio contengono
+      video di YouTube. Non vengono caricati insieme alla pagina: al loro
+      posto trovi un riquadro nero con un pulsante, e finché non lo premi
+      nessuna richiesta parte verso Google. Quando lo premi, il video
+      arriva da <em>youtube-nocookie.com</em> e da quel momento YouTube
+      vede il tuo indirizzo IP: è una tua scelta, fatta con un gesto.
     </p>
 
     <h3>I tuoi diritti</h3>
