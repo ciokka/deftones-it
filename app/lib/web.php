@@ -271,3 +271,58 @@ function creditoImmagine(array $a, string $tag = 'figcaption'): string
     return "<$tag class=\"credito\">" . implode(' · ', $pezzi) . "</$tag>";
 }
 
+/**
+ * La ricerca a testo pieno, usata sia dalla pagina sia dai suggerimenti.
+ *
+ * Modalità booleana con +parola*: tutte le parole devono esserci —
+ * altrimenti "deftones milano" restituisce mezzo sito — e ognuna vale
+ * anche come prefisso, così "chitarr" trova chitarre e chitarrista.
+ *
+ * La stringa viene spezzata sui caratteri non alfanumerici, il che si
+ * porta via anche gli operatori booleani: + - * " ( ) ~ < > @ hanno un
+ * significato in questa modalità, e una parentesi storta farebbe fallire
+ * la query invece di cercare.
+ *
+ * Torna ['articoli' => [...], 'errore' => string|null].
+ */
+function cercaArticoli(PDO $pdo, string $q, int $limite = 60): array
+{
+    $parole = preg_split('/[^\p{L}\p{N}]+/u', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    // Sotto le tre lettere MySQL non indicizza affatto: cercare "chi" va
+    // bene, "di" non troverebbe niente e sembrerebbe un guasto.
+    $parole = array_slice(array_filter($parole, fn($p) => mb_strlen($p) >= 3), 0, 6);
+    if (!$parole) {
+        return ['articoli' => [], 'errore' => 'Cerca una parola di almeno tre lettere.'];
+    }
+
+    $espressione = implode(' ', array_map(fn($p) => '+' . $p . '*', $parole));
+    $limite = max(1, min(60, $limite));
+
+    $campi = 'slug, titolo_it, sommario_it, categoria, attendibilita,
+              fonte_nome, pubblicato_il';
+
+    // Il primo indice comprende il corpo dell'articolo; se non è ancora
+    // stato creato si ripiega su quello dello schema iniziale, che c'è
+    // di sicuro. Meglio trovare meno che dare errore.
+    foreach ([
+        'titolo_it, sommario_it, corpo_it',
+        'titolo_it, sommario_it',
+    ] as $colonne) {
+        try {
+            $st = $pdo->prepare(
+                "SELECT $campi, MATCH($colonne) AGAINST (? IN BOOLEAN MODE) AS punti
+                   FROM " . t('articles') . "
+                  WHERE stato = 'pubblicato'
+                    AND MATCH($colonne) AGAINST (? IN BOOLEAN MODE)
+                  ORDER BY punti DESC, pubblicato_il DESC
+                  LIMIT $limite");
+            $st->execute([$espressione, $espressione]);
+            return ['articoli' => $st->fetchAll(), 'errore' => null];
+        } catch (Throwable $e) {
+            $ultimo = $e;
+        }
+    }
+    logline('Ricerca fallita: ' . $ultimo->getMessage(), 'web');
+    return ['articoli' => [], 'errore' => 'La ricerca non è disponibile in questo momento.'];
+}
+

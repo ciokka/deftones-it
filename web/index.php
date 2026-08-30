@@ -43,7 +43,7 @@ $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 // La ricerca resta fuori dalla cache: la chiave è il percorso, e
 // /cerca?q=milano e /cerca?q=chi hanno lo stesso percorso — si
 // servirebbero i risultati l'uno dell'altro.
-$cachabile = $metodo === 'GET' && $percorso !== '/cerca'
+$cachabile = $metodo === 'GET' && !str_starts_with($percorso, '/cerca')
           && !str_starts_with($percorso, '/admin') && !loggato();
 if ($cachabile && ($html = cacheLeggi($percorso)) !== null) {
     // La cache conserva il corpo della pagina, non le sue intestazioni:
@@ -246,61 +246,37 @@ elseif (preg_match('#^/tag/(.+)$#', $percorso, $m)) {
 
 // --- ricerca
 elseif ($percorso === '/cerca') {
-    $q = trim((string)($_GET['q'] ?? ''));
-    $q = mb_substr($q, 0, 80);
-    $articoli = [];
-    $errore = null;
+    $q = mb_substr(trim((string)($_GET['q'] ?? '')), 0, 80);
+    $esito = $q === ''
+        ? ['articoli' => [], 'errore' => null]
+        : cercaArticoli($pdo, $q);
 
-    if ($q !== '') {
-        // Modalità booleana con +parola*: tutte le parole devono esserci
-        // (altrimenti "deftones milano" restituisce mezzo sito) e ognuna
-        // vale anche come prefisso, così "chitarr" trova "chitarre" e
-        // "chitarrista". I caratteri che in questa modalità hanno un
-        // significato — + - * " ( ) ~ < > @ — vengono tolti prima, o
-        // basterebbe una parentesi storta per far fallire la query.
-        $parole = preg_split('/[^\p{L}\p{N}]+/u', $q, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-        $parole = array_slice(array_filter($parole, fn($p) => mb_strlen($p) >= 3), 0, 6);
-
-        if (!$parole) {
-            $errore = 'Cerca una parola di almeno tre lettere.';
-        } else {
-            $espressione = implode(' ', array_map(fn($p) => '+' . $p . '*', $parole));
-            $st = $pdo->prepare(
-                'SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
-                        fonte_nome, pubblicato_il,
-                        MATCH(titolo_it, sommario_it, corpo_it)
-                          AGAINST (? IN BOOLEAN MODE) AS punti
-                   FROM ' . t('articles') . "
-                  WHERE stato = 'pubblicato'
-                    AND MATCH(titolo_it, sommario_it, corpo_it)
-                        AGAINST (? IN BOOLEAN MODE)
-                  ORDER BY punti DESC, pubblicato_il DESC
-                  LIMIT 60");
-            try {
-                $st->execute([$espressione, $espressione]);
-                $articoli = $st->fetchAll();
-            } catch (Throwable) {
-                // L'indice su tre colonne potrebbe non essere ancora
-                // stato creato: si ripiega su quello dello schema
-                // iniziale, che c'è di sicuro.
-                $st = $pdo->prepare(
-                    'SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
-                            fonte_nome, pubblicato_il,
-                            MATCH(titolo_it, sommario_it) AGAINST (? IN BOOLEAN MODE) AS punti
-                       FROM ' . t('articles') . "
-                      WHERE stato = 'pubblicato'
-                        AND MATCH(titolo_it, sommario_it) AGAINST (? IN BOOLEAN MODE)
-                      ORDER BY punti DESC, pubblicato_il DESC
-                      LIMIT 60");
-                $st->execute([$espressione, $espressione]);
-                $articoli = $st->fetchAll();
-            }
-        }
-    }
-
-    $html = render('cerca', ['q' => $q, 'articoli' => $articoli, 'errore' => $errore], [
+    $html = render('cerca', ['q' => $q] + $esito, [
         'titolo' => ($q !== '' ? '"' . $q . '" — ' : '') . 'Cerca su deftones.it',
     ]);
+}
+
+// --- suggerimenti mentre si scrive
+// Niente HTML: solo i titoli che servono al menu a tendina. Sta qui e non
+// in una pagina a parte perché è la stessa ricerca, con un limite più
+// corto e senza il sommario.
+elseif ($percorso === '/cerca.json') {
+    $q = mb_substr(trim((string)($_GET['q'] ?? '')), 0, 80);
+    $fuori = [];
+    if ($q !== '') {
+        foreach (cercaArticoli($pdo, $q, 8)['articoli'] as $a) {
+            $fuori[] = [
+                't' => (string)$a['titolo_it'],
+                'u' => u('notizie/' . $a['slug'] . '/'),
+                'd' => dataIt($a['pubblicato_il']),
+                'c' => (string)$a['categoria'],
+            ];
+        }
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    header('X-Robots-Tag: noindex');
+    echo json_encode($fuori, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
 }
 
 // --- indice delle raccolte

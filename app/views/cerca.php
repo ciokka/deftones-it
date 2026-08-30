@@ -1,11 +1,14 @@
 <h1 class="titolo-sezione">Cerca</h1>
 
-<form class="ricerca" method="get" action="<?= u('cerca') ?>" role="search">
-  <input type="search" name="q" value="<?= e($q) ?>"
-         placeholder="un nome, un disco, una città…"
-         aria-label="Cerca negli articoli" autofocus>
-  <button type="submit">cerca</button>
-</form>
+<div class="ricerca-blocco">
+  <form class="ricerca" method="get" action="<?= u('cerca') ?>" role="search">
+    <input type="search" name="q" value="<?= e($q) ?>" class="ricerca-campo"
+           autocomplete="off" placeholder="un nome, un disco, una città…"
+           aria-label="Cerca negli articoli" autofocus>
+    <button type="submit">cerca</button>
+  </form>
+  <ul class="suggerimenti" hidden></ul>
+</div>
 
 <?php if ($errore): ?>
   <p class="vuoto"><?= e($errore) ?></p>

@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=35">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=36">
 </head>
 <body>
 
@@ -67,7 +67,6 @@ $voci = [
     u('/')                  => 'Notizie',
     u('raccolte/')          => 'Raccolte',
     u('categoria/tour/')    => 'Tour',
-    u('cerca')              => 'Cerca',
     u('feed.xml')           => 'RSS',
 ];
 ?>
@@ -78,14 +77,29 @@ $voci = [
       <p class="sottotitolo">The Italian Deftones fan site <span>since 2002</span></p>
     </div>
     <nav class="menu menu-riga">
-      <?php foreach ($voci as $href => $et): ?><a href="<?= $href ?>"><?= $et ?></a><?php endforeach ?>
+      <?php foreach ($voci as $href => $et): ?><a href="<?= $href ?>"><?= $et ?></a><?php endforeach ?><a class="menu-lente" href="<?= u('cerca') ?>" aria-label="Cerca" title="Cerca"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="M10.5 10.5 14 14"/></svg></a>
     </nav>
   </div>
 </header>
 
+<?php /* Il cercatore vive nascosto in ogni pagina: la lente del menu lo
+         apre senza cambiare pagina. Senza JavaScript la lente resta un
+         link a /cerca, che funziona da sola. */ ?>
+<div class="cercatore" hidden>
+  <div class="cercatore-fondo"></div>
+  <div class="cercatore-riquadro ricerca-blocco" role="dialog" aria-modal="true" aria-label="Cerca">
+    <form class="ricerca" method="get" action="<?= u('cerca') ?>" role="search">
+      <input type="search" name="q" class="ricerca-campo" autocomplete="off"
+             placeholder="un nome, un disco, una città…" aria-label="Cerca negli articoli">
+      <button type="submit">cerca</button>
+    </form>
+    <ul class="suggerimenti" hidden></ul>
+  </div>
+</div>
+
 <nav class="menu-barra">
   <div class="contenitore menu">
-    <?php foreach ($voci as $href => $et): ?><a href="<?= $href ?>"><?= $et ?></a><?php endforeach ?>
+    <?php foreach ($voci as $href => $et): ?><a href="<?= $href ?>"><?= $et ?></a><?php endforeach ?><a class="menu-lente" href="<?= u('cerca') ?>" aria-label="Cerca" title="Cerca"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="M10.5 10.5 14 14"/></svg></a>
   </div>
 </nav>
 
@@ -234,6 +248,104 @@ $voci = [
       b.classList.add('fatto');
       setTimeout(function () { b.classList.remove('fatto'); }, 1600);
     }).catch(function () {});
+  });
+})();
+
+// La ricerca. La lente del menu apre un riquadro senza cambiare pagina, e
+// mentre scrivi arrivano i titoli che corrispondono. Senza JavaScript la
+// lente resta un link a /cerca, che fa la stessa cosa in una pagina
+// intera: questo è un miglioramento, non un requisito.
+(function () {
+  if (!window.fetch) { return; }
+  var indirizzo = <?= json_encode(u('cerca.json')) ?>;
+
+  function collega(blocco) {
+    var campo = blocco.querySelector('.ricerca-campo');
+    var elenco = blocco.querySelector('.suggerimenti');
+    if (!campo || !elenco) { return; }
+    var attesa = null, scelto = -1, voci = [];
+
+    function spegni() { elenco.hidden = true; elenco.textContent = ''; voci = []; scelto = -1; }
+
+    function evidenzia(n) {
+      var figli = elenco.children;
+      if (!figli.length) { return; }
+      if (scelto >= 0 && figli[scelto]) { figli[scelto].classList.remove('scelto'); }
+      scelto = (n + figli.length) % figli.length;
+      figli[scelto].classList.add('scelto');
+      figli[scelto].scrollIntoView({ block: 'nearest' });
+    }
+
+    function disegna(dati) {
+      if (!dati || !dati.length) { spegni(); return; }
+      elenco.textContent = '';
+      dati.forEach(function (v) {
+        // textContent e non innerHTML: i titoli vengono dal database e
+        // qui non passano da nessun escape di PHP.
+        var li = document.createElement('li');
+        var a = document.createElement('a');
+        a.href = v.u;
+        var t = document.createElement('span');
+        t.className = 'sug-titolo';
+        t.textContent = v.t;
+        var m = document.createElement('span');
+        m.className = 'sug-meta';
+        m.textContent = v.c + ' · ' + v.d;
+        a.appendChild(t); a.appendChild(m); li.appendChild(a);
+        elenco.appendChild(li);
+      });
+      voci = dati; scelto = -1; elenco.hidden = false;
+    }
+
+    campo.addEventListener('input', function () {
+      var q = campo.value.trim();
+      clearTimeout(attesa);
+      // Sotto le tre lettere MySQL non indicizza: chiedere sarebbe
+      // chiedere a vuoto.
+      if (q.length < 3) { spegni(); return; }
+      // Un quinto di secondo di pausa fra un tasto e l'altro: senza,
+      // scrivere una parola di otto lettere sono otto ricerche a testo
+      // pieno, sette delle quali già superate quando arriva la risposta.
+      attesa = setTimeout(function () {
+        fetch(indirizzo + '?q=' + encodeURIComponent(q))
+          .then(function (r) { return r.ok ? r.json() : []; })
+          .then(disegna)
+          .catch(spegni);
+      }, 220);
+    });
+
+    campo.addEventListener('keydown', function (e) {
+      if (elenco.hidden) { return; }
+      if (e.key === 'ArrowDown')      { e.preventDefault(); evidenzia(scelto + 1); }
+      else if (e.key === 'ArrowUp')   { e.preventDefault(); evidenzia(scelto - 1); }
+      else if (e.key === 'Enter' && scelto >= 0) { e.preventDefault(); window.location = voci[scelto].u; }
+      else if (e.key === 'Escape')    { e.stopPropagation(); spegni(); }
+    });
+
+    // Il ritardo serve al clic: senza, il blur spegnerebbe l'elenco
+    // prima che il collegamento riceva il colpo di mouse.
+    campo.addEventListener('blur', function () { setTimeout(spegni, 160); });
+  }
+
+  var blocchi = document.querySelectorAll('.ricerca-blocco');
+  for (var i = 0; i < blocchi.length; i++) { collega(blocchi[i]); }
+
+  var box = document.querySelector('.cercatore');
+  if (!box) { return; }
+  var campo = box.querySelector('.ricerca-campo');
+
+  function mostra(aperto) {
+    box.hidden = !aperto;
+    if (aperto) { campo.focus(); campo.select(); }
+  }
+
+  var lenti = document.querySelectorAll('.menu-lente');
+  for (var j = 0; j < lenti.length; j++) {
+    lenti[j].addEventListener('click', function (e) { e.preventDefault(); mostra(true); });
+  }
+  box.querySelector('.cercatore-fondo').addEventListener('click', function () { mostra(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !box.hidden) { mostra(false); }
   });
 })();
 
