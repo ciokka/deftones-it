@@ -43,6 +43,23 @@ function quandoIt(?string $sql): string
 }
 
 /** Rende un template dentro il layout e restituisce l'HTML. */
+/**
+ * Una vista sola, senza testata né piede.
+ *
+ * render() avvolge sempre quello che produce dentro layout.php, ed è
+ * giusto così per una pagina. Ma il "carica altro" chiede solo le schede
+ * da aggiungere in fondo a una pagina che c'è già: passandogli render()
+ * si riceveva indietro il sito intero, logo e menu compresi, e finivano
+ * appiccicati in mezzo all'elenco.
+ */
+function rendiParziale(string $vista, array $dati = []): string
+{
+    extract($dati, EXTR_SKIP);
+    ob_start();
+    require dirname(__DIR__) . '/views/' . $vista . '.php';
+    return (string)ob_get_clean();
+}
+
 function render(string $vista, array $dati = [], array $meta = []): string
 {
     extract($dati, EXTR_SKIP);

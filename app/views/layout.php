@@ -401,8 +401,15 @@ $voci = [
         if (html === null) { throw new Error('risposta non valida'); }
         var tmp = document.createElement('div');
         tmp.innerHTML = html;                 // markup nostro, già scappato da PHP
-        var n = tmp.children.length;
-        while (tmp.firstElementChild) { elenco.appendChild(tmp.firstElementChild); }
+
+        // Si prendono solo le schede, non tutto quello che è arrivato.
+        // La prima versione appendeva qualunque cosa, e quando il
+        // frammento è tornato come pagina intera si sono trovati logo e
+        // menu in mezzo all'elenco. Filtrando, un frammento sbagliato non
+        // aggiunge niente invece di aggiungere il sito.
+        var nuove = tmp.querySelectorAll('article.scheda');
+        var n = nuove.length;
+        for (var i = 0; i < n; i++) { elenco.appendChild(nuove[i]); }
 
         // Meno schede del previsto vuol dire che era l'ultima pagina.
         if (n < quante) { b.parentNode.removeChild(b); return; }

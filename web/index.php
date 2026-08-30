@@ -240,7 +240,7 @@ elseif ($percorso === '/notizie') {
     if (!empty($_GET['frammento'])) {
         header('Content-Type: text/html; charset=utf-8');
         header('X-Robots-Tag: noindex');
-        echo render('schede', ['articoli' => $articoli]);
+        echo rendiParziale('schede', ['articoli' => $articoli]);
         exit;
     }
 
