@@ -68,18 +68,42 @@ dlog(sprintf('%d dischi in elenco', count($dischi)));
 
 // ---------------------------------------------------------- MusicBrainz
 
-/** MusicBrainz chiede un massimo di una richiesta al secondo. */
+/**
+ * Una chiamata a MusicBrainz, con le pause che chiedono loro.
+ *
+ * Riprova, e non è una precauzione teorica: MusicBrainz risponde
+ * "The MusicBrainz web server is currently busy" con una certa
+ * frequenza, e la prima versione di questo codice trattava quella
+ * risposta come "questo disco non ha pubblicazioni". Nel log comparivano
+ * "tracklist vuota" e "nessuna pubblicazione" per dischi che ne hanno
+ * quindici: un guasto di rete travestito da dato mancante, che è il modo
+ * peggiore di sbagliare perché non sembra un guasto.
+ *
+ * Torna null solo quando la richiesta è davvero fallita; un risultato
+ * vuoto è un array vuoto, e chi chiama può distinguerli.
+ */
 function mb(string $percorso): ?array
 {
     static $ultima = 0.0;
-    $attesa = 1.1 - (microtime(true) - $ultima);
-    if ($attesa > 0) { usleep((int)($attesa * 1000000)); }
-    $ultima = microtime(true);
 
-    $r = httpGet('https://musicbrainz.org/ws/2/' . $percorso);
-    if ($r['http'] !== 200 || $r['body'] === null) { return null; }
-    $d = json_decode($r['body'], true);
-    return is_array($d) ? $d : null;
+    foreach ([0, 2, 5, 9] as $tentativo => $pausa) {
+        if ($pausa) { sleep($pausa); }
+        // Una richiesta al secondo è quello che chiedono nelle loro regole.
+        $attesa = 1.1 - (microtime(true) - $ultima);
+        if ($attesa > 0) { usleep((int)($attesa * 1000000)); }
+        $ultima = microtime(true);
+
+        $r = httpGet('https://musicbrainz.org/ws/2/' . $percorso);
+        if ($r['http'] === 200 && $r['body'] !== null) {
+            $d = json_decode($r['body'], true);
+            // Anche con 200 possono rispondere {"error": "..."}.
+            if (is_array($d) && !isset($d['error'])) { return $d; }
+        }
+        if ($tentativo === 3) {
+            dlog('  MusicBrainz non risponde: ' . mb_substr($percorso, 0, 60));
+        }
+    }
+    return null;
 }
 
 /**
@@ -105,6 +129,10 @@ function dataDiConsenso(array $rel): ?string
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) { continue; }
         $conta[$d] = ($conta[$d] ?? 0) + 1;
     }
+    // Le date nel futuro non sono uscite: su Eros, che non è mai stato
+    // pubblicato, MusicBrainz porta pubblicazioni datate a venire.
+    $oggi = date('Y-m-d');
+    $conta = array_filter($conta, fn($d) => $d <= $oggi, ARRAY_FILTER_USE_KEY);
     if (!$conta) { return null; }
 
     // Solo l'anno d'uscita: le ristampe del 2020 non devono entrare nel
@@ -177,11 +205,17 @@ if ($faiTrack) {
         if ($d['tracklist'] && !$rifai)             { $saltati++; continue; }
 
         $rg = mb('release?release-group=' . $d['mbid'] . '&fmt=json&limit=100&inc=labels+media');
+        if ($rg === null) {
+            dlog('  richiesta fallita, salto: ' . $d['titolo']); $saltati++; continue;
+        }
         $data = dataDiConsenso($rg['releases'] ?? []);
         $scelta = pubblicazioneMigliore($rg['releases'] ?? [], $data);
         if (!$scelta) { dlog('  nessuna pubblicazione: ' . $d['titolo']); $saltati++; continue; }
 
         $piena = mb('release/' . $scelta['id'] . '?inc=recordings+labels&fmt=json');
+        if ($piena === null) {
+            dlog('  richiesta fallita, salto: ' . $d['titolo']); $saltati++; continue;
+        }
         $brani = [];
         foreach ($piena['media'] ?? [] as $supporto) {
             foreach ($supporto['tracks'] ?? [] as $t) {
