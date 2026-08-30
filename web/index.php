@@ -44,6 +44,7 @@ $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 // /cerca?q=milano e /cerca?q=chi hanno lo stesso percorso — si
 // servirebbero i risultati l'uno dell'altro.
 $cachabile = $metodo === 'GET' && !str_starts_with($percorso, '/cerca')
+          && $percorso !== '/notizie'
           && !str_starts_with($percorso, '/admin') && !loggato();
 // Le pagine non portavano nessuna intestazione di cache. Senza, ogni
 // browser decide da sé quanto tenersele, e capita di guardare per
@@ -162,6 +163,7 @@ elseif ($percorso === '/sitemap.xml') {
 
     $voci = [[u(''), $articoli[0]['pubblicato_il'] ?? null]];
     if ($raccolte) { $voci[] = [u('raccolte/'), $raccolte[0]['aggiornato_il']]; }
+    $voci[] = [u('notizie'), $articoli[0]['pubblicato_il'] ?? null];
     if ($dischi)   { $voci[] = [u('discografia/'), null]; }
     foreach ($dischi as $x) { $voci[] = [u('discografia/' . $x['slug'] . '/'), null]; }
     foreach ($categorie as $c) { $voci[] = [u('categoria/' . $c['categoria'] . '/'), $c['ultima']]; }
@@ -184,6 +186,81 @@ elseif ($percorso === '/sitemap.xml') {
     if ($cachabile) { cacheScrivi($percorso, $x); }
     echo $x;
     exit;
+}
+
+// --- archivio delle notizie, con filtri e pagine
+elseif ($percorso === '/notizie') {
+    $perPagina = 24;   // una costante non può stare dentro un ramo
+
+    $cat  = (string)($_GET['cat'] ?? '');
+    $anno = (int)($_GET['anno'] ?? 0);
+    $pag  = max(1, (int)($_GET['p'] ?? 1));
+
+    // La categoria è un ENUM: se arriva un valore che non c'è, si ignora
+    // invece di finire in una query che non trova niente.
+    $valide = array_column($pdo->query('SELECT DISTINCT categoria FROM ' . t('articles') . "
+                                         WHERE stato = 'pubblicato'")->fetchAll(), 'categoria');
+    if (!in_array($cat, $valide, true)) { $cat = ''; }
+    if ($anno < 1990 || $anno > 2100)   { $anno = 0; }
+
+    $dove = ["stato = 'pubblicato'"];
+    $arg  = [];
+    if ($cat)  { $dove[] = 'categoria = ?';            $arg[] = $cat; }
+    if ($anno) { $dove[] = 'YEAR(pubblicato_il) = ?';  $arg[] = $anno; }
+    $where = implode(' AND ', $dove);
+
+    $st = $pdo->prepare('SELECT COUNT(*) FROM ' . t('articles') . " WHERE $where");
+    $st->execute($arg);
+    $totale = (int)$st->fetchColumn();
+
+    $salto = ($pag - 1) * $perPagina;
+    $st = $pdo->prepare('SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
+                                fonte_nome, pubblicato_il
+                           FROM ' . t('articles') . "
+                          WHERE $where
+                          ORDER BY pubblicato_il DESC
+                          LIMIT $perPagina OFFSET $salto");
+    $st->execute($arg);
+    $articoli = $st->fetchAll();
+
+    // Il "carica altro" chiede la pagina dopo con frammento=1 e riceve
+    // solo le schede: la stessa vista, senza il contorno.
+    if (!empty($_GET['frammento'])) {
+        header('Content-Type: text/html; charset=utf-8');
+        header('X-Robots-Tag: noindex');
+        echo render('schede', ['articoli' => $articoli]);
+        exit;
+    }
+
+    $anni = $pdo->query('SELECT YEAR(pubblicato_il) AS anno, COUNT(*) AS quanti
+                           FROM ' . t('articles') . "
+                          WHERE stato = 'pubblicato' AND pubblicato_il IS NOT NULL
+                          GROUP BY anno ORDER BY anno DESC")->fetchAll();
+    $categorie = $pdo->query('SELECT categoria, COUNT(*) AS quanti
+                                FROM ' . t('articles') . "
+                               WHERE stato = 'pubblicato'
+                               GROUP BY categoria ORDER BY quanti DESC")->fetchAll();
+
+    $altra = null;
+    if ($salto + count($articoli) < $totale) {
+        $altra = u('notizie') . '?' . http_build_query(array_filter([
+            'cat' => $cat, 'anno' => $anno ?: null, 'p' => $pag + 1,
+        ]));
+    }
+
+    $titolo = 'Notizie' . ($cat ? ' — ' . ucfirst($cat) : '') . ($anno ? " — $anno" : '');
+    $html = render('notizie', [
+        'articoli' => $articoli, 'anni' => $anni, 'categorie' => $categorie,
+        'cat' => $cat ?: null, 'anno' => $anno ?: null,
+        'totale' => $totale, 'altraPagina' => $altra, 'perPagina' => $perPagina,
+    ], [
+        'titolo'      => $titolo . ' — deftones.it',
+        'descrizione' => "Tutte le notizie sui Deftones pubblicate su deftones.it, "
+                       . 'filtrabili per anno e categoria.',
+        // Le pagine filtrate puntano tutte alla prima, senza filtri: sono
+        // tagli dello stesso elenco, non pagine diverse da indicizzare.
+        'canonico'    => cfg('site_url') . u('notizie'),
+    ]);
 }
 
 // --- scheda notizia

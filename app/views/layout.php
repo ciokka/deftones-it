@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=40">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=41">
 </head>
 <body>
 
@@ -64,7 +64,7 @@
 // elemento sticky smette di stare fermo quando il suo contenitore esce
 // dallo schermo, e su mobile la testata deve scorrere via.
 $voci = [
-    u('/')                  => 'Notizie',
+    u('notizie')            => 'Notizie',
     u('raccolte/')          => 'Raccolte',
     u('discografia/')       => 'Dischi',
     u('categoria/tour/')    => 'Tour',
@@ -347,6 +347,51 @@ $voci = [
   box.querySelector('.cercatore-fondo').addEventListener('click', function () { mostra(false); });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !box.hidden) { mostra(false); }
+  });
+})();
+
+// "Carica altro". Il collegamento esiste già e porta alla pagina
+// successiva: senza JavaScript funziona così, ed è anche il modo in cui
+// un motore di ricerca raggiunge l'archivio. Qui lo intercettiamo,
+// chiediamo alla stessa pagina solo le schede e le aggiungiamo in fondo.
+(function () {
+  var elenco = document.getElementById('elenco-notizie');
+  if (!elenco || !window.fetch) { return; }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('.bottone-altro') : null;
+    if (!b || b.dataset.occupato) { return; }
+    e.preventDefault();
+
+    var url = b.getAttribute('href');
+    var quante = parseInt(b.dataset.perPagina || '24', 10);
+    var prima = b.textContent;
+    b.dataset.occupato = '1';
+    b.textContent = 'carico…';
+
+    fetch(url + '&frammento=1')
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (html) {
+        if (html === null) { throw new Error('risposta non valida'); }
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;                 // markup nostro, già scappato da PHP
+        var n = tmp.children.length;
+        while (tmp.firstElementChild) { elenco.appendChild(tmp.firstElementChild); }
+
+        // Meno schede del previsto vuol dire che era l'ultima pagina.
+        if (n < quante) { b.parentNode.removeChild(b); return; }
+        b.setAttribute('href', url.replace(/([?&]p=)\d+/, function (_, p) {
+          return p + (parseInt(url.match(/[?&]p=(\d+)/)[1], 10) + 1);
+        }));
+        b.textContent = prima;
+        delete b.dataset.occupato;
+      })
+      .catch(function () {
+        // Se non riesce, il pulsante torna a essere un collegamento
+        // normale: al clic dopo si cambia pagina, come senza JavaScript.
+        b.textContent = prima;
+        delete b.dataset.occupato;
+      });
   });
 })();
 

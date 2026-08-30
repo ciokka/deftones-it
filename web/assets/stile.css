@@ -468,6 +468,59 @@ body { overflow-x: clip; }
   letter-spacing: .02em;
 }
 
+/* --------------------------------------------------------- filtri */
+
+.filtri { margin: 0 0 2rem; display: flex; flex-direction: column; gap: .6rem; }
+.filtro-riga {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem .55rem;
+}
+.filtro-nome {
+  flex: none; width: 5rem;
+  font-size: .6875rem; color: var(--testo-tenue);
+  text-transform: uppercase; letter-spacing: .12em;
+}
+.filtro-voce {
+  display: inline-flex; align-items: baseline; gap: .35em;
+  padding: .25rem .6rem;
+  border: 1px solid var(--bordo);
+  border-radius: 2px;
+  font-size: .8125rem;
+  color: var(--testo-tenue);
+  text-decoration: none;
+  transition: color .15s, border-color .15s;
+}
+.filtro-voce:hover { color: var(--testo); border-color: rgba(255,255,255,.3); }
+.filtro-voce.attivo {
+  color: var(--accento);
+  border-color: var(--accento-scuro);
+  background: rgba(62,168,75,.07);
+}
+/* Il conteggio non deve avere lo stesso peso della voce: è un
+   contorno, e se compete col nome della categoria si fa fatica a
+   leggere la riga di colpo. */
+.filtro-n { font-size: .6875rem; opacity: .55; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 34rem) {
+  .filtro-riga { gap: .35rem .4rem; }
+  .filtro-nome { width: 100%; }
+}
+
+.conteggio { margin: 0 0 1.5rem; font-size: .875rem; }
+
+.altro { display: flex; justify-content: center; margin: 2.5rem 0 1rem; }
+.bottone-altro {
+  padding: .8rem 2rem;
+  border: 1px solid var(--bordo);
+  border-radius: 2px;
+  color: var(--testo-tenue);
+  text-decoration: none;
+  font-size: .8125rem;
+  text-transform: lowercase;
+  letter-spacing: .06em;
+  transition: color .15s, border-color .15s;
+}
+.bottone-altro:hover { color: var(--accento); border-color: var(--accento-scuro); }
+
 /* --------------------------------------------------------- ricerca */
 
 /* La lente, ultima voce del menu. */
