@@ -45,6 +45,13 @@ $metodo = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 // servirebbero i risultati l'uno dell'altro.
 $cachabile = $metodo === 'GET' && !str_starts_with($percorso, '/cerca')
           && !str_starts_with($percorso, '/admin') && !loggato();
+// Le pagine non portavano nessuna intestazione di cache. Senza, ogni
+// browser decide da sé quanto tenersele, e capita di guardare per
+// mezz'ora una versione vecchia della pagina credendo che il sito sia
+// rotto. La cache del server resta: questa dice solo al browser di
+// chiedere sempre se è cambiato qualcosa.
+if ($metodo === 'GET') { header('Cache-Control: no-cache, must-revalidate'); }
+
 if ($cachabile && ($html = cacheLeggi($percorso)) !== null) {
     // La cache conserva il corpo della pagina, non le sue intestazioni:
     // il tipo di contenuto va rimesso a mano, altrimenti feed e sitemap
