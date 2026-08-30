@@ -55,6 +55,7 @@
   ?>
   <div class="condividi" data-url="<?= e($indirizzo) ?>" data-titolo="<?= e($a['titolo_it']) ?>">
     <span class="condividi-etichetta">condividi</span>
+    <?= condividiMini($a['slug'], $a['titolo_it']) ?>
 
     <?php /* Link semplici, non pulsanti ufficiali: quelli caricherebbero
              codice dai server di Meta e X e traccerebbero chi apre la

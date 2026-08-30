@@ -862,6 +862,10 @@ body { overflow-x: clip; }
 .condividi-mini.fatto { color: var(--accento); }
 .condividi-mini.fatto::after { content: 'copiato'; }
 
+/* Nell'articolo la riga è alta e ariosa: l'icona ci sta dentro senza il
+   margine negativo che serve a incastonarla nel piede di una scheda. */
+.condividi .condividi-mini { margin: 0; padding: .4rem; }
+
 /* ----------------------------------------------------------- elenco */
 
 .elenco { display: grid; }

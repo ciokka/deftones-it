@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=46">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=47">
 </head>
 <body>
 
@@ -224,19 +224,24 @@ $voci = [
   var indirizzo = box.getAttribute('data-url');
   var titolo = box.getAttribute('data-titolo');
 
+  // Due modi di condividere, e se ne mostra uno solo.
+  //
+  // Dove c'è il pannello di sistema resta l'iconcina, la stessa delle
+  // schede: conosce le app installate ed è più comoda di qualunque
+  // elenco. Prima al suo posto veniva creato un pulsante con scritto
+  // "condividi", che finiva accanto all'etichetta "condividi" — la
+  // stessa parola due volte di fila.
+  //
+  // Dove il pannello non c'è — Firefox su desktop, per esempio — restano
+  // i collegamenti ai singoli servizi, che nessun sistema offrirebbe, e
+  // l'iconcina se ne va perché saprebbe fare solo copia-indirizzo.
+  var mini = box.querySelector('.condividi-mini');
   if (navigator.share) {
     var voci = box.querySelectorAll('.condividi-voce');
     for (var i = 0; i < voci.length; i++) { voci[i].remove(); }
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'condividi-voce';
-    b.textContent = 'condividi';
-    b.addEventListener('click', function () {
-      navigator.share({ title: titolo, url: indirizzo }).catch(function () {});
-    });
-    box.appendChild(b);
     return;
   }
+  if (mini) { mini.remove(); }
 
   var copia = box.querySelector('.condividi-copia');
   if (copia && navigator.clipboard) {
