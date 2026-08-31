@@ -74,7 +74,7 @@ $html = null;
 // --- home
 if ($percorso === '/') {
     $campi = 'id, slug, titolo_it, sommario_it, categoria, attendibilita,
-              fonte_nome, pubblicato_il, rilevanza,
+              fonte_nome, pubblicato_il, rilevanza, in_apertura,
               immagine_url, immagine_origine, immagine_autore,
               immagine_licenza, immagine_licenza_url, immagine_fonte_url';
 
@@ -95,12 +95,31 @@ if ($percorso === '/') {
           ORDER BY pubblicato_il DESC LIMIT 18"
     )->fetchAll();
 
-    // Condividendo la home si può scegliere fra l'immagine del sito e le
-    // tre foto in apertura: Facebook mostra le frecce per passare
-    // dall'una all'altra. La prima resta la nostra, che non invecchia.
-    $anteprime = [['percorso' => u('assets/og.png'), 'alt' => null]];
+    // Quale immagine si vede quando qualcuno condivide la home.
+    //
+    // Le dichiariamo tutte — la nostra e le tre in apertura — perché
+    // Open Graph lo consente, ma la scelta vera la fa la PRIMA: Facebook
+    // ha smesso di offrire il selettore e prende quella, ignorando le
+    // altre. La scelta quindi la facciamo qui, non al momento di
+    // condividere.
+    //
+    // Se una notizia è fissata in apertura dal pannello, la sua
+    // copertina passa davanti: "questa è la notizia in vetrina" diventa
+    // anche "questa è la faccia del sito quando lo si condivide". Se non
+    // ne fissi nessuna resta l'immagine del sito, che non invecchia
+    // mentre la notizia sì.
+    $anteprime = [];
+    $vetrina = $apertura[0] ?? null;
+    if ($vetrina && (int)$vetrina['in_apertura'] === 1 && !empty($vetrina['immagine_url'])) {
+        $anteprime[] = [
+            'percorso' => $vetrina['immagine_url'],
+            'alt'      => mb_substr((string)$vetrina['titolo_it'], 0, 200),
+        ];
+    }
+    $anteprime[] = ['percorso' => u('assets/og.png'), 'alt' => null];
     foreach ($apertura as $x) {
         if (empty($x['immagine_url'])) { continue; }
+        if ($anteprime[0]['percorso'] === $x['immagine_url']) { continue; }
         $anteprime[] = [
             'percorso' => $x['immagine_url'],
             'alt'      => mb_substr((string)$x['titolo_it'], 0, 200),

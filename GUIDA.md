@@ -284,6 +284,13 @@ l'archivio: ogni articolo riaccende i link che puntavano a lui da anni.
 L'apertura prende di suo le tre notizie più recenti. Dal pannello se ne
 possono fissare: quelle fissate vengono prima, le recenti completano.
 
+Fissarne una fa anche un'altra cosa: la sua copertina diventa l'immagine
+che si vede quando qualcuno condivide la home. La pagina ne dichiara
+quattro, ma Facebook ha smesso di offrire il selettore e prende sempre la
+prima — quindi la scelta la si fa dal pannello invece che al momento di
+condividere. Senza nessuna fissata resta l'immagine del sito, che non
+invecchia mentre una notizia sì.
+
 ---
 
 ## 7. Il pannello
