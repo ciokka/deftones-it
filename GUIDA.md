@@ -266,7 +266,7 @@ Con `--solo=slug` si lavora su un disco solo, con `--rifai` si rifà.
 
 | Indirizzo | Cosa c'è |
 |---|---|
-| `/` | l'apertura — le tre notizie in evidenza in un carosello — e sotto le ultime diciotto |
+| `/` | l'apertura — le tre notizie in evidenza, che avanzano scorrendo — e sotto le ultime diciotto |
 | `/notizie` | l'archivio completo, filtrabile per anno e categoria, con *carica altro* |
 | `/notizie/{slug}` | l'articolo |
 | `/categoria/{cat}`, `/tag/{tag}` | tagli dell'archivio |

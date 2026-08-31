@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=59">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=60">
 </head>
 <body>
 
@@ -532,7 +532,10 @@ $voci = [
   }, { passive: true });
 
   pista.addEventListener('touchend', function (e) {
-    if (!valido) { return; }
+    // Dove comanda lo scorrimento il gesto laterale si ritira: cambierebbe
+    // diapositiva per un attimo, e il primo movimento verticale la
+    // rimetterebbe dove dice la posizione nella pagina.
+    if (!valido || agganciato) { return; }
     valido = false;
     var t = e.changedTouches[0];
     var dx = t.clientX - pX, dy = t.clientY - pY;

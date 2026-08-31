@@ -343,22 +343,29 @@ body { overflow-x: clip; }
 .apertura { padding: 4rem 0 3rem; border-bottom: 1px solid var(--bordo); }
 
 /* --------------------------------------------- carosello agganciato */
-/* Solo da schermo largo, e solo se il sistema non chiede di ridurre il
-   movimento: il carosello resta appiccicato in cima mentre scorri, e le
-   tre notizie avanzano seguendo la corsa. Poi si sgancia e la pagina
-   riprende normalmente.
-   Non è intercettazione dello scorrimento: la rotella continua sempre a
-   muovere la pagina, e quello che cambia è solo cosa si vede muovere.
-   Sotto i 64rem l'involucro non fa niente e il carosello si comporta
-   come prima, con l'avanzamento a tempo. */
-@media (min-width: 64rem) and (prefers-reduced-motion: no-preference) {
-  /* La corsa totale: divisa per tre notizie fa un terzo di schermata
-     ciascuna, cioè tre o quattro scatti di rotella. È il numero da
-     girare se il cambio sembra troppo pronto o troppo pigro. */
+/* Il carosello resta appiccicato in cima mentre scorri, e le tre notizie
+   avanzano seguendo la corsa percorsa. Poi si sgancia e la pagina
+   riprende normalmente. Vale ovunque, telefono compreso.
+
+   Non è intercettazione dello scorrimento: il dito e la rotella
+   continuano sempre a muovere la pagina, e quello che cambia è solo cosa
+   si vede muovere. Se il sistema chiede di ridurre il movimento non si
+   attiva affatto, e il carosello torna ad avanzare a tempo — senza che
+   nessuna riga di JavaScript debba saperlo, perché quello legge
+   l'altezza dell'involucro e qui non gliene diamo una. */
+@media (prefers-reduced-motion: no-preference) {
+  /* La corsa totale: divisa per tre notizie fa poco meno di mezza
+     schermata ciascuna. È il numero da girare se il cambio sembra troppo
+     pronto o troppo pigro. */
   .carosello-aggancio { height: calc(var(--h-apertura) + 140vh); }
-  /* Si aggancia a zero, cioè dietro la testata: l'apertura è alta quanto
-     tutto lo schermo e lo riempie per intero, testata compresa. */
-  .carosello-aggancio > .carosello { position: sticky; top: 0; }
+  /* Si aggancia sotto quello che resta fisso in cima: sul telefono la
+     barra del menu. */
+  .carosello-aggancio > .carosello { position: sticky; top: var(--h-testata); }
+}
+/* Da 40rem in su l'apertura passa dietro la testata e riempie lo schermo
+   per intero, quindi si aggancia a zero. */
+@media (min-width: 40rem) and (prefers-reduced-motion: no-preference) {
+  .carosello-aggancio > .carosello { top: 0; }
 }
 
 /* ----------------------------------------------------- il carosello */
@@ -391,10 +398,17 @@ body { overflow-x: clip; }
      fossero due numeri, il giorno che la testata cambia altezza uno dei
      due resterebbe indietro e comparirebbe una fessura. */
   --h-testata: 3.5rem;
-  --h-apertura: calc(100vh - var(--h-testata));
-  --h-apertura: calc(100svh - var(--h-testata));
+  /* La fila degli indicatori: fino a 48rem sta nel flusso sotto la
+     pista, quindi occupa spazio e va scalata — o mentre il carosello è
+     agganciato finirebbe appena sotto il bordo dello schermo, invisibile
+     proprio quando serve. Da 48rem in su è appoggiata sul fianco e non
+     occupa niente. */
+  --h-guida: 3rem;
+  --h-apertura: calc(100vh - var(--h-testata) - var(--h-guida));
+  --h-apertura: calc(100svh - var(--h-testata) - var(--h-guida));
   min-height: 24rem;
 }
+@media (min-width: 48rem) { .carosello-aggancio { --h-guida: 0rem; } }
 /* Da 40rem in su l'apertura passa DIETRO la testata.
    La testata è sticky, quindi occupa il suo posto nel flusso e spinge
    giù tutto quello che segue: per farcela passare sotto bisogna tirare
@@ -408,8 +422,8 @@ body { overflow-x: clip; }
 @media (min-width: 40rem) {
   .carosello-aggancio {
     --h-testata: 5rem;
-    --h-apertura: 100vh;
-    --h-apertura: 100svh;
+    --h-apertura: calc(100vh - var(--h-guida));
+    --h-apertura: calc(100svh - var(--h-guida));
     margin-top: calc(-1 * var(--h-testata));
   }
 }
