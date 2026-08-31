@@ -73,16 +73,18 @@ function render(string $vista, array $dati = [], array $meta = []): string
     // L'anteprima per la condivisione. Le pagine ne passano una propria
     // come percorso — /media/copertine/xxx.jpg — e qui diventa indirizzo
     // assoluto; in mancanza vale quella del sito.
+    $imgNostra   = !isset($meta['immagine']);
     $imgPercorso = $meta['immagine'] ?? u('assets/og.png');
     $immagine    = cfg('site_url') . $imgPercorso;
-    $immagineAlt = $meta['immagine_alt'] ?? null;
+    $immagineAlt = $meta['immagine_alt']
+        ?? ($imgNostra ? 'deftones.it — the italian Deftones family' : null);
 
     // Le misure dichiarate devono essere quelle vere. Prima erano scritte
     // a mano 1200x675 per qualunque immagine: giuste per la nostra og.png,
     // sbagliate per una fotografia scaricata da Commons, che di suo è
     // 1280x850 o qualunque altra cosa. Un social che si fida di una misura
     // sbagliata ritaglia l'anteprima male, o la rifiuta.
-    $misure = str_starts_with($imgPercorso, u('assets/og.png'))
+    $misure = $imgNostra
         ? [1200, 675]                       // og.png l'abbiamo fatta noi
         : misuraImmagine($imgPercorso);
 
