@@ -183,9 +183,14 @@ body { overflow-x: clip; }
    restare fissa. Da 40rem in su la testata torna una riga sola e resta
    lei in cima. */
 .testata {
-  /* Posizionata anche da ferma: senza, il carosello — che è sticky —
-     le passerebbe sopra e il logo sparirebbe dietro la fotografia. */
-  position: relative;
+  /* Ferma in cima ovunque, telefono compreso. Lo fa position: sticky, non
+     un pezzo di JavaScript che legge lo scorrimento: sul telefono la
+     pagina scorre in un thread suo e il codice arriva sempre un
+     fotogramma dopo, quindi la testata inseguirebbe invece di stare
+     ferma — si vede vibrare. Sticky lo gestisce il compositore, e non
+     trema. */
+  position: sticky;
+  top: 0;
   z-index: 10;
   /* Fondo appena velato invece che pieno: quello che scorre sotto si
      intuisce, sfocato. Il saturate serve perché lo sfocato da solo
@@ -196,19 +201,14 @@ body { overflow-x: clip; }
   border-bottom: 1px solid var(--bordo);
 }
 
-@media (min-width: 40rem) {
-  .testata {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-}
-
 /* La barra del menu è fuori dalla testata, non dentro: un elemento
-   sticky si sblocca quando il suo contenitore esce dalla vista. */
+   sticky si sblocca quando il suo contenitore esce dalla vista.
+   Si aggancia sotto la testata, che adesso resta anche lei: l'altezza la
+   misura lo script una volta al caricamento, perché dipende da logo,
+   payoff e spaziature e scriverla a mano invecchierebbe male. */
 .menu-barra {
   position: sticky;
-  top: 0;
+  top: var(--alta-testata, 0px);
   z-index: 10;
   background: rgba(0,0,0,.62);
   -webkit-backdrop-filter: blur(16px) saturate(140%);

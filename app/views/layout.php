@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=63">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=64">
 </head>
 <body>
 
@@ -431,6 +431,24 @@ $voci = [
         delete b.dataset.occupato;
       });
   });
+})();
+
+// Quanto è alta la testata, che serve alla barra del menu per
+// agganciarsi sotto invece che sopra. Si misura al caricamento e quando
+// la finestra cambia misura — non a ogni scorrimento: qui non c'è niente
+// da inseguire, solo un numero che cambia di rado.
+(function () {
+  var t = document.querySelector('.testata');
+  if (!t) { return; }
+  function misura() {
+    document.documentElement.style.setProperty('--alta-testata', t.offsetHeight + 'px');
+  }
+  misura();
+  window.addEventListener('resize', misura, { passive: true });
+  // I caratteri arrivano dopo il primo disegno e cambiano l'altezza del
+  // payoff: senza questa seconda misura la barra resta qualche pixel
+  // sovrapposta.
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(misura); }
 })();
 
 // Il carosello dell'apertura.
