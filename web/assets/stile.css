@@ -804,13 +804,19 @@ main.contenitore { overflow-x: clip; }
      posizionano al 100% della sua altezza, finiscono fuori dalla
      finestra. Da fuori sembra che l'autocompletamento non funzioni. */
   align-items: flex-start;
-  padding: 14vh 1.5rem 1.5rem;
+  /* Nessun margine ai lati: lo tiene il riquadro, dentro di sé. Con il
+     margine qui il riquadro valeva il 100% di uno spazio già ridotto, e
+     bastava che una qualsiasi altra regola gli desse una larghezza
+     diversa perché sfondasse — ed è quello che succedeva. Messo dentro,
+     il riquadro è largo quanto lo schermo e il modulo ci sta per
+     costruzione. */
+  padding: 14vh 0 1.5rem;
 }
 .cercatore[hidden] { display: none; }
 /* Sul telefono il pannello scende più in alto e stringe i margini: lo
    spazio in larghezza è quello che è, e serve al campo. */
 @media (max-width: 34rem) {
-  .cercatore { padding: 8vh 1rem 1rem; }
+  .cercatore { padding: 8vh 0 1rem; }
   .ricerca button { padding: .7rem .8rem; }
 }
 .cercatore-fondo {
@@ -819,19 +825,24 @@ main.contenitore { overflow-x: clip; }
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
-.cercatore-riquadro {
-  position: relative;
-  width: 100%;
-  max-width: min(36rem, 100%);   /* non più largo di quello che c'è */
-}
+/* La larghezza sta tutta su .cercatore .ricerca-blocco, qui sotto: le
+   due classi vivono sullo stesso elemento e quella più specifica vince,
+   quindi dichiararla anche qui serviva solo a far credere il contrario. */
+.cercatore-riquadro { position: relative; }
 .cercatore .ricerca { margin: 0; max-width: none; }
 
 /* L'involucro è il riferimento dei suggerimenti, che escono sopra il
    resto della pagina invece di spingerlo in basso a ogni tasto. */
 .ricerca-blocco { position: relative; max-width: 32rem; margin: 0 0 2rem; }
-/* Non "none": .ricerca-blocco e .cercatore-riquadro stanno sullo stesso
-   elemento, e un max-width tolto qui vince su quello del riquadro. */
-.cercatore .ricerca-blocco { max-width: 36rem; margin: 0; }
+/* 38rem, non 36: due sono i margini interni, che adesso stanno qui. */
+.cercatore .ricerca-blocco {
+  width: 100%;
+  max-width: 38rem;
+  margin: 0;
+  padding: 0 1rem;
+}
+/* I suggerimenti si allineano al campo, non al bordo del riquadro. */
+.cercatore .suggerimenti { left: 1rem; right: 1rem; }
 
 .ricerca { display: flex; gap: .5rem; margin: 0; max-width: 32rem; }
 .ricerca input {
