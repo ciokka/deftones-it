@@ -26,7 +26,7 @@
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=61">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=62">
 </head>
 <body>
 
@@ -570,19 +570,25 @@ $voci = [
   var testata = document.querySelector('.testata');
   var barra = document.querySelector('.menu-barra');
 
-  function tieniTestata(fatto, totale) {
+  function tieniTestata(totale) {
     // Solo dove la barra del menu esiste, cioè sul telefono: da 40rem in
     // su la testata è già sticky per conto suo.
     if (!testata || !barra || getComputedStyle(barra).display === 'none') { return; }
 
-    var alta = testata.offsetHeight;
-    testata.style.transform = 'translateY(' + fatto + 'px)';
+    // La traslazione è pari a quanto si è scorso, non a quanto si è
+    // percorso del carosello: sono due misure diverse, e la differenza è
+    // l'altezza della barra del menu. Con quella sbagliata la testata
+    // restava sì ferma, ma un pezzo più su del bordo dello schermo.
+    var y = window.pageYOffset;
+    var fine = inizio() + totale;
+    var tenuta = Math.min(y, fine);
+    testata.style.transform = tenuta ? 'translateY(' + tenuta + 'px)' : '';
 
     // La barra del menu si aggancia sotto la testata finché questa è
     // tenuta, poi la segue mentre se ne va: senza, si accavallerebbero,
     // e al momento del rilascio salterebbe di colpo in cima.
-    var oltre = Math.max(0, window.pageYOffset - inizio() - totale);
-    barra.style.top = Math.max(0, alta - oltre) + 'px';
+    var oltre = Math.max(0, y - fine);
+    barra.style.top = Math.max(0, testata.offsetHeight - oltre) + 'px';
   }
 
   function corsa() {
@@ -622,7 +628,7 @@ $voci = [
     var n;
     if (p < 0.2) { n = 0; }
     else { n = Math.min(quante - 1, 1 + Math.floor((p - 0.2) / 0.8 * (quante - 1))); }
-    tieniTestata(fatto, totale);
+    tieniTestata(totale);
     if (n !== desiderato) { desiderato = n; applica(); }
   }
 
