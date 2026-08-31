@@ -70,23 +70,41 @@ function render(string $vista, array $dati = [], array $meta = []): string
     $titolo      = $meta['titolo']      ?? cfg('site_name');
     $descrizione = $meta['descrizione'] ?? '';
     $canonico    = $meta['canonico']    ?? '';
-    // L'anteprima per la condivisione. Le pagine ne passano una propria
-    // come percorso — /media/copertine/xxx.jpg — e qui diventa indirizzo
-    // assoluto; in mancanza vale quella del sito.
-    $imgNostra   = !isset($meta['immagine']);
-    $imgPercorso = $meta['immagine'] ?? u('assets/og.png');
-    $immagine    = cfg('site_url') . $imgPercorso;
-    $immagineAlt = $meta['immagine_alt']
-        ?? ($imgNostra ? 'deftones.it — the italian Deftones family' : null);
+    // Le anteprime per la condivisione.
+    //
+    // Ce ne può essere più d'una: Open Graph accetta più og:image, e
+    // Facebook offre le frecce per scegliere fra loro. La home ne manda
+    // quattro — la sua immagine e le tre foto in apertura — così chi
+    // condivide sceglie quella che gli pare invece di prendersi quella
+    // che capita.
+    //
+    // La prima è quella predefinita, ed è sempre l'immagine del sito:
+    // una fotografia in cima invecchierebbe, il marchio no.
+    //
+    // Le pagine passano PERCORSI, non indirizzi: l'indirizzo assoluto lo
+    // costruisce qui, in un punto solo.
+    $lista = $meta['immagini'] ?? [[
+        'percorso' => $meta['immagine'] ?? u('assets/og.png'),
+        'alt'      => $meta['immagine_alt'] ?? null,
+    ]];
 
-    // Le misure dichiarate devono essere quelle vere. Prima erano scritte
-    // a mano 1200x675 per qualunque immagine: giuste per la nostra og.png,
-    // sbagliate per una fotografia scaricata da Commons, che di suo è
-    // 1280x850 o qualunque altra cosa. Un social che si fida di una misura
-    // sbagliata ritaglia l'anteprima male, o la rifiuta.
-    $misure = $imgNostra
-        ? [1200, 675]                       // og.png l'abbiamo fatta noi
-        : misuraImmagine($imgPercorso);
+    $immagini = [];
+    foreach ($lista as $x) {
+        $percorso = (string)($x['percorso'] ?? '');
+        if ($percorso === '') { continue; }
+        $nostra = $percorso === u('assets/og.png');
+        // Le misure dichiarate devono essere quelle vere. Erano scritte a
+        // mano 1200x675 per qualunque immagine: giuste per la nostra
+        // og.png, sbagliate per una fotografia di Commons, che è
+        // 1280x850 o qualunque altra cosa. Un social che si fida di una
+        // misura sbagliata ritaglia male l'anteprima, o la rifiuta.
+        $misure = $nostra ? [1200, 675] : misuraImmagine($percorso);
+        $immagini[] = [
+            'url'    => cfg('site_url') . $percorso,
+            'misure' => $misure,
+            'alt'    => $x['alt'] ?? ($nostra ? 'deftones.it — the italian Deftones family' : null),
+        ];
+    }
 
     ob_start();
     require dirname(__DIR__) . '/views/layout.php';

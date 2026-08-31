@@ -18,14 +18,20 @@
 <?php if ($canonico): ?>
 <meta property="og:url" content="<?= e($canonico) ?>">
 <?php endif ?>
-<meta property="og:image" content="<?= e($immagine) ?>">
-<?php if ($misure): ?>
-<meta property="og:image:width" content="<?= (int)$misure[0] ?>">
-<meta property="og:image:height" content="<?= (int)$misure[1] ?>">
+<?php /* Più di una immagine quando ce n'è più d'una da offrire: la
+         prima è quella predefinita, le altre compaiono nel selettore di
+         Facebook. Larghezza, altezza e testo alternativo si riferiscono
+         sempre all'og:image che li precede. */ ?>
+<?php foreach ($immagini as $img): ?>
+<meta property="og:image" content="<?= e($img['url']) ?>">
+<?php if ($img['misure']): ?>
+<meta property="og:image:width" content="<?= (int)$img['misure'][0] ?>">
+<meta property="og:image:height" content="<?= (int)$img['misure'][1] ?>">
 <?php endif ?>
-<?php if ($immagineAlt): ?>
-<meta property="og:image:alt" content="<?= e($immagineAlt) ?>">
+<?php if ($img['alt']): ?>
+<meta property="og:image:alt" content="<?= e($img['alt']) ?>">
 <?php endif ?>
+<?php endforeach ?>
 <?php /* summary_large_image è ciò che fa mostrare l'immagine grande
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">

@@ -95,7 +95,20 @@ if ($percorso === '/') {
           ORDER BY pubblicato_il DESC LIMIT 18"
     )->fetchAll();
 
+    // Condividendo la home si può scegliere fra l'immagine del sito e le
+    // tre foto in apertura: Facebook mostra le frecce per passare
+    // dall'una all'altra. La prima resta la nostra, che non invecchia.
+    $anteprime = [['percorso' => u('assets/og.png'), 'alt' => null]];
+    foreach ($apertura as $x) {
+        if (empty($x['immagine_url'])) { continue; }
+        $anteprime[] = [
+            'percorso' => $x['immagine_url'],
+            'alt'      => mb_substr((string)$x['titolo_it'], 0, 200),
+        ];
+    }
+
     $html = render('home', ['apertura' => $apertura, 'articoli' => $articoli], [
+        'immagini'    => $anteprime,
         'canonico'    => cfg('site_url') . u(''),
         'titolo'      => 'deftones.it — notizie sui Deftones in italiano',
         'descrizione' => 'Notizie sui Deftones in italiano, aggiornate ogni giorno: '
