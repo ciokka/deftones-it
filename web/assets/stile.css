@@ -164,10 +164,15 @@ body::after {
 
 a { color: inherit; }
 
-/* Il banner della home esce dal contenitore con 100vw, che su alcuni
-   browser comprende la barra di scorrimento. "clip" taglia quel filo di
-   troppo; "hidden" no, perché romperebbe la testata sticky. */
-body { overflow-x: clip; }
+/* Il ritaglio sta su main e non su body, e la differenza si vede.
+   A uscire dal contenitore è solo l'apertura, che sta dentro main. Con
+   il ritaglio sul body ci finiva dentro anche il pannello di ricerca,
+   che è figlio del body: un elemento position: fixed viene ritagliato
+   dall'antenato che ha overflow: clip, e sul telefono il pulsante
+   "cerca" e i suggerimenti risultavano tagliati sul bordo destro.
+   "clip" e non "hidden" perché hidden farebbe di main un contenitore di
+   scorrimento e romperebbe l'aggancio del carosello. */
+main.contenitore { overflow-x: clip; }
 
 .contenitore {
   width: 100%;
@@ -802,13 +807,23 @@ body { overflow-x: clip; }
   padding: 14vh 1.5rem 1.5rem;
 }
 .cercatore[hidden] { display: none; }
+/* Sul telefono il pannello scende più in alto e stringe i margini: lo
+   spazio in larghezza è quello che è, e serve al campo. */
+@media (max-width: 34rem) {
+  .cercatore { padding: 8vh 1rem 1rem; }
+  .ricerca button { padding: .7rem .8rem; }
+}
 .cercatore-fondo {
   position: absolute; inset: 0;
   background: rgba(0,0,0,.74);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
-.cercatore-riquadro { position: relative; width: 100%; max-width: 36rem; }
+.cercatore-riquadro {
+  position: relative;
+  width: 100%;
+  max-width: min(36rem, 100%);   /* non più largo di quello che c'è */
+}
 .cercatore .ricerca { margin: 0; max-width: none; }
 
 /* L'involucro è il riferimento dei suggerimenti, che escono sopra il
