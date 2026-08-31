@@ -23,6 +23,9 @@ deployment:
     - /bin/cp    web/index.php           $WEB/
     - /bin/cp    web/.htaccess           $WEB/
     - /bin/cp    web/robots.txt          $WEB/
+    - /bin/cp    web/favicon.svg         $WEB/
+    - /bin/cp    web/favicon.ico         $WEB/
+    - /bin/cp    web/apple-touch-icon.png $WEB/
     - /bin/cp -r web/assets/.            $WEB/assets/
 
     # --- la cache va svuotata, o continueresti a vedere le pagine vecchie ---

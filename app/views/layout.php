@@ -25,6 +25,13 @@
 <?php /* summary_large_image è ciò che fa mostrare l'immagine grande
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
+<?php /* L'SVG per chi lo supporta — resta nitido a qualunque misura e
+         pesa ottocento byte — e l'ICO per gli altri, che ne contiene tre
+         disegnate apposta a 16, 32 e 48 invece di una sola rimpicciolita
+         dal browser. */ ?>
+<link rel="icon" href="<?= u('favicon.svg') ?>" type="image/svg+xml">
+<link rel="icon" href="<?= u('favicon.ico') ?>" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="<?= u('apple-touch-icon.png') ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
 <link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=66">
 </head>
