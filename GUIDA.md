@@ -572,7 +572,7 @@ sole senza reimportare nulla.
 giorni conservano i log, e se nel contratto c'è la nomina a responsabile
 del trattamento.
 
-**Il foglio di stile.** Ha passato le millecento righe e in una sola
+**Il foglio di stile.** Ha passato le millecinquecento righe e in una sola
 giornata ha prodotto tre collisioni — due di nomi di classe, una di
 specificità. Non è sfortuna: è cresciuto oltre la misura in cui si tiene
 a mente per intero. Prima o poi va diviso per blocchi con confini netti.

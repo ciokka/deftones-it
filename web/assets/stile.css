@@ -164,15 +164,15 @@ body::after {
 
 a { color: inherit; }
 
-/* Il ritaglio sta su main e non su body, e la differenza si vede.
-   A uscire dal contenitore è solo l'apertura, che sta dentro main. Con
-   il ritaglio sul body ci finiva dentro anche il pannello di ricerca,
-   che è figlio del body: un elemento position: fixed viene ritagliato
-   dall'antenato che ha overflow: clip, e sul telefono il pulsante
-   "cerca" e i suggerimenti risultavano tagliati sul bordo destro.
-   "clip" e non "hidden" perché hidden farebbe di main un contenitore di
-   scorrimento e romperebbe l'aggancio del carosello. */
-main.contenitore { overflow-x: clip; }
+/* Il ritaglio va sul body, non su main, e la differenza è tutta qui:
+   l'apertura esce dal contenitore apposta, per arrivare ai bordi dello
+   schermo. Ritagliando su main la si ritaglia proprio dove doveva
+   uscire, e resta larga quanto il contenitore.
+   Sul body invece non taglia niente di voluto: serve solo a togliere i
+   quindici pixel che l'apertura sfora quando c'è la barra di
+   scorrimento, perché 50vw la comprende e il contenitore no.
+   "clip" e non "hidden" perché hidden romperebbe gli elementi sticky. */
+body { overflow-x: clip; }
 
 .contenitore {
   width: 100%;
