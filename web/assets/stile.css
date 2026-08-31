@@ -183,6 +183,10 @@ body { overflow-x: clip; }
    restare fissa. Da 40rem in su la testata torna una riga sola e resta
    lei in cima. */
 .testata {
+  /* Posizionata anche da ferma: senza, il carosello — che è sticky —
+     le passerebbe sopra e il logo sparirebbe dietro la fotografia. */
+  position: relative;
+  z-index: 10;
   /* Fondo appena velato invece che pieno: quello che scorre sotto si
      intuisce, sfocato. Il saturate serve perché lo sfocato da solo
      slava i colori, e il verde dell'accento sotto ne uscirebbe grigio. */
@@ -358,14 +362,9 @@ body { overflow-x: clip; }
      schermata ciascuna. È il numero da girare se il cambio sembra troppo
      pronto o troppo pigro. */
   .carosello-aggancio { height: calc(var(--h-apertura) + 140vh); }
-  /* Si aggancia sotto quello che resta fisso in cima: sul telefono la
-     barra del menu. */
-  .carosello-aggancio > .carosello { position: sticky; top: var(--h-testata); }
-}
-/* Da 40rem in su l'apertura passa dietro la testata e riempie lo schermo
-   per intero, quindi si aggancia a zero. */
-@media (min-width: 40rem) and (prefers-reduced-motion: no-preference) {
-  .carosello-aggancio > .carosello { top: 0; }
+  /* Si aggancia a zero: la testata e la barra del menu le stanno sopra,
+     velate e sfocate, con la foto che ci passa sotto. */
+  .carosello-aggancio > .carosello { position: sticky; top: 0; }
 }
 
 /* ----------------------------------------------------- il carosello */
@@ -404,8 +403,8 @@ body { overflow-x: clip; }
      proprio quando serve. Da 48rem in su è appoggiata sul fianco e non
      occupa niente. */
   --h-guida: 3rem;
-  --h-apertura: calc(100vh - var(--h-testata) - var(--h-guida));
-  --h-apertura: calc(100svh - var(--h-testata) - var(--h-guida));
+  --h-apertura: calc(100vh - var(--h-guida));
+  --h-apertura: calc(100svh - var(--h-guida));
   min-height: 24rem;
 }
 @media (min-width: 48rem) { .carosello-aggancio { --h-guida: 0rem; } }
