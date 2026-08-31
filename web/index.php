@@ -324,9 +324,16 @@ elseif (preg_match('#^/notizie/([a-z0-9-]+)$#', $percorso, $m)) {
         'descrizione' => mb_substr($a['sommario_it'], 0, 160),
         'canonico'    => cfg('site_url') . u('notizie/' . $a['slug'] . '/'),
         // Quando c'è una foto vera, è quella che si vede quando il pezzo
-        // viene condiviso. Le copertine generate restano fuori: sono SVG,
-        // e nessun social sa disegnarle nell'anteprima.
-    ] + ($a['immagine_url'] ? ['immagine' => cfg('site_url') . $a['immagine_url']] : []));
+        // viene condiviso, con le sue misure e con un testo alternativo
+        // che descrive la fotografia e non il sito.
+    ] + ($a['immagine_url'] ? [
+        'immagine'     => $a['immagine_url'],
+        'immagine_alt' => $a['immagine_origine'] === 'disco'
+            ? (string)$a['immagine_licenza']
+            : ($a['immagine_autore']
+                ? 'Deftones, fotografia di ' . $a['immagine_autore']
+                : 'Deftones'),
+    ] : []));
 }
 
 // --- categoria
@@ -470,7 +477,10 @@ elseif (preg_match('#^/discografia/([a-z0-9-]+)$#', $percorso, $m)) {
                        ?: $d['titolo'] . ' dei Deftones' . ($d['anno'] ? ', ' . $d['anno'] : '') . '.',
         'canonico'    => cfg('site_url') . u('discografia/' . $d['slug'] . '/'),
     ];
-    if ($d['copertina']) { $meta['immagine'] = cfg('site_url') . $d['copertina']; }
+    if ($d['copertina']) {
+        $meta['immagine'] = $d['copertina'];
+        $meta['immagine_alt'] = 'Copertina di ' . $d['titolo'] . ' dei Deftones';
+    }
 
     $html = render('disco', ['d' => $d, 'collegati' => $collegati], $meta);
 }

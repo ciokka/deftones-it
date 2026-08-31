@@ -70,9 +70,21 @@ function render(string $vista, array $dati = [], array $meta = []): string
     $titolo      = $meta['titolo']      ?? cfg('site_name');
     $descrizione = $meta['descrizione'] ?? '';
     $canonico    = $meta['canonico']    ?? '';
-    // L'anteprima per la condivisione. Le pagine possono passarne una
-    // propria; in mancanza vale quella del sito.
-    $immagine    = $meta['immagine']    ?? cfg('site_url') . u('assets/og.png');
+    // L'anteprima per la condivisione. Le pagine ne passano una propria
+    // come percorso — /media/copertine/xxx.jpg — e qui diventa indirizzo
+    // assoluto; in mancanza vale quella del sito.
+    $imgPercorso = $meta['immagine'] ?? u('assets/og.png');
+    $immagine    = cfg('site_url') . $imgPercorso;
+    $immagineAlt = $meta['immagine_alt'] ?? null;
+
+    // Le misure dichiarate devono essere quelle vere. Prima erano scritte
+    // a mano 1200x675 per qualunque immagine: giuste per la nostra og.png,
+    // sbagliate per una fotografia scaricata da Commons, che di suo è
+    // 1280x850 o qualunque altra cosa. Un social che si fida di una misura
+    // sbagliata ritaglia l'anteprima male, o la rifiuta.
+    $misure = str_starts_with($imgPercorso, u('assets/og.png'))
+        ? [1200, 675]                       // og.png l'abbiamo fatta noi
+        : misuraImmagine($imgPercorso);
 
     ob_start();
     require dirname(__DIR__) . '/views/layout.php';
@@ -411,5 +423,25 @@ function facciateVideo(string $html): string
         $html
     );
     return $fatto ?? $html;
+}
+
+/**
+ * Larghezza e altezza di un'immagine che stiamo servendo noi.
+ *
+ * Solo quelle sotto /media/, che sono le uniche di cui conosciamo il
+ * posto sul disco. getimagesize legge la sola intestazione del file, e
+ * la pagina che la usa finisce comunque in cache: si paga una volta.
+ * Se non si riesce a misurare si torna null, e le misure non vengono
+ * dichiarate affatto — meglio tacere che dire un numero sbagliato.
+ */
+function misuraImmagine(string $percorso): ?array
+{
+    if (!str_starts_with($percorso, '/media/')) { return null; }
+    $base = rtrim((string)(cfg('media_dir') ?: ''), '/');
+    if ($base === '') { return null; }
+    $file = $base . substr($percorso, strlen('/media'));
+    if (!is_file($file)) { return null; }
+    $d = @getimagesize($file);
+    return $d ? [(int)$d[0], (int)$d[1]] : null;
 }
 

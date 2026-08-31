@@ -19,9 +19,13 @@
 <meta property="og:url" content="<?= e($canonico) ?>">
 <?php endif ?>
 <meta property="og:image" content="<?= e($immagine) ?>">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="675">
-<meta property="og:image:alt" content="deftones.it — the italian Deftones family">
+<?php if ($misure): ?>
+<meta property="og:image:width" content="<?= (int)$misure[0] ?>">
+<meta property="og:image:height" content="<?= (int)$misure[1] ?>">
+<?php endif ?>
+<?php if ($immagineAlt): ?>
+<meta property="og:image:alt" content="<?= e($immagineAlt) ?>">
+<?php endif ?>
 <?php /* summary_large_image è ciò che fa mostrare l'immagine grande
          invece della miniatura quadrata di fianco al testo. */ ?>
 <meta name="twitter:card" content="summary_large_image">
