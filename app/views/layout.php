@@ -478,8 +478,13 @@ $voci = [
   // conMoto: la diapositiva che entra va prima messa dalla parte giusta
   // SENZA transizione, altrimenti scivolerebbe da dove si trovava prima.
   function poni(el, asse, quanto, opacita, conMoto) {
+    // Quattro decimi di secondo e non otto. Con l'inerzia del dito un
+    // colpo secco attraversa la fetta di mezzo in due o tre decimi: con
+    // una dissolvenza lunga la diapositiva centrale faceva in tempo ad
+    // arrivare a un terzo e veniva scavalcata, e quel terzo si legge come
+    // "saltata". Più corta, la si vede passare per intero.
     el.style.transition = conMoto && !lento
-      ? 'transform .75s cubic-bezier(.22,.61,.36,1), opacity .5s ease'
+      ? 'transform .4s cubic-bezier(.22,.61,.36,1), opacity .28s ease'
       : 'none';
     el.style.transform = quanto ? 'translate' + asse + '(' + quanto + '%)' : 'none';
     el.style.opacity = opacita;
@@ -513,7 +518,7 @@ $voci = [
       // Scorrendo in fretta si può essere già saltati oltre: appena la
       // transizione finisce si recupera il ritardo.
       if (agganciato && desiderato !== attivo) { applica(); }
-    }, lento ? 0 : 780);
+    }, lento ? 0 : 430);
 
     attivo = n;
     for (var i = 0; i < punti.length; i++) {
@@ -612,8 +617,8 @@ $voci = [
     // cambio arriva presto. Le altre si dividono il resto in parti
     // uguali, e ne hanno abbastanza per farsi leggere.
     var n;
-    if (p < 0.2) { n = 0; }
-    else { n = Math.min(quante - 1, 1 + Math.floor((p - 0.2) / 0.8 * (quante - 1))); }
+    if (p < 0.16) { n = 0; }
+    else { n = Math.min(quante - 1, 1 + Math.floor((p - 0.16) / 0.84 * (quante - 1))); }
     if (n !== desiderato) { desiderato = n; applica(); }
   }
 
@@ -635,7 +640,7 @@ $voci = [
     portaA = function (n) {
       // Il centro della fetta che spetta a quella diapositiva, con le
       // stesse proporzioni usate qui sopra.
-      var p = n === 0 ? 0.1 : 0.2 + 0.8 * ((n - 0.5) / (quante - 1));
+      var p = n === 0 ? 0.08 : 0.16 + 0.84 * ((n - 0.5) / (quante - 1));
       window.scrollTo({ top: inizio() + corsa() * p, behavior: 'smooth' });
     };
   }
