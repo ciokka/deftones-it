@@ -488,3 +488,20 @@ function misuraImmagine(string $percorso): ?array
     return $d ? [(int)$d[0], (int)$d[1]] : null;
 }
 
+/**
+ * Una data di scatto, come si legge sotto una miniatura.
+ *
+ * Arriva completa, o col solo anno e mese, o col solo anno: si mostra
+ * quello che c'è, senza completare quello che non c'è.
+ */
+function dataFotoBreve(string $d): string
+{
+    if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $d, $m)) {
+        return $m[3] . '/' . $m[2] . '/' . $m[1];
+    }
+    if (preg_match('/^(\d{4})-(\d{2})$/', $d, $m)) {
+        return $m[2] . '/' . $m[1];
+    }
+    return $d;
+}
+

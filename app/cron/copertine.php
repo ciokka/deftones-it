@@ -72,11 +72,12 @@ if ($raccogli) {
 
     $inserisci = $pdo->prepare('INSERT INTO ' . t('immagini') . '
           (commons, url_file, url_pagina, autore, licenza, licenza_url,
-           larghezza, altezza, soggetto)
-        VALUES (?,?,?,?,?,?,?,?,?)
+           larghezza, altezza, data_foto, soggetto)
+        VALUES (?,?,?,?,?,?,?,?,?,?)
         ON DUPLICATE KEY UPDATE
            url_file = VALUES(url_file), autore = VALUES(autore),
-           licenza  = VALUES(licenza),  licenza_url = VALUES(licenza_url)');
+           licenza  = VALUES(licenza),  licenza_url = VALUES(licenza_url),
+           data_foto = VALUES(data_foto)');
 
     foreach ($daVisitare as $cat => $soggetto) {
         $file = commonsFileDi($cat);
@@ -91,7 +92,7 @@ if ($raccogli) {
                     $i['url_file'], $i['url_pagina'],
                     $i['autore'] ?: null, $i['licenza'] ?: null,
                     $i['licenza_url'] ?: null,
-                    $i['larghezza'], $i['altezza'], $soggetto,
+                    $i['larghezza'], $i['altezza'], $i['data'], $soggetto,
                 ]);
                 if ($inserisci->rowCount() === 1) { $nuove++; }
             } catch (Throwable $e) {

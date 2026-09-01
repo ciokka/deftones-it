@@ -131,6 +131,7 @@ function commonsMetadati(array $titoli): array
                 'altezza'     => (int)($ii['thumbheight'] ?? $ii['height'] ?? 0),
                 'l_orig'      => (int)($ii['width'] ?? 0),
                 'a_orig'      => (int)($ii['height'] ?? 0),
+                'data'        => dataFoto($val('DateTimeOriginal') ?: $val('DateTime')),
                 'autore'      => testoSemplice($val('Artist')),
                 'licenza'     => testoSemplice($val('LicenseShortName')),
                 'licenza_url' => $val('LicenseUrl'),
@@ -140,6 +141,25 @@ function commonsMetadati(array $titoli): array
         usleep(200000);   // Commons non chiede di rallentare, ma è educato
     }
     return $out;
+}
+
+/**
+ * Quando è stata scattata una fotografia.
+ *
+ * Commons risponde in ordine sparso: "2016-10-28 01:32", "8 October
+ * 2016", "2016", o un frammento di HTML con dentro un <time>. Si prende
+ * quello che si riesce a leggere e si tiene com'è — anno e mese se il
+ * giorno non c'è, il solo anno se non c'è altro. Una data parziale è
+ * un'informazione; una data completata a caso è una bugia.
+ */
+function dataFoto(string $grezzo): ?string
+{
+    $t = testoSemplice($grezzo);
+    if ($t === '') { return null; }
+    if (preg_match('/(19|20)\d{2}-\d{2}-\d{2}/', $t, $m)) { return $m[0]; }
+    if (preg_match('/(19|20)\d{2}-\d{2}(?!\d)/', $t, $m)) { return $m[0]; }
+    if (preg_match('/\b((?:19|20)\d{2})\b/', $t, $m))     { return $m[1]; }
+    return null;
 }
 
 /** I metadati arrivano con dentro dell'HTML: qui resta solo il testo. */

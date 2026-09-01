@@ -73,8 +73,16 @@
                  alt="" loading="lazy" decoding="async">
             <span class="foto-dati">
               <span class="foto-autore"><?= e(mb_substr((string)($f['autore'] ?: '—'), 0, 34)) ?></span>
-              <span class="foto-uso"><?= (int)$f['usata'] ?> <?= (int)$f['usata'] === 1 ? 'uso' : 'usi' ?>
-                <?php if ($f['soggetto'] !== 'band'): ?> · <?= e($f['soggetto']) ?><?php endif ?></span>
+              <span class="foto-uso">
+                <?php /* Commons non sempre sa il giorno: si mostra quello
+                         che sa. Sapere che una foto è del 2009 evita di
+                         metterla su una notizia di oggi. */ ?>
+                <?php if ($f['data_foto']): ?>
+                  <span class="foto-quando"><?= e(dataFotoBreve((string)$f['data_foto'])) ?></span> ·
+                <?php endif ?>
+                <?= (int)$f['usata'] ?> <?= (int)$f['usata'] === 1 ? 'uso' : 'usi' ?>
+                <?php if ($f['soggetto'] !== 'band'): ?> · <?= e($f['soggetto']) ?><?php endif ?>
+              </span>
             </span>
           </button>
         </form>
