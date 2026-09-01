@@ -422,3 +422,25 @@ function dischiPerTitolo(PDO $pdo): array
                          ORDER BY CHAR_LENGTH(titolo) DESC')->fetchAll();
 }
 
+/**
+ * La miniatura di una fotografia del catalogo.
+ *
+ * Nel pannello se ne mostrano centinaia insieme: chiederle a piena
+ * misura sarebbe qualche decina di megabyte per aprire una pagina.
+ * Entrambi gli archivi servono formati più piccoli cambiando il nome
+ * del file, quindi non serve generare né conservare niente.
+ */
+function miniaturaFoto(string $url): string
+{
+    // Commons: .../thumb/x/xx/Nome.jpg/1200px-Nome.jpg
+    if (str_contains($url, '/1200px-')) {
+        return str_replace('/1200px-', '/320px-', $url);
+    }
+    // Flickr: il suffisso prima dell'estensione dice la misura.
+    // _b è 1024, _z è 640, _n è 320.
+    if (preg_match('#^(https://live\.staticflickr\.com/.+)_[a-z]\.jpg$#i', $url, $m)) {
+        return $m[1] . '_n.jpg';
+    }
+    return $url;
+}
+

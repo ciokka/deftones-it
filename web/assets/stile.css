@@ -1552,6 +1552,17 @@ figure:has(> img.img-mancante) { display: none; }
 }
 .foto-scelta button:hover { border-color: var(--accento-scuro); color: var(--testo); }
 .foto-scelta img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+
+/* Nel catalogo le miniature sono più fitte: lì si scorre per giudicare,
+   non per scegliere una. */
+.griglia-fitta { grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: .5rem; }
+
+/* Una scartata resta visibile ma spenta: si deve capire a colpo d'occhio
+   cosa è stato buttato, e poterlo rimettere. */
+.foto-fuori button { border-style: dashed; }
+.foto-fuori img { filter: grayscale(1); opacity: .32; }
+.foto-fuori .foto-dati { opacity: .5; }
+.foto-fuori button:hover img { opacity: .6; }
 .foto-dati { display: block; padding: .4rem .5rem .5rem; }
 .foto-autore { display: block; font-size: .75rem; line-height: 1.3; }
 .foto-uso { display: block; font-size: .6875rem; opacity: .6; margin-top: .15rem; }

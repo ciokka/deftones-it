@@ -69,7 +69,7 @@
                    scaricare l'originale a 1200: sessanta immagini a piena
                    misura sarebbero dodici megabyte per aprire una pagina. */ ?>
           <button type="submit" title="usa questa">
-            <img src="<?= e(preg_replace('#/1200px-#', '/320px-', (string)$f['url_file'])) ?>"
+            <img src="<?= e(miniaturaFoto((string)$f['url_file'])) ?>"
                  alt="" loading="lazy" decoding="async">
             <span class="foto-dati">
               <span class="foto-autore"><?= e(mb_substr((string)($f['autore'] ?: '—'), 0, 34)) ?></span>

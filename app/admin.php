@@ -293,6 +293,54 @@ function messaggioDiPassaggio(): ?array
     return is_array($m) ? $m : null;
 }
 
+// --------------------------------------------- catalogo fotografie
+
+if ($azione === 'foto') {
+    require_once __DIR__ . '/lib/copertine.php';
+    $msg = messaggioDiPassaggio();
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrfValido($_POST['csrf'] ?? null)) {
+        // Un interruttore solo: la fotografia va o non va bene. Rovesciarlo
+        // non cancella niente — le scartate restano, così una raccolta
+        // futura non le riporta dentro e un ripensamento costa un clic.
+        $pdo->prepare('UPDATE ' . t('immagini') . '
+             SET scartata = 1 - scartata WHERE id = ?')->execute([(int)($_POST['img'] ?? 0)]);
+        vaiA('admin/foto' . (string)($_POST['torna'] ?? ''));
+    }
+
+    $stato = (string)($_GET['stato'] ?? 'attive');
+    $sog   = (string)($_GET['sog'] ?? '');
+    $cerca = trim((string)($_GET['q'] ?? ''));
+
+    $dove = [];
+    $par  = [];
+    if ($stato === 'attive')   { $dove[] = 'scartata = 0'; }
+    if ($stato === 'scartate') { $dove[] = 'scartata = 1'; }
+    if ($sog !== '')   { $dove[] = 'soggetto = ?';  $par[] = $sog; }
+    if ($cerca !== '') { $dove[] = '(autore LIKE ? OR riferimento LIKE ?)';
+                         $par[] = '%' . $cerca . '%'; $par[] = '%' . $cerca . '%'; }
+    $filtro = $dove ? 'WHERE ' . implode(' AND ', $dove) : '';
+
+    $q = $pdo->prepare('SELECT * FROM ' . t('immagini') . "
+                         $filtro ORDER BY scartata, soggetto, usata DESC, id LIMIT 400");
+    $q->execute($par);
+    $foto = $q->fetchAll();
+
+    $conti = $pdo->query('SELECT
+            COUNT(*) AS tutte,
+            SUM(scartata = 0) AS attive,
+            SUM(scartata = 1) AS scartate
+          FROM ' . t('immagini'))->fetch();
+    $soggetti = $pdo->query('SELECT soggetto, COUNT(*) AS n FROM ' . t('immagini') . '
+                              GROUP BY soggetto ORDER BY n DESC')->fetchAll();
+
+    echo render('admin-foto', [
+        'foto' => $foto, 'conti' => $conti, 'soggetti' => $soggetti,
+        'stato' => $stato, 'sog' => $sog, 'cerca' => $cerca, 'messaggio' => $msg,
+    ], ['titolo' => 'Catalogo fotografie — pannello']);
+    exit;
+}
+
 // ------------------------------------------------ scelta copertina
 
 if (preg_match('#^copertina/(\d+)$#', $azione, $m)) {

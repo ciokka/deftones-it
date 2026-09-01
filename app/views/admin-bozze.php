@@ -19,6 +19,7 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
          aria-label="Nuovo articolo" title="Nuovo articolo"><?= icona('nuovo', 17) ?></a>
       <a class="bottone bottone-tenue" href="<?= u('admin/richieste') ?>">richieste</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/raccolte') ?>">raccolte</a>
+      <a class="bottone bottone-tenue" href="<?= u('admin/foto') ?>"><?= icona('immagine') ?>foto</a>
       <form method="post" action="<?= u('admin/azione') ?>" style="display:inline">
         <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
         <input type="hidden" name="che" value="svuota">

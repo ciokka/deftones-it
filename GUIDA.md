@@ -309,6 +309,16 @@ tre varianti dello stesso pulsante. Un articolo scritto così resta senza
 `modello` e senza `uso_token`, ed è giusto che si veda: quelle colonne
 sono la traccia di cosa ha generato cosa.
 
+**Foto** apre il catalogo intero e serve a fare pulizia. Un clic su una
+fotografia la toglie, un altro la rimette. Le scartate non vengono
+cancellate: restano lì, così una raccolta futura non le riporta dentro.
+
+Vale la pena passarci una volta con calma. Le fotografie libere dei
+Deftones sono grandi — mediana tremila pixel — ma la qualità
+*fotografica* varia moltissimo, e nessun filtro automatico la può
+giudicare: buio, sfocato e nuca sono cose che si vedono solo guardando.
+Mezz'ora spesa lì migliora ogni assegnazione futura.
+
 **Copertina** apre il catalogo delle fotografie e ne fa scegliere una a
 mano. Vengono prima quelle del soggetto giusto e quelle usate meno, e si
 possono filtrare per autore. Scegliendone una, l'origine diventa
