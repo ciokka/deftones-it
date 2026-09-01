@@ -15,15 +15,16 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
   <div class="pannello-testa">
     <h1>bozze <span style="color:var(--testo-tenue)"><?= (int)$totale ?></span></h1>
     <div class="azioni">
+      <a class="bottone" href="<?= u('admin/nuovo') ?>"><?= icona('nuovo') ?>nuovo articolo</a>
+      <a class="bottone bottone-tenue" href="<?= u('admin/richieste') ?>">richieste</a>
+      <a class="bottone bottone-tenue" href="<?= u('admin/raccolte') ?>">raccolte</a>
       <form method="post" action="<?= u('admin/azione') ?>" style="display:inline">
         <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
         <input type="hidden" name="che" value="svuota">
-        <button class="bottone bottone-tenue" type="submit">svuota cache</button>
+        <button class="bottone bottone-tenue" type="submit"><?= icona('cache') ?>cache</button>
       </form>
-      <a class="bottone bottone-tenue" href="<?= u('admin/richieste') ?>">richieste</a>
-      <a class="bottone bottone-tenue" href="<?= u('admin/raccolte') ?>">raccolte</a>
-      <a class="bottone bottone-tenue" href="<?= u('/') ?>">vedi il sito</a>
-      <a class="bottone bottone-tenue" href="<?= u('admin/esci') ?>">esci</a>
+      <a class="bottone bottone-tenue" href="<?= u('/') ?>"><?= icona('fuori') ?>il sito</a>
+      <a class="bottone bottone-tenue" href="<?= u('admin/esci') ?>"><?= icona('esci') ?>esci</a>
     </div>
   </div>
 
@@ -92,10 +93,11 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
         <p class="sommario"><?= e(mb_substr($b['sommario_it'], 0, 320)) ?><?= mb_strlen($b['sommario_it']) > 320 ? '…' : '' ?></p>
 
         <div class="azioni">
-          <a class="bottone bottone-tenue" href="<?= u('admin/anteprima/' . (int)$b['id']) ?>">leggi tutto</a>
-          <a class="bottone bottone-tenue" href="<?= u('admin/modifica/' . (int)$b['id']) ?>">modifica</a>
+          <a class="bottone bottone-tenue" href="<?= u('admin/anteprima/' . (int)$b['id']) ?>"><?= icona('anteprima') ?>leggi</a>
+          <a class="bottone bottone-tenue" href="<?= u('admin/modifica/' . (int)$b['id']) ?>"><?= icona('modifica') ?>modifica</a>
+          <a class="bottone bottone-tenue" href="<?= u('admin/copertina/' . (int)$b['id']) ?>"><?= icona('immagine') ?>copertina</a>
           <?php if ($b['fonte_url']): ?>
-            <a class="bottone bottone-tenue" href="<?= e($b['fonte_url']) ?>" target="_blank" rel="noopener">fonte</a>
+            <a class="bottone bottone-tenue" href="<?= e($b['fonte_url']) ?>" target="_blank" rel="noopener"><?= icona('fuori') ?>fonte</a>
           <?php endif ?>
         </div>
       </article>
@@ -135,14 +137,15 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
               <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
               <input type="hidden" name="che" value="apertura">
               <button class="bottone piccolo <?= $p['in_apertura'] ? 'bottone-acceso' : 'bottone-tenue' ?>"
-                      type="submit"><?= $p['in_apertura'] ? 'libera' : 'in apertura' ?></button>
+                      type="submit"><?= icona('apertura') ?><?= $p['in_apertura'] ? 'libera' : 'in apertura' ?></button>
             </form>
-            <a class="bottone bottone-tenue piccolo" href="<?= u('admin/modifica/' . (int)$p['id']) ?>">modifica</a>
+            <a class="bottone bottone-tenue piccolo" href="<?= u('admin/modifica/' . (int)$p['id']) ?>"><?= icona('modifica') ?>modifica</a>
+            <a class="bottone bottone-tenue piccolo" href="<?= u('admin/copertina/' . (int)$p['id']) ?>"><?= icona('immagine') ?>copertina</a>
             <form method="post" action="<?= u('admin/azione') ?>">
               <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
               <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
               <input type="hidden" name="che" value="ritira">
-              <button class="bottone bottone-tenue piccolo" type="submit">ritira</button>
+              <button class="bottone bottone-tenue piccolo" type="submit"><?= icona('ritira') ?>ritira</button>
             </form>
           </div>
         </div>

@@ -5,6 +5,11 @@
  */
 declare(strict_types=1);
 
+// Le iconcine servono a tutte le viste del pannello, compresa
+// l'anteprima che viene resa poche righe più sotto: la richiesta va
+// quindi qui e non a metà file.
+require_once __DIR__ . '/lib/icone.php';
+
 sessioneAvvia();
 $pdo = db();
 $azione = substr($percorso, strlen('/admin'));
@@ -272,6 +277,214 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {
     }
 }
 
+/**
+ * Il messaggio che sopravvive a un redirect.
+ *
+ * Dopo aver salvato si rimanda a un'altra pagina — o un aggiornamento
+ * del browser rifarebbe il salvataggio — e la variabile con l'esito si
+ * perderebbe per strada. Si posa in sessione e si raccoglie di là, una
+ * volta sola.
+ */
+function messaggioDiPassaggio(): ?array
+{
+    if (empty($_SESSION['messaggio'])) { return null; }
+    $m = $_SESSION['messaggio'];
+    unset($_SESSION['messaggio']);
+    return is_array($m) ? $m : null;
+}
+
+// ------------------------------------------------ scelta copertina
+
+if (preg_match('#^copertina/(\d+)$#', $azione, $m)) {
+    require_once __DIR__ . '/lib/copertine.php';
+    $id  = (int)$m[1];
+    $msg = messaggioDiPassaggio();
+
+    $q = $pdo->prepare('SELECT * FROM ' . t('articles') . ' WHERE id = ? LIMIT 1');
+    $q->execute([$id]);
+    $a = $q->fetch();
+    if (!$a) { pagina404(); }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrfValido($_POST['csrf'] ?? null)) {
+        $che = (string)($_POST['che'] ?? '');
+
+        if ($che === 'automatica') {
+            // Rimette l'articolo in coda e rifà la scelta come farebbe il
+            // cron, senza aspettare il giro delle quattro ore.
+            $r = assegnaCopertina($pdo, $a, dischiPerTitolo($pdo));
+            $_SESSION['messaggio'] = ['ok', match ($r['origine']) {
+                'disco'   => 'Copertina di ' . $r['nota'] . '.',
+                'commons' => 'Scelta una foto di ' . $r['nota'] . '.',
+                default   => 'Nessuna foto adatta trovata.',
+            }];
+
+        } elseif ($che === 'scelta') {
+            $q = $pdo->prepare('SELECT * FROM ' . t('immagini') . ' WHERE id = ? LIMIT 1');
+            $q->execute([(int)($_POST['img'] ?? 0)]);
+            $img = $q->fetch();
+
+            if (!$img) {
+                $_SESSION['messaggio'] = ['ko', 'Quella fotografia non è più nel catalogo.'];
+            } else {
+                $dati = httpGet((string)$img['url_file'])['body'] ?? null;
+                $file = cartellaCopertine() . '/' . $a['slug'] . '.jpg';
+                if ($dati === null || strlen($dati) < 5000
+                    || @file_put_contents($file, $dati) === false) {
+                    $_SESSION['messaggio'] = ['ko', 'Non sono riuscito a scaricarla. Riprova.'];
+                } else {
+                    // origine "manuale": il cron non la tocca più, nemmeno
+                    // con --rifai. L'hai scelta tu.
+                    $pdo->prepare('UPDATE ' . t('articles') . '
+                         SET immagine_url = ?, immagine_autore = ?, immagine_licenza = ?,
+                             immagine_licenza_url = ?, immagine_fonte_url = ?,
+                             immagine_origine = \'manuale\', immagine_cercata_il = NOW()
+                       WHERE id = ?')->execute([
+                        '/media/copertine/' . $a['slug'] . '.jpg',
+                        $img['autore'], $img['licenza'], $img['licenza_url'],
+                        $img['url_pagina'], $id,
+                    ]);
+                    $pdo->prepare('UPDATE ' . t('immagini') . '
+                         SET usata = usata + 1 WHERE id = ?')->execute([(int)$img['id']]);
+                    $_SESSION['messaggio'] = ['ok', 'Copertina scelta: foto di '
+                        . ($img['autore'] ?: 'autore ignoto') . '.'];
+                }
+            }
+
+        } elseif ($che === 'togli') {
+            $f = cartellaCopertine() . '/' . $a['slug'] . '.jpg';
+            if (is_file($f)) { @unlink($f); }
+            $pdo->prepare('UPDATE ' . t('articles') . '
+                 SET immagine_url = NULL, immagine_autore = NULL, immagine_licenza = NULL,
+                     immagine_licenza_url = NULL, immagine_fonte_url = NULL,
+                     immagine_origine = NULL, immagine_cercata_il = NULL
+               WHERE id = ?')->execute([$id]);
+            $_SESSION['messaggio'] = ['ok', 'Copertina tolta. Al prossimo giro ne cerca una.'];
+        }
+
+        cacheSvuota();
+        vaiA('admin/copertina/' . $id);
+    }
+
+    // Il catalogo da cui scegliere. Il soggetto giusto viene per primo,
+    // poi il resto: se l'articolo parla di Chino, le sue foto stanno in
+    // cima senza però nascondere le altre.
+    $tag = json_decode((string)$a['tag'], true) ?: [];
+    $sog = soggettoArticolo((string)$a['titolo_it'], $tag, dischiPerTitolo($pdo));
+    $mira = $sog['tipo'] === 'foto' ? $sog['chiave'] : 'band';
+
+    $cerca = trim((string)($_GET['q'] ?? ''));
+    $dove = ['scartata = 0'];
+    $par  = [];
+    if ($cerca !== '') {
+        $dove[] = '(autore LIKE ? OR commons LIKE ?)';
+        $par[] = '%' . $cerca . '%';
+        $par[] = '%' . $cerca . '%';
+    }
+    $q = $pdo->prepare('SELECT * FROM ' . t('immagini') . '
+                         WHERE ' . implode(' AND ', $dove) . '
+                         ORDER BY soggetto = ? DESC, usata ASC, id ASC
+                         LIMIT 60');
+    // I parametri vanno nell'ordine in cui i punti interrogativi compaiono
+    // nella query: prima quelli del WHERE, poi quello dell'ORDER BY.
+    $q->execute(array_merge($par, [$mira]));
+    $foto = $q->fetchAll();
+
+    echo render('admin-copertina', [
+        'a' => $a, 'foto' => $foto, 'mira' => $mira,
+        'cerca' => $cerca, 'messaggio' => $msg,
+    ], ['titolo' => 'Copertina — pannello']);
+    exit;
+}
+
+// ------------------------------------------------- nuovo articolo
+
+if ($azione === 'nuovo') {
+    $msg = null;
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!csrfValido($_POST['csrf'] ?? null)) {
+            $msg = ['ko', 'Sessione scaduta, riprova.'];
+        } elseif (trim((string)($_POST['titolo_it'] ?? '')) === '') {
+            $msg = ['ko', 'Il titolo serve: da lì nasce anche l\'indirizzo dell\'articolo.'];
+        } else {
+            $titolo = mb_substr(trim((string)$_POST['titolo_it']), 0, 300);
+            $come   = (string)($_POST['come'] ?? 'bozza');
+            $stato  = $come === 'bozza' ? 'draft' : 'pubblicato';
+
+            $tag = array_values(array_filter(array_map(
+                fn($t) => trim(mb_strtolower($t)),
+                explode(',', (string)($_POST['tag'] ?? ''))
+            )));
+            $quando = trim((string)($_POST['pubblicato_il'] ?? ''));
+            $quando = $quando !== '' ? str_replace('T', ' ', $quando) . ':00' : date('Y-m-d H:i:s');
+
+            $catOk = valoriEnum($pdo, t('articles'), 'categoria');
+            $attOk = valoriEnum($pdo, t('articles'), 'attendibilita');
+            $cat = (string)($_POST['categoria'] ?? '');
+            $att = (string)($_POST['attendibilita'] ?? '');
+
+            // Scritto a mano: modello e uso_token restano vuoti, ed è
+            // giusto che si veda — sono la traccia di cosa ha generato
+            // cosa. La rilevanza la mettiamo alta: se lo scrivi tu,
+            // vuol dire che conta.
+            $q = $pdo->prepare('INSERT INTO ' . t('articles') . '
+                  (slug, titolo_it, sommario_it, corpo_it, categoria, attendibilita,
+                   tag, rilevanza, fonte_nome, fonte_url, stato, pubblicato_il, creato_il)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW())');
+            $q->execute([
+                slugUnico($titolo), $titolo,
+                trim((string)($_POST['sommario_it'] ?? '')),
+                trim((string)($_POST['corpo_it'] ?? '')) ?: null,
+                in_array($cat, $catOk, true) ? $cat : 'news',
+                in_array($att, $attOk, true) ? $att : 'confermato',
+                $tag ? json_encode($tag, JSON_UNESCAPED_UNICODE) : null,
+                80,
+                trim((string)($_POST['fonte_nome'] ?? '')) ?: null,
+                trim((string)($_POST['fonte_url'] ?? '')) ?: null,
+                $stato, $quando,
+            ]);
+            $id = (int)$pdo->lastInsertId();
+
+            $coda = '';
+            if ($come === 'copertina') {
+                require_once __DIR__ . '/lib/copertine.php';
+                $art = ['id' => $id, 'slug' => slug($titolo), 'titolo_it' => $titolo,
+                        'tag' => json_encode($tag)];
+                $q = $pdo->prepare('SELECT slug FROM ' . t('articles') . ' WHERE id = ?');
+                $q->execute([$id]);
+                $art['slug'] = (string)$q->fetchColumn();
+                $r = assegnaCopertina($pdo, $art, dischiPerTitolo($pdo));
+                $coda = ' — ' . match ($r['origine']) {
+                    'disco'   => 'copertina di ' . $r['nota'],
+                    'commons' => 'foto di ' . $r['nota'],
+                    default   => 'nessuna foto adatta trovata',
+                };
+            }
+
+            cacheSvuota();
+            $_SESSION['messaggio'] = ['ok', ($stato === 'draft'
+                ? 'Bozza creata.' : 'Articolo pubblicato.') . $coda];
+            vaiA('admin/modifica/' . $id);
+        }
+    }
+
+    // Lo scheletro di un articolo che non esiste ancora: la stessa vista
+    // della modifica, con i campi vuoti.
+    echo render('admin-modifica', [
+        'a' => [
+            'id' => 0, 'slug' => '', 'titolo_it' => '', 'sommario_it' => '',
+            'corpo_it' => '', 'categoria' => 'news', 'attendibilita' => 'confermato',
+            'tag' => null, 'fonte_nome' => '', 'fonte_url' => '',
+            'pubblicato_il' => date('Y-m-d H:i:s'), 'stato' => 'nuovo',
+            'immagine_origine' => null,
+        ],
+        'categorie' => valoriEnum($pdo, t('articles'), 'categoria'),
+        'attendib'  => valoriEnum($pdo, t('articles'), 'attendibilita'),
+        'messaggio' => $msg,
+    ], ['titolo' => 'Nuovo articolo — pannello']);
+    exit;
+}
+
 // ------------------------------------------------------------ modifica
 
 /** I valori ammessi da una colonna ENUM, letti dalla colonna stessa. */
@@ -286,7 +499,7 @@ function valoriEnum(PDO $pdo, string $tabella, string $colonna): array
 
 if (preg_match('#^modifica/(\d+)$#', $azione, $m)) {
     $id = (int)$m[1];
-    $msg = null;
+    $msg = messaggioDiPassaggio();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!csrfValido($_POST['csrf'] ?? null)) {
@@ -409,7 +622,7 @@ $ultimo = $pdo->query('SELECT job, finito_il, esito, item_elaborati, messaggio
 
 echo render('admin-bozze', [
     'bozze' => $bozze, 'pubblicate' => $pubblicate, 'ultimo' => $ultimo,
-    'messaggio' => $messaggio, 'totale' => $totale, 'pagina' => $pagina,
+    'messaggio' => $messaggio ?? messaggioDiPassaggio(), 'totale' => $totale, 'pagina' => $pagina,
     'pagine' => $pagine, 'cerca' => $cerca, 'anno' => $anno, 'cat' => $cat,
     'ordine' => $ordine, 'anni' => $anni, 'categorie' => $categorie,
 ], ['titolo' => 'Pannello — deftones.it']);

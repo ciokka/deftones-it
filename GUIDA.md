@@ -302,8 +302,22 @@ ordina per rilevanza, lunghezza o data. Con le caselle si pubblica o si
 scarta in blocco — ma solo una selezione esplicita, mai "tutte quelle che
 vedi".
 
-**Su ogni bozza**: *leggi tutto* apre l'anteprima, *modifica* apre il
-modulo. Dall'anteprima si pubblica.
+**Nuovo articolo** scrive un pezzo a mano, senza IA: gli stessi campi
+della modifica, e in fondo tre modi di finire — *salva come bozza*,
+*pubblica*, *pubblica con copertina*. Sono tre intenzioni diverse, non
+tre varianti dello stesso pulsante. Un articolo scritto così resta senza
+`modello` e senza `uso_token`, ed è giusto che si veda: quelle colonne
+sono la traccia di cosa ha generato cosa.
+
+**Copertina** apre il catalogo delle fotografie e ne fa scegliere una a
+mano. Vengono prima quelle del soggetto giusto e quelle usate meno, e si
+possono filtrare per autore. Scegliendone una, l'origine diventa
+*manuale* e il cron non la cambia più, nemmeno con `--rifai`. Da lì si
+può anche far cercare al programma un'altra foto, o togliere la
+copertina e rimettere l'articolo in coda.
+
+**Su ogni bozza**: *leggi* apre l'anteprima, *modifica* il modulo,
+*copertina* il catalogo. Dall'anteprima si pubblica.
 
 **Pubblica con copertina** pubblica e cerca subito la foto, invece di
 aspettare il giro delle copertine che passa ogni quattro ore. Ci mette

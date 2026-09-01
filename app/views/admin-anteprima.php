@@ -1,5 +1,5 @@
 <div class="pannello">
-  <p><a href="<?= u('admin/') ?>" style="color:var(--testo-tenue);font-size:.875rem">← torna alle bozze</a></p>
+  <p><a class="torna" href="<?= u('admin/') ?>"><?= icona('indietro') ?> torna alle bozze</a></p>
 
   <div class="meta">
     <span class="punteggio"><?= (int)$a['rilevanza'] ?></span>
@@ -35,20 +35,21 @@
         <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
         <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
         <input type="hidden" name="che" value="<?= $che ?>">
-        <button class="bottone<?= $cl ?>" type="submit"><?= $et ?></button>
+        <button class="bottone<?= $cl ?>" type="submit"><?= icona($che === 'scarta' ? 'scarta' : 'pubblica') ?><?= $et ?></button>
       </form>
     <?php endforeach ?>
-    <a class="bottone bottone-tenue" href="<?= u('admin/modifica/' . (int)$a['id']) ?>">modifica</a>
+    <a class="bottone bottone-tenue" href="<?= u('admin/modifica/' . (int)$a['id']) ?>"><?= icona('modifica') ?>modifica</a>
+    <a class="bottone bottone-tenue" href="<?= u('admin/copertina/' . (int)$a['id']) ?>"><?= icona('immagine') ?>copertina</a>
     <?php if (!empty($a['immagine_origine'])): ?>
       <form method="post" action="<?= u('admin/azione') ?>" style="display:inline">
         <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
         <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
         <input type="hidden" name="che" value="copertina-no">
-        <button class="bottone bottone-tenue" type="submit">altra copertina</button>
+        <button class="bottone bottone-tenue" type="submit"><?= icona('cambia') ?>altra copertina</button>
       </form>
     <?php endif ?>
     <?php if ($a['fonte_url']): ?>
-      <a class="bottone bottone-tenue" href="<?= e($a['fonte_url']) ?>" target="_blank" rel="noopener">fonte</a>
+      <a class="bottone bottone-tenue" href="<?= e($a['fonte_url']) ?>" target="_blank" rel="noopener"><?= icona('fuori') ?>fonte</a>
     <?php endif ?>
   </div>
 </div>

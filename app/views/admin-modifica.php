@@ -1,11 +1,14 @@
 <div class="pannello">
-  <p><a href="<?= u('admin/') ?>" style="color:var(--testo-tenue);font-size:.875rem">← torna alle bozze</a></p>
+  <p><a class="torna" href="<?= u('admin/') ?>"><?= icona('indietro') ?> torna alle bozze</a></p>
+
+  <?php $nuovo = ($a['stato'] ?? '') === 'nuovo'; ?>
+  <h1 class="titoletto"><?= $nuovo ? 'Nuovo articolo' : 'Modifica' ?></h1>
 
   <?php if ($messaggio): ?>
     <p class="avviso<?= $messaggio[0] === 'ok' ? 'Ok' : 'Ko' ?>"><?= e($messaggio[1]) ?></p>
   <?php endif ?>
 
-  <form method="post" action="<?= u('admin/modifica/' . (int)$a['id']) ?>" class="modulo">
+  <form method="post" action="<?= $nuovo ? u('admin/nuovo') : u('admin/modifica/' . (int)$a['id']) ?>" class="modulo">
     <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
 
     <label class="campo-largo">
@@ -43,7 +46,7 @@
       </label>
 
       <label>
-        <span>Data di pubblicazione</span>
+        <span>Data di pubblicazione <em>— sposta l'articolo nell'ordine e negli archivi</em></span>
         <?php /* La data che si vede sul sito. Cambiarla sposta l'articolo
                  nell'ordine cronologico e negli archivi per anno. */ ?>
         <input type="datetime-local" name="pubblicato_il"
@@ -69,16 +72,32 @@
     </div>
 
     <div class="barra-azioni">
-      <button class="bottone" type="submit">salva</button>
-      <?php if ($a['stato'] === 'pubblicato'): ?>
-        <a class="bottone bottone-tenue" href="<?= u('notizie/' . $a['slug'] . '/') ?>"
-           target="_blank" rel="noopener">vedi online</a>
+      <?php if ($nuovo): ?>
+        <?php /* Tre modi di finire, perché sono tre intenzioni diverse:
+                 metterlo da parte, metterlo online, metterlo online già
+                 illustrato. L'ultimo ci mette qualche secondo perché
+                 scarica davvero la fotografia. */ ?>
+        <button class="bottone" type="submit" name="come" value="copertina">
+          <?= icona('immagine') ?>pubblica con copertina</button>
+        <button class="bottone bottone-tenue" type="submit" name="come" value="pubblica">
+          <?= icona('pubblica') ?>pubblica</button>
+        <button class="bottone bottone-tenue" type="submit" name="come" value="bozza">
+          <?= icona('salva') ?>salva come bozza</button>
       <?php else: ?>
-        <a class="bottone bottone-tenue" href="<?= u('admin/anteprima/' . (int)$a['id']) ?>">anteprima</a>
+        <button class="bottone" type="submit"><?= icona('salva') ?>salva</button>
+        <a class="bottone bottone-tenue" href="<?= u('admin/copertina/' . (int)$a['id']) ?>">
+          <?= icona('immagine') ?>copertina</a>
+        <?php if ($a['stato'] === 'pubblicato'): ?>
+          <a class="bottone bottone-tenue" href="<?= u('notizie/' . $a['slug'] . '/') ?>"
+             target="_blank" rel="noopener"><?= icona('fuori') ?>vedi online</a>
+        <?php else: ?>
+          <a class="bottone bottone-tenue" href="<?= u('admin/anteprima/' . (int)$a['id']) ?>">
+            <?= icona('anteprima') ?>anteprima</a>
+        <?php endif ?>
+        <span class="modulo-nota">
+          stato: <?= e($a['stato']) ?><?php if ($a['immagine_origine']): ?> · copertina: <?= e($a['immagine_origine']) ?><?php endif ?>
+        </span>
       <?php endif ?>
-      <span class="modulo-nota">
-        stato: <?= e($a['stato']) ?><?php if ($a['immagine_origine']): ?> · copertina: <?= e($a['immagine_origine']) ?><?php endif ?>
-      </span>
     </div>
   </form>
 </div>
