@@ -76,7 +76,8 @@ if ($percorso === '/') {
     $campi = 'id, slug, titolo_it, sommario_it, categoria, attendibilita,
               fonte_nome, pubblicato_il, rilevanza, in_apertura,
               immagine_url, immagine_origine, immagine_autore,
-              immagine_licenza, immagine_licenza_url, immagine_fonte_url';
+              immagine_licenza, immagine_licenza_url, immagine_fonte_url,
+              immagine_cercata_il';
 
     // Le tre in apertura: prima quelle fissate dal pannello, poi le più
     // recenti a completare. Fissarne nessuna lascia il comportamento
@@ -112,16 +113,17 @@ if ($percorso === '/') {
     $vetrina = $apertura[0] ?? null;
     if ($vetrina && (int)$vetrina['in_apertura'] === 1 && !empty($vetrina['immagine_url'])) {
         $anteprime[] = [
-            'percorso' => $vetrina['immagine_url'],
+            'percorso' => urlCopertina($vetrina),
             'alt'      => mb_substr((string)$vetrina['titolo_it'], 0, 200),
         ];
     }
     $anteprime[] = ['percorso' => u('assets/og.png'), 'alt' => null];
     foreach ($apertura as $x) {
         if (empty($x['immagine_url'])) { continue; }
-        if ($anteprime[0]['percorso'] === $x['immagine_url']) { continue; }
+        $dove = urlCopertina($x);
+        if ($anteprime[0]['percorso'] === $dove) { continue; }
         $anteprime[] = [
-            'percorso' => $x['immagine_url'],
+            'percorso' => $dove,
             'alt'      => mb_substr((string)$x['titolo_it'], 0, 200),
         ];
     }
@@ -359,7 +361,7 @@ elseif (preg_match('#^/notizie/([a-z0-9-]+)$#', $percorso, $m)) {
         // viene condiviso, con le sue misure e con un testo alternativo
         // che descrive la fotografia e non il sito.
     ] + ($a['immagine_url'] ? [
-        'immagine'     => $a['immagine_url'],
+        'immagine'     => urlCopertina($a),
         'immagine_alt' => $a['immagine_origine'] === 'disco'
             ? (string)$a['immagine_licenza']
             : ($a['immagine_autore']

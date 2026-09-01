@@ -11,7 +11,7 @@
 
   <div class="copertina-adesso">
     <?php if ($a['immagine_url']): ?>
-      <img src="<?= e($a['immagine_url']) ?>" alt="">
+      <img src="<?= e(urlCopertina($a)) ?>" alt="">
       <div class="copertina-dati">
         <p class="modulo-nota">
           <?= e((string)($a['immagine_autore'] ?: 'autore non registrato')) ?>

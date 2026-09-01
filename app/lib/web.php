@@ -270,6 +270,27 @@ function copertina(array $a, bool $subito = false): string
  * sotto. Vuoto se l'articolo non ha una copertina: chi la usa deve
  * saperlo gestire, e la home lo fa disattivando il banner.
  */
+/**
+ * L'indirizzo di una copertina, con un contrassegno che cambia quando
+ * cambia la fotografia.
+ *
+ * Il file nuovo si scrive sempre sullo stesso percorso — è il nome
+ * dell'articolo — quindi per il browser l'indirizzo non è cambiato e
+ * continua a mostrare quello che ha già in memoria. Sostituendo la
+ * copertina si vedeva cambiare il nome dell'autore ma non la foto.
+ *
+ * Il contrassegno è il momento in cui la copertina è stata assegnata:
+ * cambia quando cambia la foto e non un attimo prima, quindi non
+ * costringe a riscaricarla a ogni visita.
+ */
+function urlCopertina(array $a): string
+{
+    $u = (string)($a['immagine_url'] ?? '');
+    if ($u === '') { return ''; }
+    $quando = $a['immagine_cercata_il'] ?? null;
+    return $quando ? $u . '?v=' . (int)strtotime((string)$quando) : $u;
+}
+
 function copertinaImg(array $a, bool $subito = false): string
 {
     // Nessun ripiego: un articolo senza fotografia vera non ha copertina.
@@ -277,7 +298,7 @@ function copertinaImg(array $a, bool $subito = false): string
     // accanto a una foto vera si vede subito che è un tappabuchi.
     if (empty($a['immagine_url'])) { return ''; }
 
-    return '<img src="' . e((string)$a['immagine_url']) . '" alt=""'
+    return '<img src="' . e(urlCopertina($a)) . '" alt=""'
          . ' loading="' . ($subito ? 'eager' : 'lazy') . '" decoding="async">';
 }
 
@@ -456,6 +477,8 @@ function facciateVideo(string $html): string
  */
 function misuraImmagine(string $percorso): ?array
 {
+    // Il contrassegno anti-cache non fa parte del nome del file.
+    $percorso = explode('?', $percorso)[0];
     if (!str_starts_with($percorso, '/media/')) { return null; }
     $base = rtrim((string)(cfg('media_dir') ?: ''), '/');
     if ($base === '') { return null; }
