@@ -529,11 +529,20 @@ una foto libera, stiamo usando una foto altrui. Per questo sta sotto
 l'immagine e non in fondo alla pagina.
 
 **Le fotografie vengono da due posti, con lo stesso metro.** Wikimedia
-Commons e Flickr: stesso modello legale — Creative Commons con
-attribuzione — stesso filtro, stesso catalogo, stessi crediti. Su Flickr
-ce n'è di più perché su Commons arriva solo quello che qualcuno si prende
-la briga di trasferire: un quinto delle foto che avevamo veniva di lì,
-passando per le mani di un volontario.
+Commons — interrogata direttamente — e Flickr, raggiunta attraverso
+Openverse. Stesso modello legale, stesso filtro, stesso catalogo, stessi
+crediti.
+
+Su Flickr ce n'è di più perché su Commons arriva solo quello che qualcuno
+si prende la briga di trasferire: un quinto delle foto che avevamo veniva
+di lì, passata per le mani di un volontario. A Flickr però non si arriva
+più direttamente: dal 2024 non rilascia chiavi API agli account
+gratuiti. Openverse indicizza le stesse fotografie e risponde senza
+chiave — venti richieste al minuto, duecento al giorno.
+
+I risultati che Openverse restituisce da Wikimedia vengono scartati:
+quelli li prendiamo alla fonte, con metadati migliori — compresa la data
+di scatto, che Openverse non riporta.
 
 Da nessuna delle due si prendono licenze NC o ND. Non perché il sito sia
 commerciale — non lo è — ma perché "non commerciale" è una nozione che

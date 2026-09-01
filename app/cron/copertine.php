@@ -4,10 +4,10 @@
  *
  * Due mestieri in un file solo, perché sono le due metà della stessa cosa:
  *
- *   --raccogli-flickr  fa lo stesso su Flickr, dove le foto con
- *                licenza libera sono molte di più: su Commons arriva
- *                solo quello che qualcuno si prende la briga di
- *                trasferire. Serve una chiave gratuita in config.php.
+ *   --raccogli-altre   cerca su Openverse, che indicizza le foto libere
+ *                di Flickr e di altri archivi: su Commons arriva solo
+ *                quello che qualcuno si prende la briga di trasferire.
+ *                Non serve nessuna chiave.
  *
  *   --raccogli   interroga Wikimedia Commons e riempie il catalogo
  *                df_immagini. Va fatto ogni tanto, non ogni giorno: le
@@ -33,13 +33,13 @@ declare(strict_types=1);
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/web.php';       // per cacheSvuota()
 require __DIR__ . '/../lib/copertine.php';
-require __DIR__ . '/../lib/flickr.php';
+require __DIR__ . '/../lib/openverse.php';
 
 $avvio = microtime(true);
 $opz = $argv ?? [];
 $soloProva = in_array('--prova', $opz, true);
 $raccogli  = in_array('--raccogli', $opz, true);
-$flickr    = in_array('--raccogli-flickr', $opz, true);
+$altre     = in_array('--raccogli-altre', $opz, true);
 $rifai     = in_array('--rifai', $opz, true);
 $limite    = 40;
 foreach ($opz as $o) {
@@ -60,29 +60,20 @@ if (!$soloProva && !is_dir($cartella) && !@mkdir($cartella, 0755, true) && !is_d
 }
 
 // =====================================================================
-//  Raccolta: Flickr -> df_immagini
+//  Raccolta: Openverse (Flickr e altri) -> df_immagini
 // =====================================================================
-if ($flickr) {
-    if (!cfg('flickr_key')) {
-        allarme('Manca flickr_key in config.php: la chiave è gratuita, '
-              . 'da flickr.com/services/apps/create', 'copertine');
-        exit(1);
-    }
-
-    // Si cerca per tag e non a testo libero: "deftones" scritto in una
-    // didascalia compare in mille foto che non c'entrano, mentre chi
-    // mette quel tag sta dicendo che il soggetto è quello. E si chiedono
-    // due tag insieme per le persone: "chino" da solo è un cognome
-    // diffuso, "deftones + chino" no.
+if ($altre) {
+    // Le domande. Openverse cerca nel titolo, nella descrizione e nei
+    // tag: per le persone si mette anche "deftones", o "chino" da solo
+    // porta indietro mezzo mondo.
     $ricerche = [
         'deftones'                  => 'band',
-        'deftones,chinomoreno'      => 'chino',
-        'deftones,chino'            => 'chino',
-        'deftones,stephencarpenter' => 'stephen',
-        'deftones,sergiovega'       => 'sergio',
-        'deftones,abecunningham'    => 'abe',
-        'deftones,frankdelgado'     => 'frank',
-        'deftones,chicheng'         => 'chi',
+        'deftones chino moreno'     => 'chino',
+        'deftones stephen carpenter'=> 'stephen',
+        'deftones sergio vega'      => 'sergio',
+        'deftones abe cunningham'   => 'abe',
+        'deftones frank delgado'    => 'frank',
+        'deftones chi cheng'        => 'chi',
     ];
 
     $inserisci = $pdo->prepare('INSERT INTO ' . t('immagini') . '
@@ -91,12 +82,13 @@ if ($flickr) {
         VALUES (?,?,?,?,?,?,?,?,?,?,?)
         ON DUPLICATE KEY UPDATE
            url_file = VALUES(url_file), autore = VALUES(autore),
-           licenza  = VALUES(licenza),  licenza_url = VALUES(licenza_url),
-           data_foto = VALUES(data_foto)');
+           licenza  = VALUES(licenza),  licenza_url = VALUES(licenza_url)');
 
     $viste = $nuove = $scartate = 0;
-    foreach ($ricerche as $tag => $soggetto) {
-        $foto = flickrCerca($tag);
+    foreach ($ricerche as $domanda => $soggetto) {
+        // Le ricerche sui singoli membri rendono meno: non ha senso
+        // insistere per dodici pagine.
+        $foto = openverseCerca($domanda, $soggetto === 'band' ? 12 : 5);
         $buone = 0;
         foreach ($foto as $i) {
             $viste++;
@@ -105,9 +97,9 @@ if ($flickr) {
             if ($soloProva) { $nuove++; continue; }
             try {
                 $inserisci->execute([
-                    $i['riferimento'], 'flickr',
+                    $i['riferimento'], $i['provenienza'],
                     $i['url_file'], $i['url_pagina'],
-                    $i['autore'] ?: null, $i['licenza'], $i['licenza_url'],
+                    $i['autore'] ?: null, $i['licenza'], $i['licenza_url'] ?: null,
                     $i['larghezza'], $i['altezza'], $i['data'], $soggetto,
                 ]);
                 if ($inserisci->rowCount() === 1) { $nuove++; }
@@ -115,10 +107,12 @@ if ($flickr) {
                 logline('Non salvata: ' . $i['riferimento'] . ' — ' . $e->getMessage(), 'copertine');
             }
         }
-        logline(sprintf('  %-30s %3d trovate  %3d utilizzabili', $tag, count($foto), $buone), 'copertine');
+        logline(sprintf('  %-30s %3d trovate  %3d utilizzabili',
+            mb_substr($domanda, 0, 30), count($foto), $buone), 'copertine');
     }
 
-    logline(sprintf('Flickr: %d viste, %d nuove, %d non utilizzabili', $viste, $nuove, $scartate), 'copertine');
+    logline(sprintf('Openverse: %d viste, %d nuove, %d non utilizzabili',
+        $viste, $nuove, $scartate), 'copertine');
     if (is_resource($lock)) { flock($lock, LOCK_UN); fclose($lock); }
     exit(0);
 }

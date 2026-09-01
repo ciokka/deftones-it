@@ -79,12 +79,6 @@ return [
     // che è assoluto e non passa da base_url.
     'media_dir' => '/home/bpdefton/public_html/media',
 
-    // Chiave per cercare fotografie con licenza libera su Flickr, da
-    // flickr.com/services/apps/create. È gratuita e serve solo alla
-    // raccolta: senza, copertine.php --raccogli-flickr non fa niente e
-    // lo dice, mentre tutto il resto continua a funzionare.
-    'flickr_key' => '',
-
     'user_agent' => 'deftones.it/1.0 (aggregatore notizie fan; +https://www.deftones.it)',
     'http_timeout' => 15,
 ];
