@@ -13,9 +13,10 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
 <div class="pannello">
 
   <div class="pannello-testa">
-    <h1>bozze <span style="color:var(--testo-tenue)"><?= (int)$totale ?></span></h1>
+    <h1>bozze <span class="conta"><?= (int)$totale ?></span></h1>
     <div class="azioni">
-      <a class="bottone" href="<?= u('admin/nuovo') ?>"><?= icona('nuovo') ?>nuovo articolo</a>
+      <a class="bottone bottone-solo-icona" href="<?= u('admin/nuovo') ?>"
+         aria-label="Nuovo articolo" title="Nuovo articolo"><?= icona('nuovo', 17) ?></a>
       <a class="bottone bottone-tenue" href="<?= u('admin/richieste') ?>">richieste</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/raccolte') ?>">raccolte</a>
       <form method="post" action="<?= u('admin/azione') ?>" style="display:inline">

@@ -1386,7 +1386,7 @@ figure:has(> img.img-mancante) { display: none; }
 
 .pannello { padding: 3rem 0; }
 .pannello-testa {
-  display: flex; align-items: baseline; justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;
   padding-bottom: 1rem; border-bottom: 1px solid var(--bordo);
 }
@@ -1406,7 +1406,12 @@ figure:has(> img.img-mancante) { display: none; }
   padding: .2rem .5rem; border: 1px solid var(--accento-scuro);
   color: var(--accento); font-size: .75rem; font-variant-numeric: tabular-nums;
 }
-.azioni { display: flex; gap: .625rem; margin-top: 1.25rem; flex-wrap: wrap; }
+/* align-items: center, e i moduli sono elementi flex anche loro.
+   Senza, un pulsante avvolto in un <form> restava qualche pixel più in
+   basso degli <a> che gli stanno di fianco: il modulo si stirava per
+   l'altezza della riga e il pulsante gli restava appoggiato in cima. */
+.azioni { display: flex; align-items: center; gap: .625rem; margin-top: 1.25rem; flex-wrap: wrap; }
+.azioni form, .riga-azioni form { display: flex; margin: 0; }
 
 .accesso { max-width: 22rem; margin: 6rem auto; }
 .accesso h1 {
@@ -1453,6 +1458,27 @@ figure:has(> img.img-mancante) { display: none; }
 .filtri input:focus, .filtri select:focus { outline: none; border-color: var(--accento); }
 
 /* ------------------------------------------ pannello: icone e foto */
+
+/* Quante bozze aspettano. Era grigio come il resto del titolo e non si
+   leggeva: è il numero per cui si apre il pannello. */
+.conta {
+  display: inline-block;
+  margin-left: .35rem;
+  padding: .1rem .55rem;
+  border: 1px solid var(--accento-scuro);
+  border-radius: 2px;
+  background: rgba(62,168,75,.1);
+  color: var(--accento);
+  font-family: var(--testo-font);
+  font-size: .9375rem;
+  font-variant-numeric: tabular-nums;
+  vertical-align: .3em;
+}
+
+/* Un pulsante di sola icona: quadrato, senza il margine che l'icona
+   tiene quando ha una parola di fianco. */
+.bottone-solo-icona { padding: .7rem; }
+.bottone-solo-icona .icona { margin-right: 0; }
 
 /* Le icone stanno dentro ai pulsanti, non al posto del testo: da sole
    costringono a indovinare, accanto alla parola si leggono in un colpo
