@@ -38,6 +38,17 @@
               </div>
               <h1><a href="<?= u('notizie/' . $primo['slug'] . '/') ?>"><?= e($primo['titolo_it']) ?></a></h1>
               <p class="sommario"><?= e(mb_substr($primo['sommario_it'], 0, 260)) ?><?= mb_strlen($primo['sommario_it']) > 260 ? '…' : '' ?></p>
+
+              <?php /* Un pulsante, non tutta la diapositiva cliccabile:
+                       con le notizie che avanzano scorrendo, una slide
+                       tutta sensibile raccoglie clic involontari. */ ?>
+              <a class="hero-cta" href="<?= u('notizie/' . $primo['slug'] . '/') ?>">
+                leggi l'articolo
+                <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"
+                     stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M2.5 8h10"/><path d="M9 4.5 12.5 8 9 11.5"/>
+                </svg>
+              </a>
             </div>
 
             <div class="piede">

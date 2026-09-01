@@ -604,7 +604,33 @@ body { overflow-x: clip; }
 @media (min-width: 40rem) {
   .apertura.hero h1 { font-size: clamp(2.4rem, 4.6vw, 3.2rem); }
 }
-.apertura.hero h1 a::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+/* Il titolo è un collegamento normale: prima un ::after steso copriva
+   tutta la diapositiva, e su un carosello che avanza scorrendo era un
+   bersaglio grande quanto lo schermo pronto a raccogliere clic che
+   nessuno voleva dare. Adesso ci si va dal titolo o dal pulsante. */
+.hero-cta {
+  display: inline-flex; align-items: center; gap: .55em;
+  margin: 0 0 1.5rem;          /* o tocca la riga della fonte, sotto */
+  padding: .7rem 1.35rem;
+  border: 1px solid var(--bordo-forte);
+  border-radius: 2px;
+  background: rgba(0,0,0,.35);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--testo);
+  text-decoration: none;
+  font-size: .875rem;
+  letter-spacing: .03em;
+  transition: color .18s, border-color .18s, background .18s;
+}
+.hero-cta:hover, .hero-cta:focus-visible {
+  color: var(--accento);
+  border-color: var(--accento);
+  background: rgba(0,0,0,.55);
+}
+/* La freccia si sposta di tre pixel: dice che si va da qualche parte. */
+.hero-cta svg { flex: none; transition: transform .18s; }
+.hero-cta:hover svg { transform: translateX(3px); }
 .hero .sommario { margin: 0 0 1.25rem; color: rgba(255,255,255,.84); }
 
 /* Con un titolo da quarantasette pixel il sommario non ci sta per
@@ -621,7 +647,7 @@ body { overflow-x: clip; }
 /* Sopra il collegamento steso, o non ci si potrebbe cliccare. */
 /* Il distacco dal fondo lo dà .hero-interno, una volta sola: qui
    servirebbe solo a sommarsi. */
-.hero .piede { position: relative; z-index: 2; }
+.hero .piede { position: relative; }
 .piede-destra { display: flex; align-items: center; gap: 1rem; }
 .hero .credito { margin: 0; text-align: right; }
 .hero .credito a { border-bottom-color: rgba(255,255,255,.28); }
