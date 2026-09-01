@@ -528,6 +528,18 @@ condizione* che l'autore sia citato: senza quella riga non stiamo usando
 una foto libera, stiamo usando una foto altrui. Per questo sta sotto
 l'immagine e non in fondo alla pagina.
 
+**Le fotografie vengono da due posti, con lo stesso metro.** Wikimedia
+Commons e Flickr: stesso modello legale — Creative Commons con
+attribuzione — stesso filtro, stesso catalogo, stessi crediti. Su Flickr
+ce n'è di più perché su Commons arriva solo quello che qualcuno si prende
+la briga di trasferire: un quinto delle foto che avevamo veniva di lì,
+passando per le mani di un volontario.
+
+Da nessuna delle due si prendono licenze NC o ND. Non perché il sito sia
+commerciale — non lo è — ma perché "non commerciale" è una nozione che
+nessuno sa definire con precisione, e un sito che un giorno mettesse un
+banner ci finirebbe dentro senza accorgersene.
+
 **Commons viene interrogato di rado, non a ogni articolo.** Le foto
 libere dei Deftones non nascono al ritmo delle notizie: `--raccogli`
 riempie il catalogo `df_immagini` (162 immagini utilizzabili su 252

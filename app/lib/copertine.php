@@ -48,6 +48,12 @@ const NOMI_SOGGETTO = [
     'stephen carpenter' => 'stephen',
     'stef carpenter'    => 'stephen',
     'sergio vega'       => 'sergio',
+    // Su Commons questi tre non hanno una categoria propria, ma su
+    // Flickr le loro foto ci sono: se il catalogo non ne ha, la scelta
+    // ripiega da sola sulle foto di gruppo.
+    'abe cunningham'    => 'abe',
+    'frank delgado'     => 'frank',
+    'chi cheng'         => 'chi',
 ];
 
 // ---------------------------------------------------------------- API
@@ -185,6 +191,7 @@ function licenzaLibera(string $licenza): bool
     }
     return str_starts_with($l, 'cc')
         || str_contains($l, 'public domain')
+        || str_contains($l, 'pubblico dominio')   // come la scriviamo noi per Flickr
         || $l === 'attribution';
 }
 

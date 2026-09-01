@@ -82,6 +82,9 @@
                 <?php endif ?>
                 <?= (int)$f['usata'] ?> <?= (int)$f['usata'] === 1 ? 'uso' : 'usi' ?>
                 <?php if ($f['soggetto'] !== 'band'): ?> · <?= e($f['soggetto']) ?><?php endif ?>
+                <?php /* Da dove viene: cambia dove punta il credito, e
+                         quindi dove va chi vuole vedere l'originale. */ ?>
+                · <?= e((string)($f['provenienza'] ?? 'commons')) ?>
               </span>
             </span>
           </button>

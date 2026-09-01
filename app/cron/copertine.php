@@ -4,6 +4,11 @@
  *
  * Due mestieri in un file solo, perché sono le due metà della stessa cosa:
  *
+ *   --raccogli-flickr  fa lo stesso su Flickr, dove le foto con
+ *                licenza libera sono molte di più: su Commons arriva
+ *                solo quello che qualcuno si prende la briga di
+ *                trasferire. Serve una chiave gratuita in config.php.
+ *
  *   --raccogli   interroga Wikimedia Commons e riempie il catalogo
  *                df_immagini. Va fatto ogni tanto, non ogni giorno: le
  *                foto libere dei Deftones non nascono al ritmo delle
@@ -28,11 +33,13 @@ declare(strict_types=1);
 require __DIR__ . '/../lib/bootstrap.php';
 require __DIR__ . '/../lib/web.php';       // per cacheSvuota()
 require __DIR__ . '/../lib/copertine.php';
+require __DIR__ . '/../lib/flickr.php';
 
 $avvio = microtime(true);
 $opz = $argv ?? [];
 $soloProva = in_array('--prova', $opz, true);
 $raccogli  = in_array('--raccogli', $opz, true);
+$flickr    = in_array('--raccogli-flickr', $opz, true);
 $rifai     = in_array('--rifai', $opz, true);
 $limite    = 40;
 foreach ($opz as $o) {
@@ -50,6 +57,70 @@ $cartella = cartellaCopertine();
 if (!$soloProva && !is_dir($cartella) && !@mkdir($cartella, 0755, true) && !is_dir($cartella)) {
     allarme('Non riesco a creare ' . $cartella . ' — copertine saltate.', 'copertine');
     exit(1);
+}
+
+// =====================================================================
+//  Raccolta: Flickr -> df_immagini
+// =====================================================================
+if ($flickr) {
+    if (!cfg('flickr_key')) {
+        allarme('Manca flickr_key in config.php: la chiave è gratuita, '
+              . 'da flickr.com/services/apps/create', 'copertine');
+        exit(1);
+    }
+
+    // Si cerca per tag e non a testo libero: "deftones" scritto in una
+    // didascalia compare in mille foto che non c'entrano, mentre chi
+    // mette quel tag sta dicendo che il soggetto è quello. E si chiedono
+    // due tag insieme per le persone: "chino" da solo è un cognome
+    // diffuso, "deftones + chino" no.
+    $ricerche = [
+        'deftones'                  => 'band',
+        'deftones,chinomoreno'      => 'chino',
+        'deftones,chino'            => 'chino',
+        'deftones,stephencarpenter' => 'stephen',
+        'deftones,sergiovega'       => 'sergio',
+        'deftones,abecunningham'    => 'abe',
+        'deftones,frankdelgado'     => 'frank',
+        'deftones,chicheng'         => 'chi',
+    ];
+
+    $inserisci = $pdo->prepare('INSERT INTO ' . t('immagini') . '
+          (riferimento, provenienza, url_file, url_pagina, autore, licenza, licenza_url,
+           larghezza, altezza, data_foto, soggetto)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        ON DUPLICATE KEY UPDATE
+           url_file = VALUES(url_file), autore = VALUES(autore),
+           licenza  = VALUES(licenza),  licenza_url = VALUES(licenza_url),
+           data_foto = VALUES(data_foto)');
+
+    $viste = $nuove = $scartate = 0;
+    foreach ($ricerche as $tag => $soggetto) {
+        $foto = flickrCerca($tag);
+        $buone = 0;
+        foreach ($foto as $i) {
+            $viste++;
+            if (!immagineAdatta($i)) { $scartate++; continue; }
+            $buone++;
+            if ($soloProva) { $nuove++; continue; }
+            try {
+                $inserisci->execute([
+                    $i['riferimento'], 'flickr',
+                    $i['url_file'], $i['url_pagina'],
+                    $i['autore'] ?: null, $i['licenza'], $i['licenza_url'],
+                    $i['larghezza'], $i['altezza'], $i['data'], $soggetto,
+                ]);
+                if ($inserisci->rowCount() === 1) { $nuove++; }
+            } catch (Throwable $e) {
+                logline('Non salvata: ' . $i['riferimento'] . ' — ' . $e->getMessage(), 'copertine');
+            }
+        }
+        logline(sprintf('  %-30s %3d trovate  %3d utilizzabili', $tag, count($foto), $buone), 'copertine');
+    }
+
+    logline(sprintf('Flickr: %d viste, %d nuove, %d non utilizzabili', $viste, $nuove, $scartate), 'copertine');
+    if (is_resource($lock)) { flock($lock, LOCK_UN); fclose($lock); }
+    exit(0);
 }
 
 // =====================================================================
@@ -71,9 +142,9 @@ if ($raccogli) {
     logline(sprintf('%d categorie da visitare', count($daVisitare)), 'copertine');
 
     $inserisci = $pdo->prepare('INSERT INTO ' . t('immagini') . '
-          (commons, url_file, url_pagina, autore, licenza, licenza_url,
+          (riferimento, provenienza, url_file, url_pagina, autore, licenza, licenza_url,
            larghezza, altezza, data_foto, soggetto)
-        VALUES (?,?,?,?,?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?)
         ON DUPLICATE KEY UPDATE
            url_file = VALUES(url_file), autore = VALUES(autore),
            licenza  = VALUES(licenza),  licenza_url = VALUES(licenza_url),
@@ -88,7 +159,7 @@ if ($raccogli) {
             if ($soloProva) { $nuove++; continue; }
             try {
                 $inserisci->execute([
-                    substr($i['commons'], strlen('File:')),
+                    substr($i['commons'], strlen('File:')), 'commons',
                     $i['url_file'], $i['url_pagina'],
                     $i['autore'] ?: null, $i['licenza'] ?: null,
                     $i['licenza_url'] ?: null,

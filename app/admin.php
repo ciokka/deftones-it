@@ -376,7 +376,7 @@ if (preg_match('#^copertina/(\d+)$#', $azione, $m)) {
     $dove = ['scartata = 0'];
     $par  = [];
     if ($cerca !== '') {
-        $dove[] = '(autore LIKE ? OR commons LIKE ?)';
+        $dove[] = '(autore LIKE ? OR riferimento LIKE ?)';
         $par[] = '%' . $cerca . '%';
         $par[] = '%' . $cerca . '%';
     }
