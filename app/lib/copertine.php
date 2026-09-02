@@ -186,7 +186,16 @@ function licenzaLibera(string $licenza): bool
 {
     $l = mb_strtolower(trim($licenza));
     if ($l === '') { return false; }
-    foreach (['fair use', 'non-free', 'nonfree', 'no derivative', 'nc-', 'noncommercial'] as $no) {
+
+    // NC e ND si riconoscono come parole intere, non come pezzi di
+    // testo. Cercando il frammento "nc-" si prendeva "by-nc-sa" ma non
+    // "by-nc 2.0", dove dopo nc c'è uno spazio: una licenza non
+    // commerciale passava il filtro per come era scritta. E le ND non
+    // venivano controllate affatto se non per esteso.
+    if (preg_match('/\b(nc|nd)\b|non[\s-]?commercial|no[\s-]?deriv/i', $l)) {
+        return false;
+    }
+    foreach (['fair use', 'non-free', 'nonfree'] as $no) {
         if (str_contains($l, $no)) { return false; }
     }
     return str_starts_with($l, 'cc')
