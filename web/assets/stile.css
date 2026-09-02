@@ -1662,3 +1662,40 @@ figure:has(> img.img-mancante) { display: none; }
 .registro { font-size: .8125rem; color: var(--testo-tenue); }
 .registro div { padding: .35rem 0; border-bottom: 1px solid var(--bordo); }
 .registro strong { color: var(--testo); font-weight: 500; }
+
+/* ------------------------------------ raccolte lanciate dal pannello */
+
+/* Il nome è "barra-raccolte" e non "raccolte" perché .raccolta, al
+   singolare, è già la pagina pubblica delle raccolte di articoli: due
+   selettori quasi uguali per due cose diverse sono un incidente che
+   aspetta il suo turno. */
+.barra-raccolte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  margin: 0 0 1.5rem;
+}
+.barra-raccolte form { margin: 0; }
+.barra-raccolte .bottone { display: inline-flex; align-items: center; gap: .4rem; }
+
+.resoconto { margin: 0 0 2rem; }
+.resoconto summary {
+  cursor: pointer;
+  color: var(--testo-tenue);
+  font-size: .9rem;
+  padding: .35rem 0;
+}
+.resoconto summary:hover { color: var(--accento); }
+.resoconto pre {
+  margin: .5rem 0 0;
+  padding: .8rem 1rem;
+  background: var(--fondo-alto);
+  border: 1px solid var(--bordo);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: .78rem;
+  line-height: 1.5;
+  color: var(--testo-tenue);
+  white-space: pre;
+}

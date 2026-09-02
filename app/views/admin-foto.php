@@ -34,6 +34,38 @@ $query = (string)parse_url($link(), PHP_URL_QUERY);
     non le riporta dentro e un ripensamento costa un clic.
   </p>
 
+  <div class="barra-raccolte">
+    <?php /* Le raccolte partono staccate dalla pagina: durano troppo
+             perché il browser le aspetti. Il resoconto arriva nel log
+             qui sotto, che si aggiorna ricaricando. */ ?>
+    <?php foreach ([['--raccogli', 'raccogli', 'Wikimedia Commons',
+                     'una ventina di secondi'],
+                    ['--raccogli-altre', 'raccogli', 'Openverse (Flickr)',
+                     'cinque minuti — non più di una volta al giorno'],
+                    ['--diagnosi', 'diagnosi', 'prova Openverse',
+                     'tre richieste, per sapere se risponde']]
+                  as [$modo, $ico, $et, $quanto]): ?>
+      <form method="post">
+        <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
+        <input type="hidden" name="raccolta" value="<?= e($modo) ?>">
+        <input type="hidden" name="torna" value="<?= e($query ? '?' . $query : '') ?>">
+        <button type="submit" class="bottone bottone-tenue" title="<?= e($quanto) ?>">
+          <?= icona($ico) ?> <?= e($et) ?>
+        </button>
+      </form>
+    <?php endforeach ?>
+    <a class="bottone bottone-tenue" href="<?= e($link()) ?>" title="rileggi il resoconto">
+      <?= icona('cambia') ?> aggiorna
+    </a>
+  </div>
+
+  <?php if ($log !== ''): ?>
+    <details class="resoconto"<?= $messaggio ? ' open' : '' ?>>
+      <summary>resoconto dell'ultima raccolta</summary>
+      <pre><?= e($log) ?></pre>
+    </details>
+  <?php endif ?>
+
   <div class="filtri-archivio">
     <div class="filtro-riga">
       <span class="filtro-nome">soggetto</span>

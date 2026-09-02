@@ -38,6 +38,11 @@ const ICONE = [
     'fuori'     => '<path d="M9.5 2.5h4v4"/><path d="M13.5 2.5 7 9"/>'
                  . '<path d="M11.5 9.5v3.5a.9.9 0 0 1-.9.9H3.4a.9.9 0 0 1-.9-.9V5.9a.9.9 0 0 1 .9-.9H7"/>',
     'indietro'  => '<path d="M7 3.5 2.5 8 7 12.5"/><path d="M2.5 8h11"/>',
+
+    // raccolta fotografie
+    'raccogli'  => '<path d="M8 1.8v8.4"/><path d="M4.8 7 8 10.2 11.2 7"/>'
+                 . '<path d="M2.5 11.5v1.7a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-1.7"/>',
+    'diagnosi'  => '<path d="M1.8 8h2.9l1.4 3.8 2.2-7.6 1.5 3.8h4.4"/>',
 ];
 
 /**

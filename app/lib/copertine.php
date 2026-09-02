@@ -478,3 +478,67 @@ function miniaturaFoto(string $url): string
     return $url;
 }
 
+
+// ---------------------------------------------- raccolte dal pannello
+
+/**
+ * Il percorso del PHP da riga di comando.
+ *
+ * Non è quello che sta girando: il web gira sotto un binario diverso,
+ * spesso senza le funzioni che servono e con un tempo massimo di
+ * esecuzione da pagina web. Su cPanel il CLI sta in un posto preciso,
+ * che si può cambiare da config.php se un giorno cambia versione.
+ */
+function phpCli(): string
+{
+    return (string)(cfg('php_cli') ?: '/opt/cpanel/ea-php83/root/usr/bin/php');
+}
+
+/**
+ * Fa partire una raccolta e torna subito.
+ *
+ * Le raccolte durano da venti secondi a cinque minuti: troppo per una
+ * pagina web, che verrebbe interrotta a metà lasciando il lucchetto
+ * chiuso. Quindi si lancia il cron staccato dalla pagina — la pagina
+ * risponde subito, il lavoro prosegue per conto suo e racconta tutto nel
+ * suo log, che è lo stesso che si legge qui sotto.
+ *
+ * Se l'hosting vieta di lanciare programmi — capita, ed è una scelta
+ * legittima — non si finge che sia andata: si restituisce il comando da
+ * incollare in un processo cron, che è la strada che funziona sempre.
+ */
+function lanciaRaccolta(string $modo): array
+{
+    $ammessi = ['--raccogli', '--raccogli-altre', '--diagnosi'];
+    if (!in_array($modo, $ammessi, true)) {
+        return ['ko', 'Raccolta sconosciuta.'];
+    }
+
+    $comando = escapeshellarg(phpCli()) . ' -q '
+             . escapeshellarg(dirname(__DIR__) . '/cron/copertine.php') . ' ' . $modo;
+
+    $vietate = array_map('trim', explode(',', (string)ini_get('disable_functions')));
+    if (!function_exists('exec') || in_array('exec', $vietate, true)) {
+        return ['ko', 'Questo hosting non permette di lanciare programmi dalle pagine. '
+                    . 'Il comando da mettere in un processo cron è: ' . $comando];
+    }
+
+    // Staccata davvero: senza il reindirizzamento dell'uscita la pagina
+    // resterebbe ad aspettare la fine del programma, che è esattamente
+    // ciò che stiamo evitando.
+    @exec($comando . ' > /dev/null 2>&1 &');
+
+    $quanto = $modo === '--raccogli-altre' ? 'cinque minuti circa'
+            : ($modo === '--diagnosi' ? 'un minuto' : 'una ventina di secondi');
+    return ['ok', 'Raccolta avviata: ci mette ' . $quanto
+                . '. Il resoconto compare qui sotto, aggiorna la pagina per vederlo.'];
+}
+
+/** Le ultime righe del log delle copertine, per leggerlo dal pannello. */
+function codaLog(int $righe = 40): string
+{
+    $f = dirname(__DIR__) . '/logs/copertine.log';
+    if (!is_file($f)) { return ''; }
+    $tutte = @file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    return implode("\n", array_slice($tutte, -$righe));
+}

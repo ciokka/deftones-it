@@ -108,6 +108,11 @@ return [
     //          "email":"deftones.it@gmail.com"}'
     // Rispondono con client_id e client_secret, e mandano una email da
     // confermare: finché non la confermi le credenziali non funzionano.
+    // Il PHP da riga di comando, quello che i cron usano e che le
+    // raccolte lanciate dal pannello vanno a cercare. Cambia quando
+    // cambia versione di PHP su cPanel.
+    'php_cli' => '/opt/cpanel/ea-php83/root/usr/bin/php',
+
     'openverse_id'     => '',
     'openverse_secret' => '',
 

@@ -300,11 +300,15 @@ if ($azione === 'foto') {
     $msg = messaggioDiPassaggio();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrfValido($_POST['csrf'] ?? null)) {
-        // Un interruttore solo: la fotografia va o non va bene. Rovesciarlo
-        // non cancella niente — le scartate restano, così una raccolta
-        // futura non le riporta dentro e un ripensamento costa un clic.
-        $pdo->prepare('UPDATE ' . t('immagini') . '
-             SET scartata = 1 - scartata WHERE id = ?')->execute([(int)($_POST['img'] ?? 0)]);
+        if (!empty($_POST['raccolta'])) {
+            $_SESSION['messaggio'] = lanciaRaccolta((string)$_POST['raccolta']);
+        } else {
+            // Un interruttore solo: la fotografia va o non va bene. Rovesciarlo
+            // non cancella niente — le scartate restano, così una raccolta
+            // futura non le riporta dentro e un ripensamento costa un clic.
+            $pdo->prepare('UPDATE ' . t('immagini') . '
+                 SET scartata = 1 - scartata WHERE id = ?')->execute([(int)($_POST['img'] ?? 0)]);
+        }
         vaiA('admin/foto' . (string)($_POST['torna'] ?? ''));
     }
 
@@ -337,6 +341,7 @@ if ($azione === 'foto') {
     echo render('admin-foto', [
         'foto' => $foto, 'conti' => $conti, 'soggetti' => $soggetti,
         'stato' => $stato, 'sog' => $sog, 'cerca' => $cerca, 'messaggio' => $msg,
+        'log' => codaLog(),
     ], ['titolo' => 'Catalogo fotografie — pannello']);
     exit;
 }
