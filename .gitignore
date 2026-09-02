@@ -11,3 +11,14 @@ app/cache/
 .DS_Store
 *.local.php
 .env
+
+# I dump di produzione NON entrano nel repository: è pubblico, e dentro
+# ci sono gli hash delle password degli utenti WordPress, gli indirizzi
+# email dei commentatori e degli iscritti alla newsletter, e l'utente
+# del pannello. Servono a popolare l'ambiente di prova e restano sul
+# disco. Le migrazioni vere in sql/ sono elencate una per una in git,
+# quindi qui si può essere larghi.
+sql/bpdefton_base.sql
+sql/*dump*.sql
+sql/*backup*.sql
+*.sql.gz

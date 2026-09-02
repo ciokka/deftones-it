@@ -130,7 +130,9 @@ dove viene una colonna.
 
 ## 3. Come si aggiorna
 
-Il Mac governa, il server segue.
+Il Mac governa, il server segue. E prima di governare si prova: la copia
+sul NAS del capitolo 4 esiste perché nessuna modifica debba più essere
+pubblicata per sapere se funziona.
 
 1. Le modifiche si committano e si spingono su `github.com/ciokka/deftones-it`
 2. cPanel → **Git™ Version Control** → *Pull or Deploy*
@@ -159,7 +161,164 @@ passato, e si può annullare a sua volta.
 
 ---
 
-## 4. I cron
+## 4. La prova sul NAS
+
+Dal 02/09/2026 esiste una copia completa del sito su un NAS Synology in
+casa, all'indirizzo **http://192.168.1.9:8080**. Serve a una cosa sola:
+provare una modifica prima che la veda qualcun altro. Prima, l'unico
+modo per sapere se una riga funzionava era pubblicarla.
+
+Nel titolo di ogni pagina c'è scritto **`[PROVA NAS]`**. Se leggi quella
+scritta stai guardando la copia; se non c'è, sei in produzione.
+
+### Cosa gira dove
+
+| | Produzione | NAS di prova |
+|---|---|---|
+| Macchina | hosting condiviso cPanel | Synology DS120j, ARM, 489 MB di RAM |
+| Server web | Apache (ea-php83) | Apache 2.4 di Web Station |
+| PHP | 8.3 di cPanel | 8.3.27 di Synology |
+| Database | MySQL `bpdefton_base` | MariaDB 10.11, database `deftones`, **porta 3307** |
+| Codice | `/home/bpdefton/deftones/app` + `public_html` | `/volume1/web/deftones/{app,web}` |
+| Aggiornamento | git push → deploy da cPanel | `strumenti/sincronizza-nas.sh` |
+
+Il NAS non è un clone: è un ambiente **equivalente dove conta**. Apache
+con `.htaccess`, PHP 8.3, MySQL. Le differenze che restano sono tre e
+vanno tenute a mente:
+
+- **`mail()` non funziona**: sul NAS non c'è un MTA, quindi
+  `riepilogo.php` non manda niente. Gira, scrive il log, e la mail
+  muore lì.
+- **la chiave Anthropic è vuota** apposta in `config.php`: `enrich`
+  fallisce con un messaggio chiaro invece di consumare credito a ogni
+  prova. Se devi provare proprio `enrich`, incollala lì per il tempo che
+  serve e poi toglila.
+- **è lento**: due core ARM a 800 MHz e mezzo giga di RAM. Una pagina
+  esce in mezzo secondo invece che in un decimo. Serve a provare che le
+  cose funzionino, non a misurare quanto vanno veloci.
+
+### I due comandi
+
+```
+strumenti/sincronizza-nas.sh        # manda il codice sul NAS
+strumenti/nas-esegui.sh ingest      # lancia un cron sul NAS
+strumenti/nas-esegui.sh enrich --prova
+```
+
+La sincronizzazione copia **l'albero di lavoro**, committato o no: è
+tutto il punto. Salta `config.php`, `logs/`, `cache/` e `web/media/`, e
+prima di copiare fa piazza pulita — sovrascrivere e basta lascerebbe in
+giro i file rinominati, e passeresti un pomeriggio a debugare una vista
+che sul NAS esiste ancora.
+
+Usa `tar` su ssh e non `rsync` per due motivi indipendenti: su DSM
+`/bin/rsync` è setuid root e rifiuta le sessioni che non arrivano dal
+servizio di backup di rete (autenticazione riuscita, poi *Permission
+denied*), e il `rsync` di macOS non è più quello vero ma `openrsync`,
+che di opzioni ne ha la metà.
+
+### Il database di prova
+
+Sul NAS, accanto al codice, c'è `.locale/` — non è nel repository:
+
+| File | Cos'è |
+|---|---|
+| `.locale/db.sh` | il client MariaDB già puntato al database di prova |
+| `.locale/my.cnf` | le credenziali, lette da `config.php`, permessi `600` |
+| `.locale/crea-db.sql` | ricrea database e utente da zero |
+
+```
+ssh nas '/volume1/web/deftones/.locale/db.sh -e "SELECT COUNT(*) FROM df_articles"'
+ssh nas '/volume1/web/deftones/.locale/db.sh' < sql/nuova-migrazione.sql
+```
+
+Il database è raggiungibile anche dal Mac sulla **3307** con l'utente
+`deftones`: la password sta in `config.php` sul NAS e in nessun altro
+posto. Non è mai passata da una chat né da un file del repository.
+
+A `.locale/` si aggiunge `azzera-db.sh`, che cancella tutte le tabelle
+del database di prova: serve prima di caricare un dump, perché le
+`CREATE TABLE` fallirebbero su tabelle che esistono già.
+
+### Portare i dati di produzione
+
+Dal 03/09/2026 il database di prova contiene i dati veri: 652 articoli,
+321 immagini, 2200 item grezzi, l'archivio WordPress. Si rifà così:
+
+1. phpMyAdmin di cPanel → esporta `bpdefton_base` in un file `.sql`
+2. il file **non va in git**: `.gitignore` lo esclude, e il motivo è che
+   il repository è pubblico mentre il dump contiene gli hash delle
+   password degli utenti WordPress, gli indirizzi dei commentatori e
+   quelli degli iscritti alla newsletter
+3. due trasformazioni prima di caricarlo, entrambe obbligatorie:
+
+   - **la collazione**: produzione è MySQL 8, il NAS è MariaDB.
+     `utf8mb4_0900_ai_ci` su MariaDB non esiste e va sostituita con
+     `utf8mb4_unicode_ci`
+   - **il filtro alle tabelle**: si tengono le `df_*` più le cinque
+     `wp_*` che `importa-wp.php` legge davvero (`wp_posts`,
+     `wp_postmeta`, `wp_terms`, `wp_term_taxonomy`,
+     `wp_term_relationships`, `wp_termmeta`). Le altre 112 sono log di
+     Wordfence, code di plugin, newsletter: venti mega di roba che non
+     serve, e che è meglio non duplicare vista la natura del contenuto
+
+4. `azzera-db.sh`, poi `gunzip -c dump.sql.gz | .locale/db.sh`
+
+Il filtro non è solo igiene. **Il `max_allowed_packet` di MariaDB su DSM
+è di 1 MB**, e il dump completo conteneva una singola `INSERT` da 2,8 MB
+— il log degli accessi falliti di un plugin di sicurezza, serializzato
+dentro una riga di `wp_options`. L'importazione moriva lì, a metà, con
+un errore che non nomina la tabella colpevole. Tolte le tabelle inutili,
+la riga più lunga scende sotto il limite.
+
+### Le immagini si scaricano a parte
+
+Il dump porta i dati, non i file. Gli articoli cercano le immagini su
+`/media/`, che sul NAS nasce vuota. Le riempie `.locale/scarica-media.php`:
+legge dal database ogni percorso `/media/...` citato — le copertine degli
+articoli e gli allegati dentro i corpi — e scarica dal sito vero quelli
+che mancano. Sono 277 file, 80 mega. Rilanciarlo non ripete il lavoro:
+salta quello che c'è già, quindi è anche il modo di recuperare un
+download andato storto.
+
+Sedici file rispondono 404. Non è un difetto della copia: **sono 404
+anche in produzione**, e sette articoli pubblicati li mostrano rotti dal
+tempo dell'importazione da WordPress. L'ambiente di prova li ha resi
+visibili semplicemente perché è la prima volta che qualcuno guarda
+quelle pagine con attenzione.
+
+### Come è stato messo in piedi
+
+Se un giorno il NAS va formattato, l'ordine è questo:
+
+1. Centro pacchetti: **MariaDB 10** (avvia, imposta la password di root,
+   spunta *Abilita connessione TCP/IP* sulla **3307**), **Web Station**,
+   **Apache HTTP Server 2.4**, **PHP 8.3**, **phpMyAdmin**
+2. Pannello di controllo → *Terminale e SNMP* → **abilita SSH**, e
+   *Utente e gruppo* → **servizio home utente**
+3. La chiave pubblica del Mac in `~/.ssh/authorized_keys` sul NAS.
+   `ssh-copy-id` viene espulso a metà dal `sshd` di Synology: va fatto a
+   mano con `cat >> ~/.ssh/authorized_keys`, e la home deve essere
+   `0711`, `.ssh` `700`, `authorized_keys` `600` — altrimenti `sshd`
+   ignora la chiave in silenzio
+4. Web Station → *Servizio Web* PHP, radice `web/deftones/web`, back-end
+   **Apache 2.4** (nginx non legge `.htaccess`: vedresti la home e un
+   404 su tutto il resto), profilo PHP 8.3
+5. Web Station → *Portale Web* basato sulla porta, **8080**
+6. `strumenti/sincronizza-nas.sh`, poi `config.php` a mano sul NAS
+7. `.locale/crea-db.sql` come root, poi le migrazioni da `sql/`
+
+**`config.php` sul NAS deve essere `644`.** Apache gira come utente
+`http`, e con `640` non può leggerlo: `require` fallisce, la pagina
+risponde 500 con il corpo vuoto e nel log non c'è niente di utile. È
+costato mezz'ora.
+
+Il file non è raggiungibile dal web comunque: sta in `app/`, che è
+fuori dalla radice dei documenti — esattamente come in produzione.
+
+---
+
+## 5. I cron
 
 Percorso completo del PHP: `/opt/cpanel/ea-php83/root/usr/bin/php -q`.
 Gli script stanno in `/home/bpdefton/deftones/app/cron/`.
@@ -277,7 +436,7 @@ Tracklist e copertine dei dischi, solo se ne aggiungi uno al seed:
 
 Gli altri quattro — `importa-wp.php`, `valuta-archivio.php`,
 `crea-temi.php`, `recupera-storico.php` — hanno già fatto il loro lavoro
-e non dovrebbero servire più. Sono documentati qui sotto, al capitolo 5,
+e non dovrebbero servire più. Sono documentati qui sotto, al capitolo 6,
 se un giorno servissero.
 
 **Perché nessuno di questi va programmato.** Un `crea-temi.php` lasciato
@@ -289,7 +448,7 @@ che cambiano due volte all'anno.
 
 ---
 
-## 5. Gli script
+## 6. Gli script
 
 ### ingest.php — raccoglie
 Interroga 17 feed. Per ogni articolo: già visto? contiene una parola
@@ -402,7 +561,7 @@ Con `--solo=slug` si lavora su un disco solo, con `--rifai` si rifà.
 
 ---
 
-## 6. Il sito
+## 7. Il sito
 
 | Indirizzo | Cosa c'è |
 |---|---|
@@ -442,7 +601,7 @@ invecchia mentre una notizia sì.
 
 ---
 
-## 7. Il pannello
+## 8. Il pannello
 
 Sta in `/admin`. Il primo accesso crea l'utente e poi si chiude da solo.
 
@@ -500,7 +659,7 @@ mostra ancora la versione vecchia.
 
 ---
 
-## 8. Le tabelle
+## 9. Le tabelle
 
 | Tabella | Cosa contiene |
 |---|---|
@@ -524,7 +683,7 @@ hosting consente **un solo database**, da cui il prefisso `df_`.
 
 ---
 
-## 9. Le manopole
+## 10. Le manopole
 
 In `config.php`:
 
@@ -545,7 +704,7 @@ del sito e il conto di fine mese.
 
 ---
 
-## 10. Quando qualcosa non va
+## 11. Quando qualcosa non va
 
 **Dove guardare, in ordine:**
 
@@ -571,7 +730,7 @@ traccia resta nell'error_log di Apache.
 
 ---
 
-## 11. Perché certe cose sono così
+## 12. Perché certe cose sono così
 
 **Raggruppare prima di scrivere.** Dodici testate coprono lo stesso
 concerto. Scrivendo un articolo per fonte il sito diventa illeggibile e
@@ -825,7 +984,7 @@ indirizzi veri.
 
 ---
 
-## 12. Cosa resta
+## 13. Cosa resta
 
 **Pubblicare l'archivio.** 265 bozze valutate e ordinate per rilevanza,
 otto raccolte pronte. Il consiglio è di procedere per raccolta:

@@ -50,7 +50,13 @@ function db(bool $verifica = false): PDO
     if ($pdo === null) {
         $d = cfg('db');
         $pdo = new PDO(
-            "mysql:host={$d['host']};dbname={$d['name']};charset=utf8mb4",
+            // La porta si dichiara solo dove non è quella standard: su
+            // cPanel MySQL sta sulla 3306 e la voce in config.php non
+            // esiste nemmeno, sul NAS di prova MariaDB 10 ascolta sulla
+            // 3307. Senza la chiave il DSN resta identico a prima.
+            "mysql:host={$d['host']};"
+                . (empty($d['port']) ? '' : "port={$d['port']};")
+                . "dbname={$d['name']};charset=utf8mb4",
             $d['user'],
             $d['pass'],
             [

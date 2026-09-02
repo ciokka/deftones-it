@@ -8,11 +8,18 @@ RewriteEngine On
 #
 # /.well-known/ è escluso: serve al rinnovo automatico del certificato e
 # deve restare raggiungibile anche in chiaro, o l'SSL smette di rinnovarsi.
+# La prima condizione di entrambe le regole guarda il nome dell'host:
+# canonicalizza solo chi sta già arrivando su deftones.it. Serve alla
+# copia di prova sul NAS, che risponde a un indirizzo IP — senza questa
+# riga ogni richiesta locale verrebbe rimbalzata in produzione, e
+# l'ambiente di prova non potrebbe nemmeno mostrare la prima pagina.
+RewriteCond %{HTTP_HOST} deftones\.it$ [NC]
 RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !https
 RewriteCond %{REQUEST_URI} !^/\.well-known/
 RewriteRule ^ https://www.deftones.it%{REQUEST_URI} [R=301,L]
 
+RewriteCond %{HTTP_HOST} deftones\.it$ [NC]
 RewriteCond %{HTTP_HOST} !^www\. [NC]
 RewriteRule ^ https://www.deftones.it%{REQUEST_URI} [R=301,L]
 
