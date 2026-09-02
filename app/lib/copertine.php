@@ -558,7 +558,17 @@ function lanciaRaccolta(string $modo): array
         return ['ko', 'Raccolta sconosciuta.'];
     }
 
-    $comando = escapeshellarg(phpCli()) . ' -q '
+    // L'ambiente va ripulito, o il programma parte azzoppato.
+    //
+    // Una pagina web su cPanel gira con PHPRC impostata: è la variabile
+    // che dice a PHP quale configurazione leggere, e punta a quella del
+    // sito. Il programma lanciato da qui la eredita, va a leggere quella
+    // invece della propria e si ritrova senza le estensioni che dalla
+    // riga di comando avrebbe — mbstring per prima, che qui serve a ogni
+    // riga. Lo stesso comando da un processo cron non eredita niente e
+    // funziona: era tutta lì la differenza.
+    $comando = '/usr/bin/env -u PHPRC -u PHP_INI_SCAN_DIR '
+             . escapeshellarg(phpCli()) . ' -q '
              . escapeshellarg(dirname(__DIR__) . '/cron/copertine.php') . ' ' . $modo;
 
     $vietate = array_map('trim', explode(',', (string)ini_get('disable_functions')));
