@@ -107,13 +107,17 @@ function nomeLicenza(string $codice, string $versione): string
  * Si ferma da sola quando una pagina torna meno piena del massimo:
  * vuol dire che era l'ultima.
  */
-function openverseCerca(string $domanda, int $pagine = 12): array
+function openverseCerca(string $domanda, int $pagine = 12, bool &$guasto = false): array
 {
+    $guasto = false;
     $fuori = [];
     for ($p = 1; $p <= $pagine; $p++) {
-        // Venti al minuto è il limite senza chiave: tre secondi e mezzo
-        // fra una richiesta e l'altra ci stanno dentro con margine.
-        if ($p > 1) { sleep(4); }
+        // Venti al minuto è il limite senza chiave. Sei secondi fra una
+        // pagina e l'altra fanno dieci richieste al minuto: metà del
+        // consentito, che è il margine che serve perché i tentativi
+        // ripetuti non sfondino il tetto proprio quando le cose vanno
+        // già male.
+        if ($p > 1) { sleep(6); }
 
         $indirizzo = OPENVERSE_API . '?' . http_build_query([
             'q'         => $domanda,
@@ -133,8 +137,13 @@ function openverseCerca(string $domanda, int $pagine = 12): array
         // Il tempo d'attesa è quaranta secondi e non i quindici
         // consueti: la ricerca di Openverse lavora su un indice enorme e
         // ci mette il suo.
+        // Due tentativi, non tre, e distanti. Quando Openverse smette di
+        // rispondere non è un intoppo di rete: è un limite superato, e
+        // insistere in fretta lo peggiora — sono i tentativi ravvicinati
+        // a far scattare il tetto al minuto proprio mentre cerchiamo di
+        // recuperare.
         $d = null;
-        foreach ([0, 3, 8] as $tentativo => $pausa) {
+        foreach ([0, 20] as $tentativo => $pausa) {
             if ($pausa) { sleep($pausa); }
             $g = openverseGettone();
             $r = httpGet($indirizzo, null, null, true, 40,
@@ -144,7 +153,8 @@ function openverseCerca(string $domanda, int $pagine = 12): array
                 if (is_array($x) && isset($x['results'])) { $d = $x; break; }
                 logline('Openverse, risposta illeggibile: '
                     . mb_substr((string)$r['body'], 0, 120), 'copertine');
-            } elseif ($tentativo === 2) {
+            } elseif ($tentativo === 1) {
+                $guasto = true;
                 logline(sprintf('Openverse non risponde (http %d%s) — «%s», pagina %d',
                     $r['http'], $r['error'] ? ', ' . $r['error'] : '', $domanda, $p), 'copertine');
             }

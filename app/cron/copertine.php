@@ -104,7 +104,15 @@ if ($altre) {
     foreach ($ricerche as $domanda => $soggetto) {
         // Le ricerche sui singoli membri rendono meno: non ha senso
         // insistere per dodici pagine.
-        $foto = openverseCerca($domanda, $soggetto === 'band' ? 12 : 5);
+        $foto = openverseCerca($domanda, $soggetto === 'band' ? 8 : 4, $guasto);
+        // Se l'archivio non risponde si smette subito. Andare avanti a
+        // interrogare un server che ci sta ignorando non porta foto e
+        // allunga il periodo in cui ci ignora.
+        if ($guasto) {
+            logline('Openverse non risponde: interrompo il giro. '
+                . 'Riprovare fra ventiquattr\'ore, non prima.', 'copertine');
+            break;
+        }
         $buone = 0;
         foreach ($foto as $i) {
             $viste++;
