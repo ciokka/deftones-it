@@ -207,14 +207,43 @@ Le richieste girano ogni mezz'ora perché a vuoto non costano niente: lo
 script prende un lock, non trova nulla in attesa ed esce. È la differenza
 fra ordinare un articolo e averlo entro mezz'ora, o il giorno dopo.
 
-### Gli strumenti da lanciare a mano
+### Le raccolte fotografiche: dal pannello
+
+Nel catalogo fotografie ci sono tre pulsanti — Commons, Openverse, e la
+prova di Openverse che costa tre richieste invece di sessanta — e sotto
+il resoconto dell'ultima raccolta, che legge lo stesso log dei cron. Non
+serve più creare processi temporanei per raccogliere.
+
+Partono staccate dalla pagina: una raccolta dura da venti secondi a sei
+minuti, e aspettarla dentro una richiesta web significa vedersela
+interrompere a metà col lucchetto ancora chiuso.
+
+**Se un giorno il pulsante dicesse "avviata" senza che succeda niente**,
+la causa è quasi certamente `PHPRC`. Su cPanel la pagina web gira con
+quella variabile impostata: dice a PHP quale configurazione leggere e
+punta a quella del sito. Il programma lanciato dalla pagina la eredita,
+legge quella invece della propria e parte senza le estensioni che dalla
+riga di comando avrebbe — `mbstring` per prima, che serve alla nona riga
+di `bootstrap.php`. Lo stesso comando da un cron non eredita niente e
+funziona benissimo, ed è per questo che il guasto sembra impossibile.
+Si lancia con `env -u PHPRC -u PHP_INI_SCAN_DIR` davanti, che è quello
+che fa `lanciaRaccolta()`.
+
+Il sintomo è stato invisibile per due ore perché l'uscita finiva in
+`/dev/null` insieme agli errori. Ora l'uscita normale sì — il programma
+scrive già nel log — ma gli errori no: quelli vanno nel log e si leggono
+dal pannello.
+
+### Gli altri strumenti da lanciare a mano
 
 Non si programmano. Si crea un processo temporaneo con orario fra due
 minuti, si legge il log, **e poi si cancella la riga**. Qui `2>&1` ci
 sta, perché quel log lo leggi tu subito dopo.
 
-Raccogliere fotografie da Openverse — dopo un tour, o quando serve altro
-materiale. Con `--prova` non scrive niente e dice solo quante ne trova:
+Raccogliere fotografie da Openverse — oggi si fa col pulsante, ma il
+comando resta valido. Attenzione: `--prova` fa **le stesse richieste**
+della raccolta vera, quindi farle entrambe consuma il doppio della quota
+per ottenere le stesse foto:
 
 ```
 /opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/copertine.php --raccogli-altre --prova > /home/bpdefton/copertine.log 2>&1
@@ -339,6 +368,14 @@ Assegna una copertina agli articoli che non ce l'hanno. Non spende
 niente: pesca da un catalogo locale di fotografie con licenza libera.
 
 Tre mestieri distinti. `--raccogli` interroga Wikimedia Commons e
+Su Commons le fotografie recenti non stanno nelle categorie: fra il
+caricamento e la categorizzazione passano mesi, e a volte non passa mai.
+Perciò dopo le diciassette categorie si fa anche una ricerca a testo
+libero sui nomi dei file, dai più recenti, scartando chi non nomina il
+gruppo o uno dei suoi — la ricerca di Commons trova "deftones" dentro
+atti parlamentari del Seicento. È quella la riga «fuori categoria» nel
+resoconto.
+
 `--raccogli-altre` interroga Openverse, che indicizza le foto libere di
 Flickr: tutt'e due riempiono `df_immagini` e vanno fatte di rado, perché
 le foto libere dei Deftones non nascono al ritmo delle notizie. Senza
