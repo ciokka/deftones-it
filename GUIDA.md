@@ -60,7 +60,7 @@ decisioni prese lungo la strada:
 │   │                          nessun deploy. Se lo perdi, lo rifai da
 │   │                          config.example.php
 │   ├── admin.php              il pannello
-│   ├── cron/                  gli otto script
+│   ├── cron/                  i dieci script
 │   ├── lib/                   funzioni condivise
 │   ├── views/                 i template
 │   ├── cache/                 pagine generate — si svuota da sé
@@ -70,7 +70,10 @@ decisioni prese lungo la strada:
 │   ├── index.php              unico punto d'ingresso
 │   ├── .htaccess              manda tutto a index.php
 │   ├── assets/                CSS, font, pattern, immagini
-│   └── media/                 le immagini del vecchio WordPress
+│   ├── favicon.svg .ico       l'icona del sito, e apple-touch-icon.png
+│   ├── robots.txt             cosa i motori possono percorrere
+│   └── media/                 immagini del vecchio WordPress, copertine
+│                              degli articoli e dei dischi
 │
 ├── repositories/deftones-it/  il clone git che cPanel aggiorna
 └── archivio-wp/               il vecchio WordPress, spento e fuori dal web
@@ -90,6 +93,38 @@ strumenti/    script che girano sul Mac, non sul server
 materiali/    logo, pattern, immagine di anteprima
 .cpanel.yml   dice al deploy dove va ogni cosa
 ```
+
+### Le librerie
+
+| File | Cosa contiene |
+|---|---|
+| `bootstrap.php` | configurazione, database, log, scaricamento, feed, slug, email |
+| `web.php` | escaping, indirizzi, cache su file, rendering, copertine, crediti, ricerca |
+| `claude.php` | le chiamate al modello, con e senza ricerca sul web |
+| `prompts.php` | le istruzioni date al modello, in un posto solo |
+| `copertine.php` | Wikimedia Commons, Cover Art Archive, scelta e assegnazione |
+| `openverse.php` | le foto libere di Flickr, raggiunte tramite Openverse |
+| `icone.php` | le iconcine del pannello |
+
+### I file SQL, nell'ordine in cui sono stati eseguiti
+
+Nessuno di questi viene eseguito da solo: si incollano a mano in
+phpMyAdmin. Servono a ricostruire il database da zero, e a capire da
+dove viene una colonna.
+
+| File | Cosa aggiunge |
+|---|---|
+| `schema.sql` | le tabelle di partenza |
+| `albums-seed.sql` | i tredici dischi con i loro identificativi MusicBrainz |
+| `temi.sql` | `df_temi`, le raccolte tematiche |
+| `richieste.sql` | `df_richieste`, gli articoli su commissione |
+| `correzioni-01…07.sql` | ritocchi fatti strada facendo |
+| `copertine.sql` | le colonne `immagine_*` e la tabella `df_immagini` |
+| `ricerca.sql` | l'indice a testo pieno che comprende il corpo |
+| `apertura.sql` | `in_apertura`, per fissare una notizia in vetrina |
+| `data-foto.sql` | `data_foto`, quando è stata scattata |
+| `flickr.sql` | `commons` diventa `riferimento`, e nasce `provenienza` |
+| `controllo.sql`, `ispezione.sql` | non modificano niente: servono a guardare |
 
 ---
 
@@ -237,9 +272,11 @@ si giustifica solo sui contenuti che resteranno anni.
 Assegna una copertina agli articoli che non ce l'hanno. Non spende
 niente: pesca da un catalogo locale di fotografie con licenza libera.
 
-Due mestieri distinti. `--raccogli` interroga Wikimedia Commons e riempie
-`df_immagini` — va fatto di rado, le foto libere dei Deftones non nascono
-al ritmo delle notizie. Senza opzioni, assegna.
+Tre mestieri distinti. `--raccogli` interroga Wikimedia Commons e
+`--raccogli-altre` interroga Openverse, che indicizza le foto libere di
+Flickr: tutt'e due riempiono `df_immagini` e vanno fatte di rado, perché
+le foto libere dei Deftones non nascono al ritmo delle notizie. Senza
+opzioni, assegna.
 
 - `--prova` mostra cosa farebbe, simulando anche la rotazione
 - `--limite=N` quanti articoli per giro (40 di suo)
@@ -281,8 +318,17 @@ all'articolo corrispondente, ma **solo se è pubblicato**: un 301 verso un
 404 è peggio di un 404 diretto. È un motivo in più per pubblicare
 l'archivio: ogni articolo riaccende i link che puntavano a lui da anni.
 
-L'apertura prende di suo le tre notizie più recenti. Dal pannello se ne
-possono fissare: quelle fissate vengono prima, le recenti completano.
+**L'apertura** è un carosello di tre notizie che avanzano seguendo lo
+scorrimento: resta agganciata in cima per un tratto di pagina, poi si
+sgancia e la pagina riprende. Non intercetta niente — il dito e la
+rotella muovono sempre la pagina, cambia solo cosa si vede muovere — e
+sotto `prefers-reduced-motion` non si attiva affatto. All'articolo ci si
+va dal titolo o dal pulsante, non cliccando la diapositiva intera: su un
+carosello che avanza scorrendo, un bersaglio grande quanto lo schermo
+raccoglie clic che nessuno voleva dare.
+
+Prende di suo le tre notizie più recenti. Dal pannello se ne possono
+fissare: quelle fissate vengono prima, le recenti completano.
 
 Fissarne una fa anche un'altra cosa: la sua copertina diventa l'immagine
 che si vede quando qualcuno condivide la home. La pagina ne dichiara
@@ -302,14 +348,15 @@ ordina per rilevanza, lunghezza o data. Con le caselle si pubblica o si
 scarta in blocco — ma solo una selezione esplicita, mai "tutte quelle che
 vedi".
 
-**Nuovo articolo** scrive un pezzo a mano, senza IA: gli stessi campi
+**Nuovo articolo** — `/admin/nuovo` — scrive un pezzo a mano, senza IA: gli stessi campi
 della modifica, e in fondo tre modi di finire — *salva come bozza*,
 *pubblica*, *pubblica con copertina*. Sono tre intenzioni diverse, non
 tre varianti dello stesso pulsante. Un articolo scritto così resta senza
 `modello` e senza `uso_token`, ed è giusto che si veda: quelle colonne
 sono la traccia di cosa ha generato cosa.
 
-**Foto** apre il catalogo intero e serve a fare pulizia. Un clic su una
+**Foto** — `/admin/foto` — apre il catalogo intero e serve a fare
+pulizia. Un clic su una
 fotografia la toglie, un altro la rimette. Le scartate non vengono
 cancellate: restano lì, così una raccolta futura non le riporta dentro.
 
@@ -319,8 +366,8 @@ Deftones sono grandi — mediana tremila pixel — ma la qualità
 giudicare: buio, sfocato e nuca sono cose che si vedono solo guardando.
 Mezz'ora spesa lì migliora ogni assegnazione futura.
 
-**Copertina** apre il catalogo delle fotografie e ne fa scegliere una a
-mano. Vengono prima quelle del soggetto giusto e quelle usate meno, e si
+**Copertina** — `/admin/copertina/{id}` — apre il catalogo delle
+fotografie e ne fa scegliere una a mano. Vengono prima quelle del soggetto giusto e quelle usate meno, e si
 possono filtrare per autore. Scegliendone una, l'origine diventa
 *manuale* e il cron non la cambia più, nemmeno con `--rifai`. Da lì si
 può anche far cercare al programma un'altra foto, o togliere la
@@ -359,7 +406,7 @@ mostra ancora la versione vecchia.
 | `df_articles` | gli articoli in italiano: bozze, pubblicati, scartati |
 | `df_temi` | le raccolte tematiche |
 | `df_richieste` | gli articoli commissionati |
-| `df_immagini` | il catalogo delle foto con licenza libera, con autore e licenza |
+| `df_immagini` | il catalogo delle foto libere: riferimento, provenienza, autore, licenza, data di scatto, quante volte è stata usata, e se è stata scartata |
 | `df_albums` | la discografia: date, etichette, tracklist, schede |
 | `df_shows` | i concerti — ancora da riempire |
 | `df_run_log` | cosa ha fatto ogni giro e quanto è costato |
@@ -522,6 +569,22 @@ vecchia. Stesso criterio per la tracklist: fra le stampe della stessa
 data vince quella con meno brani, perché le bonus track si aggiungono a
 un album e non lo compongono.
 
+**La copertina porta un contrassegno nell'indirizzo.** Il file nuovo si
+scrive sempre sullo stesso percorso — è il nome dell'articolo — quindi
+per il browser l'indirizzo non cambia e continua a mostrare quello che ha
+già. Sostituendo una copertina si vedeva cambiare il nome dell'autore ma
+non la fotografia. Il contrassegno viene da `immagine_cercata_il`: cambia
+quando cambia la foto e non un attimo prima, quindi non costringe
+nessuno a riscaricarla a ogni visita.
+
+**Le misure dichiarate nell'anteprima social sono quelle vere.** Le foto
+di Commons hanno proporzioni tutte diverse e le copertine dei dischi sono
+quadrate: dichiarare 1200×675 per tutte era una bugia, e i social usano
+quei numeri per disporre l'anteprima prima ancora di scaricare
+l'immagine. Si misurano con `getimagesize()` sul file locale — possiamo
+permettercelo perché ospitiamo noi ogni copertina, e la pagina finisce
+comunque in cache.
+
 **Le copertine non si possono prendere dove capita.** Le foto che
 accompagnano gli articoli dei giornali sono di agenzia o dei fotografi
 accreditati. Prenderne l'`og:image` è quello che fa quasi ogni
@@ -615,6 +678,15 @@ molto più svelto di quanto fosse.
 **Le date dei concerti.** `df_shows` è l'unica tabella ancora vuota.
 Servono le chiavi di Bandsintown e setlist.fm, entrambe gratuite.
 
+**Le fotografie buone.** Il bacino libero è quello che è: le immagini
+sono grandi — mediana tremila pixel — ma la qualità fotografica varia
+molto, e nessun filtro la può giudicare. Due strade, nell'ordine: fare
+pulizia dal pannello, in `/admin/foto`, una volta con calma; e chiedere
+al management o all'etichetta le **foto stampa ufficiali**, che sono
+fatte apposta per essere usate dalle testate e di solito si ottengono
+gratis con il credito. Se ne arrivano, serve una funzione per caricarle
+a mano nel catalogo: non c'è ancora.
+
 **Le immagini 2002-2011.** Perse, a meno che non salti fuori un backup.
 I riferimenti però sono conservati sotto `/media/legacy/`: se un giorno
 copi lì i file rispettando i percorsi originali, le immagini tornano da
@@ -631,6 +703,7 @@ a mente per intero. Prima o poi va diviso per blocchi con confini netti.
 
 ---
 
-*Ultimo aggiornamento: 30 agosto 2026 — carosello in apertura, archivio
-notizie, ricerca, discografia, modifica dal pannello, informativa
-privacy.*
+*Ultimo aggiornamento: 2 settembre 2026 — carosello guidato dallo
+scorrimento, catalogo fotografie con Openverse, articolo a mano e scelta
+della copertina dal pannello, favicon, anteprime social con le misure
+vere.*
