@@ -21,6 +21,8 @@
  *
  * Opzioni:
  *   --prova      dice cosa farebbe senza scrivere niente
+ *   --diagnosi   tre domande di prova a Openverse: dice a che punto si
+ *                rompe e quanta quota resta. Non scrive niente.
  *   --limite=N   quanti articoli trattare in questo giro (predefinito 40)
  *   --rifai      rimette in gioco anche gli articoli già assegnati
  *                automaticamente. Non tocca le copertine messe a mano.
@@ -40,6 +42,7 @@ $opz = $argv ?? [];
 $soloProva = in_array('--prova', $opz, true);
 $raccogli  = in_array('--raccogli', $opz, true);
 $altre     = in_array('--raccogli-altre', $opz, true);
+$diagnosi  = in_array('--diagnosi', $opz, true);
 $rifai     = in_array('--rifai', $opz, true);
 $limite    = 40;
 foreach ($opz as $o) {
@@ -57,6 +60,15 @@ $cartella = cartellaCopertine();
 if (!$soloProva && !is_dir($cartella) && !@mkdir($cartella, 0755, true) && !is_dir($cartella)) {
     allarme('Non riesco a creare ' . $cartella . ' — copertine saltate.', 'copertine');
     exit(1);
+}
+
+// =====================================================================
+//  Diagnosi: capire perché Openverse non risponde
+// =====================================================================
+if ($diagnosi) {
+    openverseDiagnosi();
+    logline(sprintf('Fatto in %.1fs.', microtime(true) - $avvio), 'copertine');
+    exit(0);
 }
 
 // =====================================================================

@@ -195,3 +195,70 @@ function openverseCerca(string $domanda, int $pagine = 12): array
     }
     return $fuori;
 }
+
+/**
+ * Tre domande a Openverse per capire dove si rompe.
+ *
+ * Il log diceva "non risponde, zero byte ricevuti": la connessione si
+ * apre e poi non arriva niente. Sono due cose diverse e si distinguono
+ * solo provando — se anche la domanda più banale resta appesa il
+ * problema è il nostro indirizzo, se invece passa sono le ricerche
+ * filtrate a essere troppo lente.
+ *
+ * Legge anche le intestazioni della quota, che sono l'unico posto dove
+ * Openverse dice quante richieste ci restano: non lo dice mai nel corpo,
+ * e quando la quota è finita non risponde affatto.
+ */
+function openverseDiagnosi(): void
+{
+    $prove = [
+        'domanda banale'      => ['q' => 'test', 'page_size' => '1'],
+        'con una licenza'     => ['q' => 'test', 'page_size' => '1', 'license' => 'by'],
+        'la ricerca vera'     => ['q' => 'deftones', 'page_size' => '20',
+                                  'license' => openverseLicenze()],
+    ];
+
+    $gettone = openverseGettone();
+    logline('Diagnosi Openverse — credenziali: '
+        . ($gettone ? 'sì' : 'no'), 'copertine');
+
+    foreach ($prove as $nome => $par) {
+        $quote = [];
+        $ch = curl_init(OPENVERSE_API . '?' . http_build_query($par));
+        $intestazioni = ['Accept: application/json'];
+        if ($gettone) { $intestazioni[] = 'Authorization: Bearer ' . $gettone; }
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 40,
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_USERAGENT      => cfg('user_agent'),
+            CURLOPT_HTTPHEADER     => $intestazioni,
+            CURLOPT_HEADERFUNCTION => function ($ch, $riga) use (&$quote) {
+                if (stripos($riga, 'x-ratelimit') === 0) { $quote[] = trim($riga); }
+                return strlen($riga);
+            },
+        ]);
+        $corpo = curl_exec($ch);
+        $http  = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $tempo = (float)curl_getinfo($ch, CURLINFO_TOTAL_TIME);
+        $conn  = (float)curl_getinfo($ch, CURLINFO_CONNECT_TIME);
+        $err   = curl_error($ch) ?: '';
+        curl_close($ch);
+
+        $quanti = '';
+        if (is_string($corpo)) {
+            $d = json_decode($corpo, true);
+            if (is_array($d) && isset($d['result_count'])) {
+                $quanti = ', ' . (int)$d['result_count'] . ' risultati';
+            } elseif ($http !== 200) {
+                $quanti = ', ' . mb_substr(strip_tags($corpo), 0, 80);
+            }
+        }
+
+        logline(sprintf('  %-16s http %d in %.1fs (connessione %.2fs)%s%s',
+            $nome, $http, $tempo, $conn, $quanti,
+            $err ? ' — ' . $err : ''), 'copertine');
+        foreach ($quote as $q) { logline('    ' . $q, 'copertine'); }
+        sleep(4);
+    }
+}
