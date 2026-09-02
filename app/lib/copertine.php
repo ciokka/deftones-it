@@ -230,10 +230,22 @@ function immagineAdatta(array $i): bool
     foreach (['trademark', 'insignia', 'currency'] as $no) {
         if (str_contains(mb_strtolower($i['vincoli']), $no)) { return false; }
     }
-    if ($i['l_orig'] < 800) { return false; }
-    // Una copertina orizzontale: i ritratti verticali, ritagliati a 16:9,
-    // diventano quasi sempre un mento.
-    return $i['l_orig'] >= $i['a_orig'];
+    // Qui si decide solo se una fotografia vale la pena di stare in
+    // catalogo, non se è adatta a fare da copertina automatica: sono due
+    // domande diverse, e per un pezzo scritto a mano la seconda la fa
+    // una persona guardando le miniature.
+    //
+    // I verticali entrano, quindi: ritagliati a 16:9 diventano quasi
+    // sempre un mento, e infatti l'assegnazione automatica non li
+    // prende — ma dentro un articolo, scelti da chi l'ha scritto, sono
+    // spesso i più belli. Prima li buttavamo al momento della raccolta,
+    // che è il posto sbagliato per buttare qualcosa: da lì non tornano
+    // indietro se non rifacendo il giro.
+    //
+    // Il metro è il lato lungo: novecento pixel bastano per una
+    // miniatura, per un ritratto in mezzo al testo e per capire cosa si
+    // sta guardando.
+    return max($i['l_orig'], $i['a_orig']) >= 900;
 }
 
 // ------------------------------------------------------- disco e foto
@@ -382,6 +394,10 @@ function assegnaCopertina(PDO $pdo, array $a, array $dischi, bool $prova = false
         $fuori = $giaScelte ? ' AND id NOT IN (' . implode(',', $giaScelte) . ')' : '';
         $q = $pdo->prepare('SELECT * FROM ' . t('immagini') . "
                              WHERE scartata = 0 AND soggetto IN (?, ?) $fuori
+                               -- Solo orizzontali abbastanza larghe: il
+                               -- ritaglio a 16:9 è automatico e nessuno
+                               -- lo guarda prima che sia pubblicato.
+                               AND larghezza >= altezza AND larghezza >= 800
                              ORDER BY (soggetto = ? AND usata < 3) DESC, usata ASC, RAND()
                              LIMIT 1");
         $q->execute([$soggetto, 'band', $soggetto]);

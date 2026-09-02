@@ -78,6 +78,12 @@ if ($altre) {
     // Le domande. Openverse cerca nel titolo, nella descrizione e nei
     // tag: per le persone si mette anche "deftones", o "chino" da solo
     // porta indietro mezzo mondo.
+    // Le ultime quattro non cercano una persona ma una situazione. Per
+    // un pezzo scritto a mano serve una fotografia che c'entri con
+    // quello che racconta, e "deftones" e basta riporta indietro sempre
+    // gli stessi ritratti di scena: chi cerca il palco, la folla o il
+    // festival deve chiederlo. Restano soggetto 'band' perché valgono
+    // per qualunque articolo.
     $ricerche = [
         'deftones'                  => 'band',
         'deftones chino moreno'     => 'chino',
@@ -86,6 +92,10 @@ if ($altre) {
         'deftones abe cunningham'   => 'abe',
         'deftones frank delgado'    => 'frank',
         'deftones chi cheng'        => 'chi',
+        'deftones live'             => 'band',
+        'deftones concert'          => 'band',
+        'deftones festival'         => 'band',
+        'deftones tour'             => 'band',
     ];
 
     $inserisci = $pdo->prepare('INSERT INTO ' . t('immagini') . '
