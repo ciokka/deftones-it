@@ -142,9 +142,11 @@ function costoEuro(int $in, int $out): float
  * @return array{http:int, body:?string, etag:?string, last_modified:?string, error:?string}
  */
 function httpGet(string $url, ?string $etag = null, ?string $lastMod = null,
-                 bool $seguiRedirect = true, ?int $attesaMax = null): array
+                 bool $seguiRedirect = true, ?int $attesaMax = null,
+                 array $intestazioniExtra = []): array
 {
     $intestazioni = ['Accept: application/rss+xml, application/atom+xml, application/xml, text/xml, */*'];
+    foreach ($intestazioniExtra as $x) { $intestazioni[] = $x; }
     if ($etag)    { $intestazioni[] = 'If-None-Match: ' . $etag; }
     if ($lastMod) { $intestazioni[] = 'If-Modified-Since: ' . $lastMod; }
 

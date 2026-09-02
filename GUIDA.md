@@ -676,8 +676,17 @@ Su Flickr ce n'è di più perché su Commons arriva solo quello che qualcuno
 si prende la briga di trasferire: un quinto delle foto che avevamo veniva
 di lì, passata per le mani di un volontario. A Flickr però non si arriva
 più direttamente: dal 2024 non rilascia chiavi API agli account
-gratuiti. Openverse indicizza le stesse fotografie e risponde senza
-chiave — venti richieste al minuto, duecento al giorno.
+gratuiti. Openverse indicizza le stesse fotografie.
+
+**Openverse va usato con le credenziali**, che sono gratuite. Senza, la
+quota è di duecento richieste al giorno contate **per indirizzo IP** — e
+su un hosting condiviso quell'indirizzo è lo stesso di centinaia di altri
+siti, quindi può risultare esaurita da gente che non sa di averla usata.
+Peggio: quando è esaurita la richiesta non fallisce con un errore, resta
+appesa finché non scade. Con le credenziali la quota è legata a quelle e
+sale a diecimila al giorno. Si mettono in `config.php` come
+`openverse_id` e `openverse_secret`; il gettone dura dodici ore e viene
+conservato in `cache/`.
 
 I risultati che Openverse restituisce da Wikimedia vengono scartati:
 quelli li prendiamo alla fonte, con metadati migliori — compresa la data

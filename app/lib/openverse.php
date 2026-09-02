@@ -17,7 +17,61 @@
  */
 declare(strict_types=1);
 
-const OPENVERSE_API = 'https://api.openverse.org/v1/images/';
+const OPENVERSE_API   = 'https://api.openverse.org/v1/images/';
+const OPENVERSE_TOKEN = 'https://api.openverse.org/v1/auth_tokens/token/';
+
+/**
+ * Il gettone di accesso, se ci sono le credenziali.
+ *
+ * Senza credenziali Openverse concede venti richieste al minuto e
+ * duecento al giorno, contate PER INDIRIZZO IP. Su un hosting condiviso
+ * quell'indirizzo è lo stesso di centinaia di altri siti: la quota può
+ * risultare esaurita da gente che non sa nemmeno di averla usata, e la
+ * risposta non è un errore chiaro — la richiesta resta appesa finché non
+ * scade. Con le credenziali la quota è legata a quelle, e sale a
+ * diecimila richieste al giorno.
+ *
+ * Il gettone dura dodici ore e si conserva in un file: chiederne uno
+ * nuovo a ogni pagina sarebbe una richiesta sprecata su due.
+ */
+function openverseGettone(): ?string
+{
+    $id = (string)(cfg('openverse_id') ?? '');
+    $segreto = (string)(cfg('openverse_secret') ?? '');
+    if ($id === '' || $segreto === '') { return null; }
+
+    $file = dirname(__DIR__) . '/cache/openverse-gettone.json';
+    $c = is_file($file) ? json_decode((string)@file_get_contents($file), true) : null;
+    if (is_array($c) && ($c['scade'] ?? 0) > time() + 60) { return (string)$c['gettone']; }
+
+    $ch = curl_init(OPENVERSE_TOKEN);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_TIMEOUT        => 20,
+        CURLOPT_USERAGENT      => cfg('user_agent'),
+        CURLOPT_POSTFIELDS     => http_build_query([
+            'client_id'     => $id,
+            'client_secret' => $segreto,
+            'grant_type'    => 'client_credentials',
+        ]),
+    ]);
+    $corpo = curl_exec($ch);
+    $http  = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+
+    $d = is_string($corpo) ? json_decode($corpo, true) : null;
+    if ($http !== 200 || !is_array($d) || empty($d['access_token'])) {
+        logline('Openverse: credenziali rifiutate (http ' . $http . ')', 'copertine');
+        return null;
+    }
+
+    @file_put_contents($file, json_encode([
+        'gettone' => $d['access_token'],
+        'scade'   => time() + (int)($d['expires_in'] ?? 43200),
+    ]));
+    return (string)$d['access_token'];
+}
 
 /**
  * Le licenze da chiedere a Openverse.
@@ -82,7 +136,9 @@ function openverseCerca(string $domanda, int $pagine = 12): array
         $d = null;
         foreach ([0, 3, 8] as $tentativo => $pausa) {
             if ($pausa) { sleep($pausa); }
-            $r = httpGet($indirizzo, null, null, true, 40);
+            $g = openverseGettone();
+            $r = httpGet($indirizzo, null, null, true, 40,
+                         $g ? ['Authorization: Bearer ' . $g] : []);
             if ($r['http'] === 200 && $r['body'] !== null) {
                 $x = json_decode($r['body'], true);
                 if (is_array($x) && isset($x['results'])) { $d = $x; break; }

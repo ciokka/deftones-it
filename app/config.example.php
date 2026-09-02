@@ -93,6 +93,24 @@ return [
     // copertine si ritagliano a 16:9, e un ritaglio è un'opera derivata.
     'foto_non_commerciali' => true,
 
+    // Credenziali di Openverse, gratuite e senza abbonamenti.
+    //
+    // Senza, la quota è di duecento richieste al giorno contate per
+    // indirizzo IP — e su un hosting condiviso quell'indirizzo è lo
+    // stesso di centinaia di altri siti, quindi può risultare esaurita
+    // da gente che non sa di averla usata. Peggio: quando è esaurita la
+    // richiesta non fallisce, resta appesa.
+    //
+    // Si ottengono in due minuti:
+    //   curl -X POST https://api.openverse.org/v1/auth_tokens/register/ \
+    //     -H 'Content-Type: application/json' \
+    //     -d '{"name":"deftones.it","description":"sito di fan italiano",
+    //          "email":"deftones.it@gmail.com"}'
+    // Rispondono con client_id e client_secret, e mandano una email da
+    // confermare: finché non la confermi le credenziali non funzionano.
+    'openverse_id'     => '',
+    'openverse_secret' => '',
+
     'user_agent' => 'deftones.it/1.0 (aggregatore notizie fan; +https://www.deftones.it)',
     'http_timeout' => 15,
 ];
