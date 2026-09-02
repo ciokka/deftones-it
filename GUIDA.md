@@ -617,10 +617,23 @@ I risultati che Openverse restituisce da Wikimedia vengono scartati:
 quelli li prendiamo alla fonte, con metadati migliori — compresa la data
 di scatto, che Openverse non riporta.
 
-Da nessuna delle due si prendono licenze NC o ND. Non perché il sito sia
-commerciale — non lo è — ma perché "non commerciale" è una nozione che
-nessuno sa definire con precisione, e un sito che un giorno mettesse un
-banner ci finirebbe dentro senza accorgersene.
+**Le ND non si prendono mai**, e non per prudenza: le copertine vengono
+ritagliate a 16:9, e un ritaglio è un'opera derivata. Usarle sarebbe
+fuori licenza a prescindere.
+
+**Le NC dipendono da `foto_non_commerciali` in `config.php`**, che oggi
+vale `true`: il sito non è commerciale e non ha intenzione di
+diventarlo. Se un giorno ci comparisse un banner, un link affiliato o
+una raccolta fondi, quella riga va rimessa a `false` — e vanno poi tolte
+dal catalogo le foto già entrate:
+
+```sql
+SELECT id, licenza, autore FROM df_immagini
+ WHERE licenza REGEXP '(^|[^a-z])nc([^a-z]|$)';
+```
+
+Nel pannello ogni foto NC porta un bollino, così quel giorno si vede a
+colpo d'occhio cosa c'è da togliere.
 
 **Commons viene interrogato di rado, non a ogni articolo.** Le foto
 libere dei Deftones non nascono al ritmo delle notizie: `--raccogli`

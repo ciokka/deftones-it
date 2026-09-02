@@ -73,6 +73,11 @@ $query = (string)parse_url($link(), PHP_URL_QUERY);
                 <?php if ($f['data_foto']): ?><?= e(dataFotoBreve((string)$f['data_foto'])) ?> · <?php endif ?>
                 <?= (int)$f['usata'] ?> <?= (int)$f['usata'] === 1 ? 'uso' : 'usi' ?>
                 <?php if ($f['soggetto'] !== 'band'): ?> · <?= e($f['soggetto']) ?><?php endif ?>
+                <?php /* Una NC si vede: se un giorno il sito diventasse
+                           commerciale, sono queste le foto da togliere. */ ?>
+                <?php if (preg_match('/\bnc\b/i', (string)$f['licenza'])): ?>
+                  <span class="tag-nc">NC</span>
+                <?php endif ?>
               </span>
             </span>
           </button>

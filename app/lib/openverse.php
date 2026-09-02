@@ -19,8 +19,20 @@ declare(strict_types=1);
 
 const OPENVERSE_API = 'https://api.openverse.org/v1/images/';
 
-/** Le licenze che accettiamo: nessuna NC, nessuna ND. */
-const OPENVERSE_LICENZE = 'by,by-sa,cc0,pdm';
+/**
+ * Le licenze da chiedere a Openverse.
+ *
+ * Mai le ND: le copertine vengono ritagliate a 16:9, e un ritaglio è
+ * un'opera derivata. Le NC dipendono dalla scelta in config.php, la
+ * stessa che governa il filtro su Commons: si chiedono all'archivio
+ * solo se le accettiamo, o si scaricherebbero per scartarle dopo.
+ */
+function openverseLicenze(): string
+{
+    $l = ['by', 'by-sa', 'cc0', 'pdm'];
+    if (cfg('foto_non_commerciali')) { $l[] = 'by-nc'; $l[] = 'by-nc-sa'; }
+    return implode(',', $l);
+}
 
 /**
  * Il nome per esteso di una licenza, come va scritto sotto la foto.
@@ -51,7 +63,7 @@ function openverseCerca(string $domanda, int $pagine = 12): array
 
         $r = httpGet(OPENVERSE_API . '?' . http_build_query([
             'q'         => $domanda,
-            'license'   => OPENVERSE_LICENZE,
+            'license'   => openverseLicenze(),
             'page_size' => '20',     // il massimo concesso senza chiave
             'page'      => (string)$p,
         ]));

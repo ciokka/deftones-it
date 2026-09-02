@@ -79,6 +79,20 @@ return [
     // che è assoluto e non passa da base_url.
     'media_dir' => '/home/bpdefton/public_html/media',
 
+    // Se accettare fotografie con licenza "non commerciale" (NC).
+    //
+    // true perché il sito non è commerciale e non ha intenzione di
+    // diventarlo. Se un giorno ci comparisse un banner, un link
+    // affiliato o una raccolta fondi, questa riga va rimessa a false —
+    // e poi vanno scartate dal pannello le foto già entrate:
+    //
+    //   SELECT id, licenza, autore FROM df_immagini
+    //    WHERE licenza REGEXP '(^|[^a-z])nc([^a-z]|$)';
+    //
+    // Le ND restano escluse in ogni caso, e non per prudenza: le
+    // copertine si ritagliano a 16:9, e un ritaglio è un'opera derivata.
+    'foto_non_commerciali' => true,
+
     'user_agent' => 'deftones.it/1.0 (aggregatore notizie fan; +https://www.deftones.it)',
     'http_timeout' => 15,
 ];

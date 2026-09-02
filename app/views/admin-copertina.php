@@ -85,6 +85,11 @@
                 <?php /* Da dove viene: cambia dove punta il credito, e
                          quindi dove va chi vuole vedere l'originale. */ ?>
                 · <?= e((string)($f['provenienza'] ?? 'commons')) ?>
+                <?php /* Una NC si vede: se un giorno il sito diventasse
+                           commerciale, sono queste le foto da togliere. */ ?>
+                <?php if (preg_match('/\bnc\b/i', (string)$f['licenza'])): ?>
+                  <span class="tag-nc">NC</span>
+                <?php endif ?>
               </span>
             </span>
           </button>

@@ -187,12 +187,18 @@ function licenzaLibera(string $licenza): bool
     $l = mb_strtolower(trim($licenza));
     if ($l === '') { return false; }
 
-    // NC e ND si riconoscono come parole intere, non come pezzi di
-    // testo. Cercando il frammento "nc-" si prendeva "by-nc-sa" ma non
-    // "by-nc 2.0", dove dopo nc c'è uno spazio: una licenza non
-    // commerciale passava il filtro per come era scritta. E le ND non
-    // venivano controllate affatto se non per esteso.
-    if (preg_match('/\b(nc|nd)\b|non[\s-]?commercial|no[\s-]?deriv/i', $l)) {
+    // Le ND si scartano sempre, e non è una scelta di prudenza: le
+    // copertine vengono ritagliate a 16:9, e un ritaglio è un'opera
+    // derivata. Usarle sarebbe fuori licenza a prescindere da tutto.
+    if (preg_match('/\bnd\b|no[\s-]?deriv/i', $l)) { return false; }
+
+    // Le NC dipendono da una scelta scritta in config.php. Il sito non
+    // è commerciale e non lo diventerà — ma se un giorno ci comparisse
+    // un banner, un link affiliato o una raccolta fondi, quella riga va
+    // rimessa a false e il catalogo ripulito. È qui apposta perché sia
+    // una riga sola da cambiare, e non una caccia nel codice.
+    if (!cfg('foto_non_commerciali')
+        && preg_match('/\bnc\b|non[\s-]?commercial/i', $l)) {
         return false;
     }
     foreach (['fair use', 'non-free', 'nonfree'] as $no) {

@@ -84,6 +84,10 @@ if ($altre) {
            url_file = VALUES(url_file), autore = VALUES(autore),
            licenza  = VALUES(licenza),  licenza_url = VALUES(licenza_url)');
 
+    logline(cfg('foto_non_commerciali')
+        ? 'Licenze accettate: CC BY, BY-SA, BY-NC, BY-NC-SA, CC0, pubblico dominio'
+        : 'Licenze accettate: CC BY, BY-SA, CC0, pubblico dominio (niente NC)', 'copertine');
+
     $viste = $nuove = $scartate = 0;
     foreach ($ricerche as $domanda => $soggetto) {
         // Le ricerche sui singoli membri rendono meno: non ha senso
@@ -134,6 +138,9 @@ if ($raccogli) {
         }
     }
     logline(sprintf('%d categorie da visitare', count($daVisitare)), 'copertine');
+    logline(cfg('foto_non_commerciali')
+        ? 'Licenze accettate: anche le NC'
+        : 'Licenze accettate: niente NC', 'copertine');
 
     $inserisci = $pdo->prepare('INSERT INTO ' . t('immagini') . '
           (riferimento, provenienza, url_file, url_pagina, autore, licenza, licenza_url,
