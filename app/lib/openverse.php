@@ -197,39 +197,50 @@ function openverseCerca(string $domanda, int $pagine = 12): array
 }
 
 /**
- * Tre domande a Openverse per capire dove si rompe.
+ * Dove si rompe la strada verso Openverse.
  *
- * Il log diceva "non risponde, zero byte ricevuti": la connessione si
- * apre e poi non arriva niente. Sono due cose diverse e si distinguono
- * solo provando — se anche la domanda più banale resta appesa il
- * problema è il nostro indirizzo, se invece passa sono le ricerche
- * filtrate a essere troppo lente.
+ * Il log ha detto "0 bytes received" con la connessione a 0,00 secondi.
+ * Zero secondi per raggiungere un server dall'altra parte dell'oceano
+ * non esiste: vuol dire che la connessione non è mai stata aperta, e che
+ * curl è rimasto ad aspettare qualcosa che non stava arrivando.
  *
- * Legge anche le intestazioni della quota, che sono l'unico posto dove
- * Openverse dice quante richieste ci restano: non lo dice mai nel corpo,
- * e quando la quota è finita non risponde affatto.
+ * Le cause possibili sono poche e si distinguono guardando i tempi
+ * separati — risoluzione del nome, connessione, TLS, prima risposta — e
+ * confrontandoli con un server che sappiamo funzionare. Il sospetto
+ * principale è l'IPv6: gli hosting condivisi lo annunciano spesso senza
+ * avere una strada vera, e chi ci casca resta appeso esattamente così.
+ * Perciò l'ultima prova rifà la stessa domanda forzando l'IPv4.
  */
 function openverseDiagnosi(): void
 {
+    $gettone = openverseGettone();
+    logline('Diagnosi Openverse — credenziali: ' . ($gettone ? 'sì' : 'no'), 'copertine');
+
+    // Che indirizzi ci dà il DNS. Se ci sono AAAA e nessuna strada
+    // IPv6, è lì che la richiesta si perde.
+    foreach (['A', 'AAAA'] as $tipo) {
+        $r = @dns_get_record('api.openverse.org',
+                             $tipo === 'A' ? DNS_A : DNS_AAAA);
+        $ind = [];
+        foreach ((array)$r as $x) { $ind[] = $x['ip'] ?? $x['ipv6'] ?? '?'; }
+        logline('  DNS ' . $tipo . ': ' . ($ind ? implode(', ', $ind) : 'nessuno'),
+                'copertine');
+    }
+
     $prove = [
-        'domanda banale'      => ['q' => 'test', 'page_size' => '1'],
-        'con una licenza'     => ['q' => 'test', 'page_size' => '1', 'license' => 'by'],
-        'la ricerca vera'     => ['q' => 'deftones', 'page_size' => '20',
-                                  'license' => openverseLicenze()],
+        ['Commons (controllo)', 'https://commons.wikimedia.org/w/api.php?action=query&format=json', 0],
+        ['Openverse banale',    OPENVERSE_API . '?q=test&page_size=1', 0],
+        ['Openverse via IPv4',  OPENVERSE_API . '?q=test&page_size=1', CURL_IPRESOLVE_V4],
     ];
 
-    $gettone = openverseGettone();
-    logline('Diagnosi Openverse — credenziali: '
-        . ($gettone ? 'sì' : 'no'), 'copertine');
-
-    foreach ($prove as $nome => $par) {
+    foreach ($prove as [$nome, $indirizzo, $famiglia]) {
         $quote = [];
-        $ch = curl_init(OPENVERSE_API . '?' . http_build_query($par));
+        $ch = curl_init($indirizzo);
         $intestazioni = ['Accept: application/json'];
         if ($gettone) { $intestazioni[] = 'Authorization: Bearer ' . $gettone; }
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 40,
+            CURLOPT_TIMEOUT        => 25,
             CURLOPT_CONNECTTIMEOUT => 8,
             CURLOPT_USERAGENT      => cfg('user_agent'),
             CURLOPT_HTTPHEADER     => $intestazioni,
@@ -238,27 +249,21 @@ function openverseDiagnosi(): void
                 return strlen($riga);
             },
         ]);
+        if ($famiglia) { curl_setopt($ch, CURLOPT_IPRESOLVE, $famiglia); }
+
         $corpo = curl_exec($ch);
-        $http  = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        $tempo = (float)curl_getinfo($ch, CURLINFO_TOTAL_TIME);
-        $conn  = (float)curl_getinfo($ch, CURLINFO_CONNECT_TIME);
-        $err   = curl_error($ch) ?: '';
+        $i = curl_getinfo($ch);
+        $err = curl_error($ch) ?: '';
         curl_close($ch);
 
-        $quanti = '';
-        if (is_string($corpo)) {
-            $d = json_decode($corpo, true);
-            if (is_array($d) && isset($d['result_count'])) {
-                $quanti = ', ' . (int)$d['result_count'] . ' risultati';
-            } elseif ($http !== 200) {
-                $quanti = ', ' . mb_substr(strip_tags($corpo), 0, 80);
-            }
-        }
-
-        logline(sprintf('  %-16s http %d in %.1fs (connessione %.2fs)%s%s',
-            $nome, $http, $tempo, $conn, $quanti,
-            $err ? ' — ' . $err : ''), 'copertine');
+        logline(sprintf('  %-20s http %d — dns %.2fs, connessione %.2fs, TLS %.2fs, '
+            . 'prima risposta %.2fs, totale %.2fs, %d byte da %s',
+            $nome, (int)$i['http_code'], $i['namelookup_time'], $i['connect_time'],
+            $i['appconnect_time'], $i['starttransfer_time'], $i['total_time'],
+            is_string($corpo) ? strlen($corpo) : 0,
+            $i['primary_ip'] ?: '?'), 'copertine');
+        if ($err) { logline('    errore: ' . $err, 'copertine'); }
         foreach ($quote as $q) { logline('    ' . $q, 'copertine'); }
-        sleep(4);
+        sleep(3);
     }
 }
