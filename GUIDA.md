@@ -691,14 +691,16 @@ l'hosting cadrebbe anche il sito principale, che passa dallo stesso nome
 e dalla stessa porta. Non cade. È Openverse a non voler parlare con
 l'indirizzo del nostro server.
 
-Il perché, quasi certamente, ce lo siamo procurato da soli. Il blocco è
-comparso fra una sera e la mattina dopo, e nel mezzo c'è stato un
-pomeriggio di raccolte lanciate una dietro l'altra. Il giro faceva
-quarantadue richieste e, a ogni pagina che non rispondeva, ne aggiungeva
-altre due in undici secondi: quindici richieste al minuto in condizioni
-normali, oltre il tetto di venti appena qualcosa cominciava ad andare
-storto. Il rimedio peggiorava la malattia, e il giro tirava dritto con
-le altre sei ricerche.
+Il perché ce lo siamo procurato da soli, e il catalogo ha l'ora esatta.
+Il 2 settembre alle 00:33 la raccolta è andata a buon fine e ha portato
+**131 fotografie in due minuti**. Da quel momento in poi, silenzio.
+
+Due minuti sono la spiegazione. Il giro faceva quarantadue richieste con
+quattro secondi di pausa: una ventina al minuto, cioè esattamente il
+tetto consentito senza credenziali. Ha funzionato fino all'ultima
+ricerca e ha sbattuto contro il limite proprio alla fine — poi ogni
+tentativo successivo, con tre prove ravvicinate a ogni pagina muta,
+non ha fatto che rinnovare il divieto invece di aspettarlo.
 
 Perciò la raccolta ora **si ferma alla prima ricerca che non riceve
 risposta**, tiene sei secondi fra una pagina e l'altra e riprova due
