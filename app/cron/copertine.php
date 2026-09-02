@@ -55,6 +55,27 @@ if ($lock === false) { logline('Un altro giro è in corso — esco.', 'copertine
 logline(sprintf('PHP %s (%s)%s', PHP_VERSION, PHP_SAPI, $soloProva ? ' — PROVA' : ''), 'copertine');
 $pdo = db();
 
+/**
+ * I riferimenti già in catalogo, per contare bene durante la prova.
+ *
+ * In prova non si scrive niente, quindi non c'è un INSERT che possa
+ * dire "questa era nuova". Senza questo elenco la prova contava come
+ * nuove tutte le utilizzabili, comprese le duecento che erano lì da
+ * giorni, e diceva 222 dove la raccolta vera ne inseriva 52.
+ */
+function giaInCatalogo(PDO $pdo): array
+{
+    static $elenco = null;
+    if ($elenco === null) {
+        $elenco = [];
+        foreach ($pdo->query('SELECT riferimento FROM ' . t('immagini'))
+                 ->fetchAll(PDO::FETCH_COLUMN) as $r) {
+            $elenco[(string)$r] = true;
+        }
+    }
+    return $elenco;
+}
+
 /** Dove finiscono i file scaricati, sul disco e nell'indirizzo. */
 $cartella = cartellaCopertine();
 if (!$soloProva && !is_dir($cartella) && !@mkdir($cartella, 0755, true) && !is_dir($cartella)) {
@@ -128,7 +149,10 @@ if ($altre) {
             $viste++;
             if (!immagineAdatta($i)) { $scartate++; continue; }
             $buone++;
-            if ($soloProva) { $nuove++; continue; }
+            if ($soloProva) {
+                if (!isset(giaInCatalogo($pdo)[$i['riferimento']])) { $nuove++; }
+                continue;
+            }
             try {
                 $inserisci->execute([
                     $i['riferimento'], $i['provenienza'],
@@ -187,10 +211,14 @@ if ($raccogli) {
         foreach (commonsMetadati($file) as $i) {
             $trovate++;
             if (!immagineAdatta($i)) { $scartate++; continue; }
-            if ($soloProva) { $nuove++; continue; }
+            $rif = substr($i['commons'], strlen('File:'));
+            if ($soloProva) {
+                if (!isset(giaInCatalogo($pdo)[$rif])) { $nuove++; }
+                continue;
+            }
             try {
                 $inserisci->execute([
-                    substr($i['commons'], strlen('File:')), 'commons',
+                    $rif, 'commons',
                     $i['url_file'], $i['url_pagina'],
                     $i['autore'] ?: null, $i['licenza'] ?: null,
                     $i['licenza_url'] ?: null,
