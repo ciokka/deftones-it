@@ -102,8 +102,7 @@ $query = (string)parse_url($link(), PHP_URL_QUERY);
             <span class="foto-dati">
               <span class="foto-autore"><?= e(mb_substr((string)($f['autore'] ?: '—'), 0, 26)) ?></span>
               <span class="foto-uso">
-                <?php if ($f['data_foto']): ?><?= e(dataFotoBreve((string)$f['data_foto'])) ?> · <?php
-                      elseif (!empty($f['titolo'])): ?><?= e(mb_substr((string)$f['titolo'], 0, 24)) ?> · <?php endif ?>
+                <?php if ($d = didascaliaFoto($f, 24)): ?><?= e($d) ?> · <?php endif ?>
                 <?= (int)$f['usata'] ?> <?= (int)$f['usata'] === 1 ? 'uso' : 'usi' ?>
                 <?php if ($f['soggetto'] !== 'band'): ?> · <?= e($f['soggetto']) ?><?php endif ?>
                 <?php /* Una NC si vede: se un giorno il sito diventasse

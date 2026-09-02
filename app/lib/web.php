@@ -489,6 +489,33 @@ function misuraImmagine(string $percorso): ?array
 }
 
 /**
+ * Cosa scrivere sotto la miniatura di una fotografia.
+ *
+ * La data quando c'è: sapere che uno scatto è del 2009 evita di metterlo
+ * su una notizia di oggi. Le foto di Flickr però la data non ce l'hanno
+ * — Openverse non la restituisce — e allora vale il titolo, che per uno
+ * scatto dal vivo dice spesso l'occasione, cioè più di una data.
+ *
+ * Se manca anche quello resta il riferimento: su Commons è il nome del
+ * file, che è già una didascalia. Sedici righe non hanno preso il titolo
+ * nell'ultima raccolta, ed è giusto che sotto non ci sia il vuoto.
+ */
+function didascaliaFoto(array $f, int $lettere = 30): string
+{
+    if (!empty($f['data_foto'])) { return dataFotoBreve((string)$f['data_foto']); }
+
+    $t = trim((string)($f['titolo'] ?? ''));
+    if ($t === '') {
+        $rif = (string)($f['riferimento'] ?? '');
+        // I riferimenti di Flickr sono numeri, e un numero non racconta
+        // niente a chi sta scegliendo una fotografia.
+        if (str_starts_with($rif, 'flickr:') || str_starts_with($rif, 'openverse:')) { return ''; }
+        $t = trim((string)preg_replace('/\.[a-z]{3,4}$/i', '', $rif));
+    }
+    return mb_substr($t, 0, $lettere);
+}
+
+/**
  * Una data di scatto, come si legge sotto una miniatura.
  *
  * Arriva completa, o col solo anno e mese, o col solo anno: si mostra
