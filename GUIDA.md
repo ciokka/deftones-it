@@ -161,16 +161,37 @@ passato, e si può annullare a sua volta.
 
 ## 4. I cron
 
-| Quando | Cosa | Comando |
-|---|---|---|
-| `5 */4` | raccolta | `ingest.php >/dev/null` |
-| `35 */4` | scrittura | `enrich.php >/dev/null` |
-| `15 9` | riepilogo | `riepilogo.php >/dev/null` |
-| `*/30` | richieste | `scrivi-richieste.php --una >/dev/null` |
-| `50 */4` | copertine | `copertine.php >/dev/null` |
+Percorso completo del PHP: `/opt/cpanel/ea-php83/root/usr/bin/php -q`.
+Gli script stanno in `/home/bpdefton/deftones/app/cron/`.
 
-Percorso completo del PHP: `/opt/cpanel/ea-php83/root/usr/bin/php -q`
-seguito da `/home/bpdefton/deftones/app/cron/<script>.php`.
+### I cinque fissi
+
+Questi restano in tabella. Il redirect è `>/dev/null` **senza** `2>&1`.
+
+`5 */4 * * *`
+```
+/opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/ingest.php >/dev/null
+```
+
+`35 */4 * * *`
+```
+/opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/enrich.php >/dev/null
+```
+
+`50 */4 * * *`
+```
+/opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/copertine.php >/dev/null
+```
+
+`*/30 * * * *`
+```
+/opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/scrivi-richieste.php --una >/dev/null
+```
+
+`15 9 * * *`
+```
+/opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/riepilogo.php >/dev/null
+```
 
 **`>/dev/null` senza `2>&1`**, e non è un dettaglio: l'output normale
 sparisce, ma gli errori restano su stderr e cPanel te li manda per
@@ -180,17 +201,62 @@ Processi Cron dev'essere compilato.
 
 Le copertine girano subito dopo la scrittura, e come le richieste non
 costano niente a vuoto: pescano da un catalogo locale, senza toccare né
-Wikimedia né l'IA.
+gli archivi di fotografie né l'IA.
 
 Le richieste girano ogni mezz'ora perché a vuoto non costano niente: lo
 script prende un lock, non trova nulla in attesa ed esce. È la differenza
 fra ordinare un articolo e averlo entro mezz'ora, o il giorno dopo.
 
-Gli altri script sono **strumenti una tantum**: si lanciano a mano
-creando un cron temporaneo, non si programmano. Un `crea-temi.php`
-lasciato giornaliero rifarebbe le raccolte ogni notte, con nomi diversi
-ogni volta; un `enrich.php --tutto` quotidiano è una spesa senza tetto,
-perché `--tutto` ripete il ciclo finché la coda non è vuota.
+### Gli strumenti da lanciare a mano
+
+Non si programmano. Si crea un processo temporaneo con orario fra due
+minuti, si legge il log, **e poi si cancella la riga**. Qui `2>&1` ci
+sta, perché quel log lo leggi tu subito dopo.
+
+Raccogliere fotografie da Openverse — dopo un tour, o quando serve altro
+materiale. Con `--prova` non scrive niente e dice solo quante ne trova:
+
+```
+/opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/copertine.php --raccogli-altre --prova > /home/bpdefton/copertine.log 2>&1
+```
+
+Raccogliere fotografie da Wikimedia Commons:
+
+```
+/opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/copertine.php --raccogli > /home/bpdefton/copertine.log 2>&1
+```
+
+Assegnare copertine in blocco, dopo aver pubblicato molti articoli
+d'archivio. Va rilanciato finché il numero non scende sotto il limite:
+
+```
+/opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/copertine.php --limite=200 > /home/bpdefton/copertine.log 2>&1
+```
+
+Scrivere le schede dei dischi che ne sono ancora prive — **questo costa**,
+circa sette centesimi a disco:
+
+```
+/opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/dischi.php --schede --tutte > /home/bpdefton/dischi.log 2>&1
+```
+
+Tracklist e copertine dei dischi, solo se ne aggiungi uno al seed:
+
+```
+/opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/dischi.php --tracklist --copertine > /home/bpdefton/dischi.log 2>&1
+```
+
+Gli altri quattro — `importa-wp.php`, `valuta-archivio.php`,
+`crea-temi.php`, `recupera-storico.php` — hanno già fatto il loro lavoro
+e non dovrebbero servire più. Sono documentati qui sotto, al capitolo 5,
+se un giorno servissero.
+
+**Perché nessuno di questi va programmato.** Un `crea-temi.php` lasciato
+giornaliero rifarebbe le raccolte ogni notte, con nomi diversi ogni
+volta. Un `enrich.php --tutto` quotidiano è una spesa senza tetto, perché
+`--tutto` ripete il ciclo finché la coda non è vuota. E una raccolta di
+fotografie notturna interrogherebbe duecento volte al mese due archivi
+che cambiano due volte all'anno.
 
 ---
 
