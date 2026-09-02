@@ -250,27 +250,6 @@ function condividiMini(string $slug, string $titolo): string
 }
 
 /**
- * La copertina di un articolo.
- *
- * Due casi: una foto vera salvata sul nostro disco, oppure niente. Le
- * foto arrivano da Commons con proporzioni tutte diverse: il ritaglio a
- * 16:9 lo fa il CSS, così una verticale non sfonda la pagina e la fascia
- * resta sempre la stessa.
- */
-function copertina(array $a, bool $subito = false): string
-{
-    $img = copertinaImg($a, $subito);
-    if ($img === '') { return ''; }
-    return '<figure class="copertina">' . $img . creditoImmagine($a) . '</figure>';
-}
-
-/**
- * Solo l'immagine, senza cornice né credito. Il banner della home li
- * dispone per conto suo, perché lì il credito va sopra la foto e non
- * sotto. Vuoto se l'articolo non ha una copertina: chi la usa deve
- * saperlo gestire, e la home lo fa disattivando il banner.
- */
-/**
  * L'indirizzo di una copertina, con un contrassegno che cambia quando
  * cambia la fotografia.
  *
@@ -291,6 +270,18 @@ function urlCopertina(array $a): string
     return $quando ? $u . '?v=' . (int)strtotime((string)$quando) : $u;
 }
 
+/**
+ * Solo l'immagine, senza cornice né credito.
+ *
+ * Non esiste più una funzione che confezioni la copertina intera: da
+ * quando il titolo sta SOPRA la fotografia, foto e credito non sono più
+ * un blocco unico da incollare in mezzo alla pagina ma due pezzi che
+ * ogni pagina dispone per conto suo — la home, l'articolo e l'anteprima
+ * dell'admin li mettono in tre punti diversi della propria testata.
+ *
+ * Vuoto se l'articolo non ha una copertina: chi la usa deve saperlo
+ * gestire, e le viste lo fanno spegnendo l'intera testata illustrata.
+ */
 function copertinaImg(array $a, bool $subito = false): string
 {
     // Nessun ripiego: un articolo senza fotografia vera non ha copertina.

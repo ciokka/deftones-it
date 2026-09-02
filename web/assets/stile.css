@@ -1020,24 +1020,94 @@ body { overflow-x: clip; }
   font-variant-numeric: tabular-nums;
 }
 
-/* -------------------------------------------------------- copertina */
+/* ------------------------------------------- testata dell'articolo */
 
-/* Le foto di Commons hanno proporzioni tutte diverse — verticali,
-   quadrate, panoramiche. Il ritaglio a 16:9 lo fa il browser, così la
-   fascia è sempre la stessa e una verticale non sfonda la pagina. */
-.copertina { margin: 0 0 2.25rem; }
-.copertina img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  /* Il ritaglio parte dall'alto e non dal centro: nelle foto dal vivo
-     il volto sta quasi sempre nella metà superiore, e un taglio
-     centrato lo decapita. */
-  object-position: 50% 35%;
-  background: #050505;
+/* Il titolo di un articolo con fotografia si legge SOPRA la fotografia,
+   come l'apertura della home: la copertina non è un blocco infilato fra
+   il titolo e il testo, è il fondo su cui il titolo sta.
+
+   Tre pezzi sovrapposti: la foto in fondo, una velatura che la scurisce
+   quel tanto che basta a tenere leggibile il testo, e il testo sopra.
+   I primi due stanno a z-index negativo, così il testo ci finisce sopra
+   senza doverlo posizionare.
+
+   Senza fotografia niente di tutto questo si applica: .testa e
+   .testa-interno restano due contenitori qualunque e il titolo torna in
+   cima alla colonna, dov'era. */
+
+/* A sfumare in basso è l'immagine stessa, con una maschera, e non una
+   fascia scura appoggiata sopra: dove l'immagine si dirada tornano a
+   vedersi le lettere che scorrono nello sfondo, quindi fra la foto e il
+   testo che comincia sotto non c'è nessuno stacco. Tappe fitte e non
+   tre: con pochi punti la sfumatura mostra le fasce. */
+.testa-foto {
+  position: relative;
+  isolation: isolate;          /* i piani negativi restano dentro la testata */
+  overflow: hidden;
+  /* Da bordo a bordo. Il calc(50% - 50vw) è il modo di uscire da un
+     contenitore centrato senza toccare il markup: 50% è metà della
+     colonna, 50vw metà dello schermo, e la differenza è esattamente il
+     margine da recuperare. */
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+  margin-bottom: 2.5rem;
+  /* Il testo si appoggia in basso, come nel banner della home. */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  /* Poco più di mezzo schermo e non di più: questa è l'apertura di un
+     pezzo da leggere, non un manifesto, e sotto la piega deve restare
+     il testo. Le tre misure servono tutte: il 52vw tiene le proporzioni
+     della foto sugli schermi larghi, il 58svh è il tetto vero, e il
+     24rem è il pavimento — sul telefono 52vw sono due dita di foto, e
+     il titolo se la mangerebbe tutta. svh e non vh perché vh conta anche lo spazio
+     della barra degli indirizzi, e la testata sborderebbe.
+     min-height e non height: se il titolo è lungo, cresce lui. */
+  min-height: clamp(24rem, 52vw, 58vh);
+  min-height: clamp(24rem, 52vw, 58svh);
+  --sfuma-testata: linear-gradient(to bottom,
+      rgba(0,0,0,1) 0%,   rgba(0,0,0,.99) 40%, rgba(0,0,0,.92) 56%,
+      rgba(0,0,0,.72) 70%, rgba(0,0,0,.42) 82%, rgba(0,0,0,.16) 92%,
+      rgba(0,0,0,0) 100%);
 }
-.copertina-link { display: block; text-decoration: none; }
+.testa-sfondo, .testa-velo {
+  position: absolute; inset: 0; z-index: -1;
+  -webkit-mask-image: var(--sfuma-testata);
+  mask-image: var(--sfuma-testata);
+}
+.testa-sfondo img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+  /* Il ritaglio parte dall'alto e non dal centro: nelle foto dal vivo il
+     volto sta quasi sempre nella metà superiore, e un taglio centrato lo
+     decapita. Qui conta doppio, perché la metà bassa è quella che la
+     maschera fa sparire e che il titolo copre. */
+  object-position: 50% 35%;
+}
+/* La velatura non deve arrivare al nero: a portare l'immagine al niente
+   ci pensa la maschera. Il suo mestiere è un altro, tenere leggibile il
+   testo sopra la parte di foto ancora visibile. */
+.testa-velo {
+  background:
+    linear-gradient(to top,
+      rgba(0,0,0,.82) 0%, rgba(0,0,0,.6) 28%, rgba(0,0,0,.28) 52%,
+      rgba(0,0,0,.06) 74%, rgba(0,0,0,0) 90%),
+    linear-gradient(to bottom, rgba(0,0,0,.4) 0%, rgba(0,0,0,0) 22%);
+}
+/* Il testo rientra nella colonna dell'articolo. La larghezza è quella
+   di .articolo più i due fianchi: senza aggiungerli il titolo sopra la
+   foto risulterebbe di un dito più stretto del testo sotto, e lo
+   sfalsamento fra i due si vede. */
+.testa-foto .testa-interno {
+  width: 100%;
+  max-width: calc(42rem + 3rem);
+  margin: 0 auto;
+  padding: 0 1.5rem 2.5rem;
+}
+/* Sopra la fotografia il titolo si raccoglie: la misura da manifesto
+   che regge sul fondo pieno, su una foto diventa illeggibile. */
+.testa-foto h1 { margin: 0; font-size: clamp(1.9rem, 5.2vw, 2.9rem); }
+.testa-foto .credito { text-align: right; margin-top: .9rem; }
+.testa-foto .credito a { border-bottom-color: rgba(255,255,255,.28); }
 
 .credito {
   margin: .5rem 0 0;
@@ -1048,8 +1118,6 @@ body { overflow-x: clip; }
 }
 .credito a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--bordo); }
 .credito a:hover { color: var(--accento); border-bottom-color: var(--accento-scuro); }
-
-.apertura .copertina { margin-bottom: 1.75rem; }
 
 /* ------------------------------------------ firma e condivisione */
 
@@ -1129,6 +1197,14 @@ body { overflow-x: clip; }
    resta tutto da una parte. Stessa misura per le correlate in fondo,
    altrimenti il filo sopra di loro sborda oltre l'articolo. */
 .articolo { padding: 4rem 0 2rem; max-width: 42rem; margin-inline: auto; }
+/* La fotografia comincia dove finisce la barra del menu: i quattro rem
+   di stacco che l'articolo si prende in cima servono a staccare il
+   titolo dal menu, e qui in cima non c'è più il titolo — c'è la foto,
+   che il menu lo tocca apposta.
+   Questa riga va dopo quella qui sopra e non può stare nel blocco della
+   testata illustrata: pesano uguale, e a parità di peso vince l'ultima
+   scritta. Messa più su restava un rettangolo nero fra menu e foto. */
+.articolo-foto { padding-top: 0; }
 .articolo h1 {
   margin: 0 0 1.75rem;
   font-family: var(--display);

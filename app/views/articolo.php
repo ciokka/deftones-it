@@ -1,30 +1,52 @@
-<article class="articolo">
-  <div class="meta">
-    <span class="etichetta et-<?= e($a['categoria']) ?>"><?= e($a['categoria']) ?></span>
-    <?php if ($a['attendibilita'] !== 'confermato'): ?>
-      <span class="etichetta et-dubbio"><?= e($a['attendibilita']) ?></span>
+<?php /* Il titolo sta SOPRA la fotografia, non prima né dopo: la
+         copertina è il fondo su cui si legge il titolo, come l'apertura
+         della home. Prima la foto stava fra il titolo e il testo e
+         spezzava in due l'attacco del pezzo.
+         Senza fotografia non c'è nessun fondo: la testata resta il
+         blocco di testo che era, in cima alla colonna. */ ?>
+<?php $foto = copertinaImg($a, true); ?>
+<article class="articolo<?= $foto ? ' articolo-foto' : '' ?>">
+
+  <header class="testa<?= $foto ? ' testa-foto' : '' ?>">
+    <?php if ($foto): ?>
+      <div class="testa-sfondo" aria-hidden="true"><?= $foto ?></div>
+      <div class="testa-velo" aria-hidden="true"></div>
     <?php endif ?>
-    <time datetime="<?= e($a['pubblicato_il']) ?>"><?= e(dataIt($a['pubblicato_il'])) ?></time>
-    <?= etichettaHot($a['rilevanza'] ?? null) ?>
-  </div>
 
-  <?php if (!empty($raccolta)): ?>
-    <p class="appartiene">
-      parte di <a href="<?= u('raccolte/' . $raccolta['slug'] . '/') ?>"><?= e($raccolta['titolo']) ?></a>
-    </p>
-  <?php endif ?>
+    <div class="testa-interno">
+      <div class="meta">
+        <span class="etichetta et-<?= e($a['categoria']) ?>"><?= e($a['categoria']) ?></span>
+        <?php if ($a['attendibilita'] !== 'confermato'): ?>
+          <span class="etichetta et-dubbio"><?= e($a['attendibilita']) ?></span>
+        <?php endif ?>
+        <time datetime="<?= e($a['pubblicato_il']) ?>"><?= e(dataIt($a['pubblicato_il'])) ?></time>
+        <?= etichettaHot($a['rilevanza'] ?? null) ?>
+      </div>
 
-  <h1><?= e($a['titolo_it']) ?></h1>
+      <?php if (!empty($raccolta)): ?>
+        <p class="appartiene">
+          parte di <a href="<?= u('raccolte/' . $raccolta['slug'] . '/') ?>"><?= e($raccolta['titolo']) ?></a>
+        </p>
+      <?php endif ?>
 
+      <h1><?= e($a['titolo_it']) ?></h1>
+
+      <?php /* Il credito della foto sta qui e non in fondo alla pagina:
+               una foto CC BY è libera *a condizione* che l'autore sia
+               citato accanto a quello che si sta guardando. */ ?>
+      <?= $foto ? creditoImmagine($a, 'p') : '' ?>
+    </div>
+  </header>
+
+  <?php /* L'avviso esce dalla testata: sopra la fotografia un riquadro
+           d'allarme diventa un cartello, e quello che deve saltare
+           all'occhio lì è il titolo. Qui apre il testo, che è il punto
+           in cui serve. */ ?>
   <?php if ($a['attendibilita'] !== 'confermato'): ?>
     <p class="nota-dubbio">
       Notizia non confermata da fonti ufficiali. Riportata così come circola.
     </p>
   <?php endif ?>
-
-  <?php /* La copertina sta sotto il titolo e non sopra: il titolo è
-           l'attacco del pezzo, e una foto messa prima glielo ruba. */ ?>
-  <?= copertina($a, true) ?>
 
   <div class="corpo">
     <?php if (!empty($a['corpo_it'])): ?>

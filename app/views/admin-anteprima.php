@@ -11,9 +11,22 @@
     <?php endif ?>
   </div>
 
-  <article class="articolo" style="padding-top:1rem">
-    <h1><?= e($a['titolo_it']) ?></h1>
-    <?= copertina($a, true) ?>
+  <?php /* La stessa testata dell'articolo pubblicato, titolo sopra la
+           fotografia: è qui che si decide se quella foto regge sotto
+           quel titolo, e un'anteprima che li mostra separati non fa
+           vedere proprio la cosa che si sta giudicando. */ ?>
+  <?php $foto = copertinaImg($a, true); ?>
+  <article class="articolo<?= $foto ? ' articolo-foto' : '' ?>" style="padding-top:1rem">
+    <header class="testa<?= $foto ? ' testa-foto' : '' ?>">
+      <?php if ($foto): ?>
+        <div class="testa-sfondo" aria-hidden="true"><?= $foto ?></div>
+        <div class="testa-velo" aria-hidden="true"></div>
+      <?php endif ?>
+      <div class="testa-interno">
+        <h1><?= e($a['titolo_it']) ?></h1>
+        <?= $foto ? creditoImmagine($a, 'p') : '' ?>
+      </div>
+    </header>
     <div class="corpo">
       <?php if (!empty($a['corpo_it'])): ?>
         <?= facciateVideo((string)$a['corpo_it']) ?>
