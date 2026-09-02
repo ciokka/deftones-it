@@ -79,6 +79,11 @@
                          metterla su una notizia di oggi. */ ?>
                 <?php if ($f['data_foto']): ?>
                   <span class="foto-quando"><?= e(dataFotoBreve((string)$f['data_foto'])) ?></span> ·
+                <?php elseif (!empty($f['titolo'])): ?>
+                  <?php /* Le foto di Flickr non hanno data: Openverse non
+                           la dà. Il titolo però spesso dice l'occasione,
+                           che per scegliere vale altrettanto. */ ?>
+                  <span class="foto-quando"><?= e(mb_substr((string)$f['titolo'], 0, 30)) ?></span> ·
                 <?php endif ?>
                 <?= (int)$f['usata'] ?> <?= (int)$f['usata'] === 1 ? 'uso' : 'usi' ?>
                 <?php if ($f['soggetto'] !== 'band'): ?> · <?= e($f['soggetto']) ?><?php endif ?>

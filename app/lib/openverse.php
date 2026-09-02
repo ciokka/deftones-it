@@ -197,6 +197,12 @@ function openverseCerca(string $domanda, int $pagine = 12, bool &$guasto = false
                 // Openverse non riporta quando è stata scattata: meglio
                 // niente che una data presa da un altro campo.
                 'data'        => null,
+                // Openverse la data di scatto non la dà, e le pagine di
+                // Flickr non si possono raccogliere: il loro robots.txt
+                // vieta tutto a chi non è un motore di ricerca. Resta il
+                // titolo, che per una foto dal vivo dice spesso l'anno e
+                // il posto — cioè più di una data.
+                'titolo'      => mb_substr(trim((string)($x['title'] ?? '')), 0, 200),
                 'titolo'      => (string)($x['title'] ?? ''),
             ];
         }

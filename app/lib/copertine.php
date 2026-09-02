@@ -138,6 +138,9 @@ function commonsMetadati(array $titoli): array
                 'l_orig'      => (int)($ii['width'] ?? 0),
                 'a_orig'      => (int)($ii['height'] ?? 0),
                 'data'        => dataFoto($val('DateTimeOriginal') ?: $val('DateTime')),
+                // Su Commons il nome del file è già una didascalia.
+                'titolo'      => mb_substr(preg_replace('/\.[a-z]{3,4}$/i', '',
+                                    substr((string)$p['title'], strlen('File:'))) ?? '', 0, 200),
                 'autore'      => testoSemplice($val('Artist')),
                 'licenza'     => testoSemplice($val('LicenseShortName')),
                 'licenza_url' => $val('LicenseUrl'),

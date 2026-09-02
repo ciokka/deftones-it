@@ -120,11 +120,11 @@ if ($altre) {
     ];
 
     $inserisci = $pdo->prepare('INSERT INTO ' . t('immagini') . '
-          (riferimento, provenienza, url_file, url_pagina, autore, licenza, licenza_url,
+          (riferimento, titolo, provenienza, url_file, url_pagina, autore, licenza, licenza_url,
            larghezza, altezza, data_foto, soggetto)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
         ON DUPLICATE KEY UPDATE
-           url_file = VALUES(url_file), autore = VALUES(autore),
+           url_file = VALUES(url_file), autore = VALUES(autore), titolo = VALUES(titolo),
            licenza  = VALUES(licenza),  licenza_url = VALUES(licenza_url)');
 
     logline(cfg('foto_non_commerciali')
@@ -155,7 +155,7 @@ if ($altre) {
             }
             try {
                 $inserisci->execute([
-                    $i['riferimento'], $i['provenienza'],
+                    $i['riferimento'], $i['titolo'] ?: null, $i['provenienza'],
                     $i['url_file'], $i['url_pagina'],
                     $i['autore'] ?: null, $i['licenza'], $i['licenza_url'] ?: null,
                     $i['larghezza'], $i['altezza'], $i['data'], $soggetto,
@@ -197,11 +197,11 @@ if ($raccogli) {
         : 'Licenze accettate: niente NC', 'copertine');
 
     $inserisci = $pdo->prepare('INSERT INTO ' . t('immagini') . '
-          (riferimento, provenienza, url_file, url_pagina, autore, licenza, licenza_url,
+          (riferimento, titolo, provenienza, url_file, url_pagina, autore, licenza, licenza_url,
            larghezza, altezza, data_foto, soggetto)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
         ON DUPLICATE KEY UPDATE
-           url_file = VALUES(url_file), autore = VALUES(autore),
+           url_file = VALUES(url_file), autore = VALUES(autore), titolo = VALUES(titolo),
            licenza  = VALUES(licenza),  licenza_url = VALUES(licenza_url),
            data_foto = VALUES(data_foto)');
 
@@ -218,7 +218,7 @@ if ($raccogli) {
             }
             try {
                 $inserisci->execute([
-                    $rif, 'commons',
+                    $rif, $i['titolo'] ?: null, 'commons',
                     $i['url_file'], $i['url_pagina'],
                     $i['autore'] ?: null, $i['licenza'] ?: null,
                     $i['licenza_url'] ?: null,
