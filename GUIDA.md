@@ -686,12 +686,24 @@ centesimo di secondo, e `openverse.org` risponde `403` dallo stesso
 indirizzo Cloudflare che resta muto per l'API. Dal computer di casa,
 invece, va.
 
-Il `403` è la chiave: se a filtrare fosse l'hosting, cadrebbe anche il
-sito principale, che passa dallo stesso nome e dalla stessa porta. È
-**Openverse a rifiutare l'indirizzo del nostro server** — o meglio, il
-Cloudflare che le sta davanti, che su un indirizzo condiviso da centinaia
-di siti applica la reputazione peggiore fra quelli. Non c'è niente da
-sistemare da questa parte: Serverplan non può farci nulla e noi nemmeno.
+Il `403` dice dove **non** sta il problema: se a filtrare fosse
+l'hosting cadrebbe anche il sito principale, che passa dallo stesso nome
+e dalla stessa porta. Non cade. È Openverse a non voler parlare con
+l'indirizzo del nostro server.
+
+Il perché, quasi certamente, ce lo siamo procurato da soli. Il blocco è
+comparso fra una sera e la mattina dopo, e nel mezzo c'è stato un
+pomeriggio di raccolte lanciate una dietro l'altra. Il giro faceva
+quarantadue richieste e, a ogni pagina che non rispondeva, ne aggiungeva
+altre due in undici secondi: quindici richieste al minuto in condizioni
+normali, oltre il tetto di venti appena qualcosa cominciava ad andare
+storto. Il rimedio peggiorava la malattia, e il giro tirava dritto con
+le altre sei ricerche.
+
+Perciò la raccolta ora **si ferma alla prima ricerca che non riceve
+risposta**, tiene sei secondi fra una pagina e l'altra e riprova due
+volte invece di tre, distanti. E va lanciata di rado: due o tre volte
+l'anno, dopo un tour, non certo ogni giorno.
 
 Il comando `--diagnosi` rifà quelle quattro prove e stampa i tempi
 separati, per rivedere la cosa fra qualche mese senza rifare il
