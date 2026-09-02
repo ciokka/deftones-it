@@ -567,10 +567,25 @@ function lanciaRaccolta(string $modo): array
                     . 'Il comando da mettere in un processo cron è: ' . $comando];
     }
 
+    // Una riga scritta da qui, prima di lanciare. Se nel resoconto
+    // compare questa e nient'altro, il programma non è mai partito; se
+    // non compare nemmeno questa, non è stato il pulsante a fallire.
+    // Senza, un avvio andato a vuoto è indistinguibile da un pulsante
+    // che non ha fatto niente — ed è successo.
+    $log = dirname(__DIR__) . '/logs/copertine.log';
+    @file_put_contents($log, date('Y-m-d H:i:s') . '  Avvio ' . $modo
+                           . " dal pannello.\n", FILE_APPEND | LOCK_EX);
+
     // Staccata davvero: senza il reindirizzamento dell'uscita la pagina
     // resterebbe ad aspettare la fine del programma, che è esattamente
     // ciò che stiamo evitando.
-    @exec($comando . ' > /dev/null 2>&1 &');
+    //
+    // L'uscita normale va nel nulla perché il programma scrive già nel
+    // log per conto suo, e averla due volte non serve. Gli errori no:
+    // quelli finiscono nel log. Buttarli via — come facevo — significa
+    // che un errore fatale si presenta come silenzio, e il silenzio è
+    // la cosa più difficile da diagnosticare che ci sia.
+    @exec($comando . ' > /dev/null 2>> ' . escapeshellarg($log) . ' &');
 
     $quanto = $modo === '--raccogli-altre' ? 'cinque minuti circa'
             : ($modo === '--diagnosi' ? 'un minuto' : 'una ventina di secondi');
