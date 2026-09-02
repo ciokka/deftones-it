@@ -61,15 +61,39 @@ function openverseCerca(string $domanda, int $pagine = 12): array
         // fra una richiesta e l'altra ci stanno dentro con margine.
         if ($p > 1) { sleep(4); }
 
-        $r = httpGet(OPENVERSE_API . '?' . http_build_query([
+        $indirizzo = OPENVERSE_API . '?' . http_build_query([
             'q'         => $domanda,
             'license'   => openverseLicenze(),
             'page_size' => '20',     // il massimo concesso senza chiave
             'page'      => (string)$p,
-        ]));
-        if ($r['http'] !== 200 || $r['body'] === null) { break; }
-        $d = json_decode($r['body'], true);
-        if (!is_array($d) || !isset($d['results'])) { break; }
+        ]);
+
+        // Riprova, e dice perché quando rinuncia.
+        //
+        // La prima versione usciva in silenzio a ogni intoppo, e il log
+        // diceva "0 trovate" — che è la stessa cosa che direbbe se
+        // l'archivio fosse vuoto. È l'errore già fatto con MusicBrainz:
+        // un guasto di rete travestito da dato mancante non sembra un
+        // guasto, e si finisce a cercare la causa dalla parte sbagliata.
+        //
+        // Il tempo d'attesa è quaranta secondi e non i quindici
+        // consueti: la ricerca di Openverse lavora su un indice enorme e
+        // ci mette il suo.
+        $d = null;
+        foreach ([0, 3, 8] as $tentativo => $pausa) {
+            if ($pausa) { sleep($pausa); }
+            $r = httpGet($indirizzo, null, null, true, 40);
+            if ($r['http'] === 200 && $r['body'] !== null) {
+                $x = json_decode($r['body'], true);
+                if (is_array($x) && isset($x['results'])) { $d = $x; break; }
+                logline('Openverse, risposta illeggibile: '
+                    . mb_substr((string)$r['body'], 0, 120), 'copertine');
+            } elseif ($tentativo === 2) {
+                logline(sprintf('Openverse non risponde (http %d%s) — «%s», pagina %d',
+                    $r['http'], $r['error'] ? ', ' . $r['error'] : '', $domanda, $p), 'copertine');
+            }
+        }
+        if ($d === null) { break; }
 
         foreach ($d['results'] as $x) {
             $fonte = (string)($x['provider'] ?? '');

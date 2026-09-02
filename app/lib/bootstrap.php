@@ -141,7 +141,8 @@ function costoEuro(int $in, int $out): float
  *
  * @return array{http:int, body:?string, etag:?string, last_modified:?string, error:?string}
  */
-function httpGet(string $url, ?string $etag = null, ?string $lastMod = null, bool $seguiRedirect = true): array
+function httpGet(string $url, ?string $etag = null, ?string $lastMod = null,
+                 bool $seguiRedirect = true, ?int $attesaMax = null): array
 {
     $intestazioni = ['Accept: application/rss+xml, application/atom+xml, application/xml, text/xml, */*'];
     if ($etag)    { $intestazioni[] = 'If-None-Match: ' . $etag; }
@@ -153,7 +154,7 @@ function httpGet(string $url, ?string $etag = null, ?string $lastMod = null, boo
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => $seguiRedirect,
         CURLOPT_MAXREDIRS      => 5,
-        CURLOPT_TIMEOUT        => cfg('http_timeout'),
+        CURLOPT_TIMEOUT        => $attesaMax ?? cfg('http_timeout'),
         CURLOPT_CONNECTTIMEOUT => 8,
         CURLOPT_USERAGENT      => cfg('user_agent'),
         CURLOPT_ENCODING       => '',          // accetta gzip
