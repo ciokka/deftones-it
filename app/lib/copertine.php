@@ -85,6 +85,50 @@ function commonsFileDi(string $categoria): array
     return $out;
 }
 
+/**
+ * I file che nominano i Deftones ma che nessuno ha ancora categorizzato.
+ *
+ * Le categorie sono il posto giusto dove cercare, ma ci si finisce solo
+ * se qualcuno ce li mette: fra caricare una fotografia e vederla
+ * ordinata in Category:Deftones passano mesi, e a volte non passa mai.
+ * Le foto recenti stanno quasi tutte in quel limbo — "Deftones en
+ * spectacle au Centre Bell en 2025", caricata a marzo, non è in nessuna
+ * delle diciassette categorie che visitiamo.
+ *
+ * Perciò si fa anche una ricerca a testo libero sui nomi dei file, dai
+ * più recenti. Il rumore c'è — la ricerca di Commons trova "deftones"
+ * dentro registri parlamentari del Seicento — e si toglie qui: il nome
+ * del file deve nominare il gruppo o uno dei suoi. Chi resta è nostro.
+ */
+function commonsRecenti(int $quanti = 120): array
+{
+    $d = commonsApi([
+        'action'      => 'query',
+        'list'        => 'search',
+        'srsearch'    => 'deftones',
+        'srnamespace' => '6',            // solo i file
+        'srlimit'     => (string)min($quanti, 500),
+        'srsort'      => 'create_timestamp_desc',
+    ]);
+
+    $out = [];
+    foreach ($d['query']['search'] ?? [] as $r) {
+        $t = (string)$r['title'];
+        $min = mb_strtolower($t);
+        // "Deftone Stylus typeface sample" non è una fotografia della
+        // band: la s finale non è un dettaglio.
+        if (!str_contains($min, 'deftones')) {
+            $suo = false;
+            foreach (array_keys(NOMI_SOGGETTO) as $nome) {
+                if (str_contains($min, $nome)) { $suo = true; break; }
+            }
+            if (!$suo) { continue; }
+        }
+        $out[] = $t;
+    }
+    return $out;
+}
+
 /** Le sottocategorie di una categoria: un livello, non tutto l'albero. */
 function commonsSottocategorie(string $categoria): array
 {

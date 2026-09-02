@@ -117,6 +117,12 @@ if ($altre) {
         'deftones concert'          => 'band',
         'deftones festival'         => 'band',
         'deftones tour'             => 'band',
+        // Gli anni servono a farsi dare il recente. Le altre domande
+        // pescano dal mucchio, e nel mucchio il 2011 pesa vent'anni
+        // più del 2025.
+        'deftones 2025'             => 'band',
+        'deftones 2026'             => 'band',
+        'deftones private music'    => 'band',
     ];
 
     $inserisci = $pdo->prepare('INSERT INTO ' . t('immagini') . '
@@ -205,9 +211,15 @@ if ($raccogli) {
            licenza  = VALUES(licenza),  licenza_url = VALUES(licenza_url),
            data_foto = VALUES(data_foto)');
 
+    // I file già visti nelle categorie: la ricerca a testo libero
+    // riporta gli stessi, e chiederne i metadati due volte sarebbe
+    // tempo speso per niente.
+    $visti = [];
+
     foreach ($daVisitare as $cat => $soggetto) {
         $file = commonsFileDi($cat);
         if (!$file) { continue; }
+        foreach ($file as $f) { $visti[$f] = true; }
         foreach (commonsMetadati($file) as $i) {
             $trovate++;
             if (!immagineAdatta($i)) { $scartate++; continue; }
@@ -231,6 +243,47 @@ if ($raccogli) {
         }
         logline(sprintf('  %-46s %3d file', mb_substr($cat, 0, 46), count($file)), 'copertine');
     }
+
+    // --- i file che nessuno ha ancora categorizzato --------------------
+    //
+    // Le foto recenti stanno quasi tutte qui: fra il caricamento e la
+    // categorizzazione passano mesi, e le categorie da sole fermano il
+    // catalogo al 2022.
+    $sciolti = array_values(array_filter(commonsRecenti(),
+                            fn($t) => !isset($visti[$t])));
+    if ($sciolti) {
+        foreach (commonsMetadati($sciolti) as $i) {
+            $trovate++;
+            if (!immagineAdatta($i)) { $scartate++; continue; }
+            $rif = substr($i['commons'], strlen('File:'));
+
+            // Il soggetto lo dice il nome del file, che è l'unica cosa
+            // che abbiamo: senza categoria non c'è altro da leggere.
+            $soggetto = 'band';
+            $min = mb_strtolower($rif);
+            foreach (NOMI_SOGGETTO as $nome => $chiave) {
+                if (str_contains($min, $nome)) { $soggetto = $chiave; break; }
+            }
+
+            if ($soloProva) {
+                if (!isset(giaInCatalogo($pdo)[$rif])) { $nuove++; }
+                continue;
+            }
+            try {
+                $inserisci->execute([
+                    $rif, $i['titolo'] ?: null, 'commons',
+                    $i['url_file'], $i['url_pagina'],
+                    $i['autore'] ?: null, $i['licenza'] ?: null,
+                    $i['licenza_url'] ?: null,
+                    $i['larghezza'], $i['altezza'], $i['data'], $soggetto,
+                ]);
+                if ($inserisci->rowCount() === 1) { $nuove++; }
+            } catch (Throwable $e) {
+                logline('Non salvata: ' . $i['commons'] . ' — ' . $e->getMessage(), 'copertine');
+            }
+        }
+    }
+    logline(sprintf('  %-46s %3d file', 'fuori categoria (ricerca)', count($sciolti)), 'copertine');
 
     logline(sprintf('Raccolta finita in %.1fs — %d viste, %d nuove, %d non utilizzabili',
         microtime(true) - $avvio, $trovate, $nuove, $scartate), 'copertine');
