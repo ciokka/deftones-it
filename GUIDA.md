@@ -678,15 +678,34 @@ di lì, passata per le mani di un volontario. A Flickr però non si arriva
 più direttamente: dal 2024 non rilascia chiavi API agli account
 gratuiti. Openverse indicizza le stesse fotografie.
 
-**Openverse va usato con le credenziali**, che sono gratuite. Senza, la
-quota è di duecento richieste al giorno contate **per indirizzo IP** — e
-su un hosting condiviso quell'indirizzo è lo stesso di centinaia di altri
-siti, quindi può risultare esaurita da gente che non sa di averla usata.
-Peggio: quando è esaurita la richiesta non fallisce con un errore, resta
-appesa finché non scade. Con le credenziali la quota è legata a quelle e
-sale a diecimila al giorno. Si mettono in `config.php` come
-`openverse_id` e `openverse_secret`; il gettone dura dodici ore e viene
-conservato in `cache/`.
+**Oggi Openverse non funziona, e non per colpa nostra.** Dal server di
+Serverplan la connessione cifrata verso `api.openverse.org` non si apre:
+nessun rifiuto, nessun errore, venti secondi di silenzio e zero byte. La
+stessa richiesta in chiaro sulla porta 80 risponde `301` in un
+centesimo di secondo, e `openverse.org` risponde `403` dallo stesso
+indirizzo Cloudflare che resta muto per l'API. Dal computer di casa,
+invece, va.
+
+Il `403` è la chiave: se a filtrare fosse l'hosting, cadrebbe anche il
+sito principale, che passa dallo stesso nome e dalla stessa porta. È
+**Openverse a rifiutare l'indirizzo del nostro server** — o meglio, il
+Cloudflare che le sta davanti, che su un indirizzo condiviso da centinaia
+di siti applica la reputazione peggiore fra quelli. Non c'è niente da
+sistemare da questa parte: Serverplan non può farci nulla e noi nemmeno.
+
+Il comando `--diagnosi` rifà quelle quattro prove e stampa i tempi
+separati, per rivedere la cosa fra qualche mese senza rifare il
+ragionamento da capo.
+
+Restano due strade se un giorno servisse davvero: **le credenziali**,
+gratuite, che alzerebbero la quota da duecento a diecimila richieste al
+giorno e forse basterebbero a farci passare — ma l'endpoint di
+registrazione risponde `500` da giorni, provato da tre indirizzi e due
+browser; oppure lanciare la raccolta da casa e caricare i risultati.
+Nessuna delle due vale la pena finché Commons basta. I campi in
+`config.php` (`openverse_id`, `openverse_secret`) e il codice del gettone
+ci sono già, pronti: il gettone dura dodici ore e si conserva in
+`cache/`.
 
 I risultati che Openverse restituisce da Wikimedia vengono scartati:
 quelli li prendiamo alla fonte, con metadati migliori — compresa la data

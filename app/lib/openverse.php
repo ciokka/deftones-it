@@ -270,7 +270,7 @@ function openverseDiagnosi(): void
         logline(sprintf('  %-20s http %d — dns %.2fs, connessione %.2fs, TLS %.2fs, '
             . 'prima risposta %.2fs, totale %.2fs, %d byte da %s',
             $nome, (int)$i['http_code'], $i['namelookup_time'], $i['connect_time'],
-            $i['appconnect_time'], $i['starttransfer_time'], $i['total_time'],
+            $i['appconnect_time'] ?? 0.0, $i['starttransfer_time'], $i['total_time'],
             is_string($corpo) ? strlen($corpo) : 0,
             $i['primary_ip'] ?: '?'), 'copertine');
         if ($err) { logline('    errore: ' . $err, 'copertine'); }
