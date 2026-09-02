@@ -227,10 +227,21 @@ function openverseDiagnosi(): void
                 'copertine');
     }
 
+    // Le prove servono a separare tre cose che finora si somigliavano
+    // troppo: se il server non parla con Cloudflare in generale, se non
+    // parla con Openverse in particolare, o se è la porta 443 a essere
+    // filtrata mentre la 80 passa.
     $prove = [
-        ['Commons (controllo)', 'https://commons.wikimedia.org/w/api.php?action=query&format=json', 0],
-        ['Openverse banale',    OPENVERSE_API . '?q=test&page_size=1', 0],
-        ['Openverse via IPv4',  OPENVERSE_API . '?q=test&page_size=1', CURL_IPRESOLVE_V4],
+        // Anthropic sta dietro Cloudflare e il sito ci parla ogni
+        // giorno: se questa passa, Cloudflare non c'entra.
+        ['Cloudflare (controllo)', 'https://api.anthropic.com/v1/models', 0],
+        // Stessa organizzazione, stessa infrastruttura, altro nome.
+        ['openverse.org',          'https://openverse.org/', 0],
+        // In chiaro sulla porta 80: se passa solo questa, a essere
+        // filtrata è la connessione cifrata, e si vede dal nome del
+        // sito richiesto.
+        ['api in chiaro (80)',     'http://api.openverse.org/v1/images/?q=test&page_size=1', 0],
+        ['api cifrata (443)',      OPENVERSE_API . '?q=test&page_size=1', 0],
     ];
 
     foreach ($prove as [$nome, $indirizzo, $famiglia]) {
@@ -240,7 +251,7 @@ function openverseDiagnosi(): void
         if ($gettone) { $intestazioni[] = 'Authorization: Bearer ' . $gettone; }
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 25,
+            CURLOPT_TIMEOUT        => 20,
             CURLOPT_CONNECTTIMEOUT => 8,
             CURLOPT_USERAGENT      => cfg('user_agent'),
             CURLOPT_HTTPHEADER     => $intestazioni,
