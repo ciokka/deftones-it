@@ -1,7 +1,8 @@
 <?php
 /** L'indirizzo di questa pagina conservando i filtri. */
-$link = function (array $cambia = []) use ($stato, $sog, $cerca): string {
-    $p = array_filter(['stato' => $stato, 'sog' => $sog, 'q' => $cerca] + $cambia,
+$ord = (string)($_GET['ord'] ?? '');
+$link = function (array $cambia = []) use ($stato, $sog, $cerca, $ord): string {
+    $p = array_filter(['stato' => $stato, 'sog' => $sog, 'q' => $cerca, 'ord' => $ord] + $cambia,
                       fn($v) => $v !== '' && $v !== null);
     $p = array_merge($p, array_filter($cambia, fn($v) => $v !== null));
     $p = array_filter($p, fn($v) => $v !== '');
@@ -67,6 +68,13 @@ $query = (string)parse_url($link(), PHP_URL_QUERY);
   <?php endif ?>
 
   <div class="filtri-archivio">
+    <div class="filtro-riga">
+      <span class="filtro-nome">ordine</span>
+      <a class="filtro-voce<?= $ord === '' ? ' attivo' : '' ?>"
+         href="<?= e($link(['ord' => ''])) ?>">per soggetto</a>
+      <a class="filtro-voce<?= $ord === 'recenti' ? ' attivo' : '' ?>"
+         href="<?= e($link(['ord' => 'recenti'])) ?>">ultime arrivate</a>
+    </div>
     <div class="filtro-riga">
       <span class="filtro-nome">soggetto</span>
       <a class="filtro-voce<?= $sog === '' ? ' attivo' : '' ?>" href="<?= e($link(['sog' => ''])) ?>">tutti</a>

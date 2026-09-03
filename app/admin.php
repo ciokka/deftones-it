@@ -325,8 +325,16 @@ if ($azione === 'foto') {
                          $par[] = '%' . $cerca . '%'; $par[] = '%' . $cerca . '%'; }
     $filtro = $dove ? 'WHERE ' . implode(' AND ', $dove) : '';
 
+    // Le ultime arrivate sono quelle da guardare: una raccolta ne porta
+    // centosettanta in un colpo e vanno passate in rassegna, mentre le
+    // altre stanno lì da settimane e le hai già viste. Con
+    // l'ordinamento consueto finivano oltre la quattrocentesima riga,
+    // cioè fuori dalla pagina.
+    $ord = ((string)($_GET['ord'] ?? '')) === 'recenti'
+         ? 'id DESC'
+         : 'scartata, soggetto, usata DESC, id';
     $q = $pdo->prepare('SELECT * FROM ' . t('immagini') . "
-                         $filtro ORDER BY scartata, soggetto, usata DESC, id LIMIT 400");
+                         $filtro ORDER BY $ord LIMIT 400");
     $q->execute($par);
     $foto = $q->fetchAll();
 
