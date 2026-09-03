@@ -302,6 +302,13 @@ if ($azione === 'foto') {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrfValido($_POST['csrf'] ?? null)) {
         if (!empty($_POST['raccolta'])) {
             $_SESSION['messaggio'] = lanciaRaccolta((string)$_POST['raccolta']);
+        } elseif (!empty($_POST['carica'])) {
+            try {
+                $_SESSION['messaggio'] = salvaFotoCaricata(
+                    $pdo, $_FILES['foto'] ?? [], $_POST);
+            } catch (Throwable $e) {
+                $_SESSION['messaggio'] = ['ko', 'Non salvata: ' . $e->getMessage()];
+            }
         } else {
             // Un interruttore solo: la fotografia va o non va bene. Rovesciarlo
             // non cancella niente — le scartate restano, così una raccolta

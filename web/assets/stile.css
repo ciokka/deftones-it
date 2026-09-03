@@ -1775,3 +1775,44 @@ figure:has(> img.img-mancante) { display: none; }
   color: var(--testo-tenue);
   white-space: pre;
 }
+
+/* -------------------------------- caricamento manuale di una foto */
+
+.caricamento { margin: 0 0 2rem; max-width: 34rem; }
+.caricamento > summary {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .45rem .9rem;
+  border: 1px solid var(--bordo);
+  border-radius: 4px;
+  color: var(--testo-tenue);
+  font-size: .9rem;
+}
+.caricamento > summary:hover { color: var(--accento); border-color: var(--accento); }
+.caricamento .occhiello { margin: 1rem 0; font-size: .92rem; }
+
+.modulo-foto { display: grid; gap: .9rem; }
+.modulo-foto label {
+  display: grid;
+  gap: .3rem;
+  font-size: .85rem;
+  color: var(--testo-tenue);
+}
+.modulo-foto input,
+.modulo-foto select {
+  width: 100%;
+  padding: .5rem .7rem;
+  background: var(--fondo-alto);
+  border: 1px solid var(--bordo);
+  border-radius: 4px;
+  color: var(--testo);
+  font: inherit;
+  font-size: .95rem;
+}
+.modulo-foto input:focus,
+.modulo-foto select:focus { outline: none; border-color: var(--accento); }
+.modulo-foto input[type="file"] { padding: .4rem; font-size: .85rem; }
+.modulo-foto .facolt { color: var(--testo-tenue); opacity: .65; font-style: italic; }
+.modulo-foto button { justify-self: start; margin-top: .3rem; }

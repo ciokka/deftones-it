@@ -451,7 +451,18 @@ function assegnaCopertina(PDO $pdo, array $a, array $dischi, bool $prova = false
         $img = $q->fetch();
 
         if ($img) {
-            $dati = $prova ? 'x' : (httpGet((string)$img['url_file'])['body'] ?? null);
+            // Le foto caricate a mano stanno già sul nostro disco: il
+            // loro indirizzo comincia con la barra e non con https. Un
+            // httpGet su un percorso relativo non va da nessuna parte.
+            $da = (string)$img['url_file'];
+            if ($prova) {
+                $dati = 'x';
+            } elseif (str_starts_with($da, '/media/')) {
+                $dati = @file_get_contents(rtrim((string)(cfg('media_dir') ?: ''), '/')
+                                         . substr($da, strlen('/media'))) ?: null;
+            } else {
+                $dati = httpGet($da)['body'] ?? null;
+            }
             if ($dati !== null && ($prova || strlen($dati) > 5000)) {
                 if ($prova || @file_put_contents($file, $dati) !== false) {
                     if ($prova) { $giaScelte[] = (int)$img['id']; }
@@ -518,6 +529,15 @@ function miniaturaFoto(string $url): string
     // _b è 1024, _z è 640, _n è 320.
     if (preg_match('#^(https://live\.staticflickr\.com/.+)_[a-z]\.jpg$#i', $url, $m)) {
         return $m[1] . '_n.jpg';
+    }
+    // Caricate a mano: la miniatura sta accanto alla grande, se GD c'era
+    // quando è stata caricata. Se non c'è si mostra la grande, che pesa
+    // ma si vede.
+    if (str_starts_with($url, '/media/foto/') && str_ends_with($url, '.jpg')) {
+        $mini = substr($url, 0, -4) . '-mini.jpg';
+        $suDisco = rtrim((string)(cfg('media_dir') ?: ''), '/')
+                 . substr($mini, strlen('/media'));
+        if (is_file($suDisco)) { return $mini; }
     }
     return $url;
 }
@@ -610,4 +630,130 @@ function codaLog(int $righe = 40): string
     if (!is_file($f)) { return ''; }
     $tutte = @file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
     return implode("\n", array_slice($tutte, -$righe));
+}
+
+// ------------------------------------------- fotografie caricate a mano
+
+/** Dove finiscono le fotografie caricate dal pannello. */
+function cartellaFoto(): string
+{
+    return rtrim((string)(cfg('media_dir') ?: '/home/bpdefton/public_html/media'), '/')
+         . '/foto';
+}
+
+/**
+ * Rimpicciolisce un'immagine, se il server sa farlo.
+ *
+ * Una fotografia che arriva dall'ufficio stampa può pesare dieci
+ * megabyte e stare a seimila pixel: buona per la carta, assurda per una
+ * pagina web. Se GD c'è si riduce, se non c'è si tiene com'è — meglio
+ * una copertina pesante che nessuna copertina.
+ */
+function ridimensiona(string $origine, string $destinazione, int $larghezzaMax): bool
+{
+    if (!function_exists('imagecreatetruecolor')) { return false; }
+    $info = @getimagesize($origine);
+    if (!$info) { return false; }
+
+    [$l, $a] = $info;
+    $sorgente = match ($info['mime']) {
+        'image/jpeg' => @imagecreatefromjpeg($origine),
+        'image/png'  => @imagecreatefrompng($origine),
+        default      => null,
+    };
+    if (!$sorgente) { return false; }
+
+    // Più piccola del massimo: si copia e basta, che ricomprimere una
+    // fotografia già piccola la peggiora senza farle guadagnare niente.
+    if ($l <= $larghezzaMax) {
+        imagedestroy($sorgente);
+        return @copy($origine, $destinazione);
+    }
+
+    $nuovaA = (int)round($a * $larghezzaMax / $l);
+    $tela = imagecreatetruecolor($larghezzaMax, $nuovaA);
+    imagecopyresampled($tela, $sorgente, 0, 0, 0, 0, $larghezzaMax, $nuovaA, $l, $a);
+    $esito = @imagejpeg($tela, $destinazione, 86);
+    imagedestroy($tela);
+    imagedestroy($sorgente);
+    return (bool)$esito;
+}
+
+/**
+ * Mette in catalogo una fotografia arrivata per posta.
+ *
+ * È l'unica fonte davvero aggiornata che abbiamo: Commons ha una foto
+ * del 2025 e Flickr nessuna, mentre l'ufficio stampa di un'etichetta e
+ * un fotografo di concerti hanno esattamente quello che serve — basta
+ * chiedere. Finché non si poteva caricare un file, chiedere non serviva
+ * a niente.
+ *
+ * Il tipo si legge dall'immagine, non da quello che dichiara il
+ * browser: quello lo scrive chi carica, e chi carica può sbagliarsi.
+ */
+function salvaFotoCaricata(PDO $pdo, array $file, array $campi): array
+{
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
+        || !is_uploaded_file($file['tmp_name'] ?? '')) {
+        return ['ko', 'Nessun file caricato, o caricamento interrotto.'];
+    }
+
+    $info = @getimagesize($file['tmp_name']);
+    if (!$info || !in_array($info['mime'], ['image/jpeg', 'image/png'], true)) {
+        return ['ko', 'Serve una fotografia JPEG o PNG.'];
+    }
+    [$l, $a] = $info;
+    if (max($l, $a) < 900) {
+        return ['ko', sprintf('Troppo piccola: %d×%d, e il lato lungo deve arrivare a 900.', $l, $a)];
+    }
+
+    $autore = trim((string)($campi['autore'] ?? ''));
+    if ($autore === '') {
+        return ['ko', 'Manca l\'autore. Una fotografia si pubblica citando chi l\'ha scattata.'];
+    }
+    $licenza = trim((string)($campi['licenza'] ?? ''));
+    if ($licenza === '') {
+        return ['ko', 'Manca la licenza, o gli estremi del permesso.'];
+    }
+
+    $cartella = cartellaFoto();
+    if (!is_dir($cartella) && !@mkdir($cartella, 0755, true) && !is_dir($cartella)) {
+        return ['ko', 'Non riesco a creare ' . $cartella];
+    }
+
+    // Un nome che non si scontri e che resti leggibile in una cartella.
+    $base = 'manuale-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
+    $grande  = $cartella . '/' . $base . '.jpg';
+    $piccola = $cartella . '/' . $base . '-mini.jpg';
+
+    if (!ridimensiona($file['tmp_name'], $grande, 1600)) {
+        if (!@move_uploaded_file($file['tmp_name'], $grande)) {
+            return ['ko', 'Non riesco a scrivere il file in ' . $cartella];
+        }
+    }
+    // La miniatura è un di più: se GD non c'è si mostra la grande
+    // rimpicciolita dal browser, che è brutto ma funziona.
+    ridimensiona($grande, $piccola, 320);
+
+    $vere = @getimagesize($grande) ?: [$l, $a];
+    $stmt = $pdo->prepare('INSERT INTO ' . t('immagini') . '
+          (riferimento, titolo, provenienza, url_file, url_pagina, autore, licenza,
+           licenza_url, larghezza, altezza, data_foto, soggetto)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
+    $stmt->execute([
+        'manuale:' . $base,
+        mb_substr(trim((string)($campi['titolo'] ?? '')), 0, 200) ?: null,
+        'manuale',
+        '/media/foto/' . $base . '.jpg',
+        trim((string)($campi['url_pagina'] ?? '')) ?: null,
+        mb_substr($autore, 0, 200),
+        mb_substr($licenza, 0, 80),
+        trim((string)($campi['licenza_url'] ?? '')) ?: null,
+        (int)$vere[0], (int)$vere[1],
+        dataFoto((string)($campi['data_foto'] ?? '')),
+        (string)($campi['soggetto'] ?? 'band') ?: 'band',
+    ]);
+
+    return ['ok', sprintf('Fotografia in catalogo: %d×%d, di %s.',
+                          (int)$vere[0], (int)$vere[1], $autore)];
 }

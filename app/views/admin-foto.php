@@ -60,6 +60,65 @@ $query = (string)parse_url($link(), PHP_URL_QUERY);
     </a>
   </div>
 
+  <details class="caricamento">
+    <summary><?= icona('immagine') ?> carica una fotografia</summary>
+    <?php /* L'unica fonte davvero aggiornata: Commons ha una foto del
+             2025 e Flickr nessuna, mentre l'ufficio stampa di
+             un'etichetta e un fotografo di concerti hanno esattamente
+             quello che serve. Basta chiedere — e poter caricare. */ ?>
+    <p class="occhiello">
+      Per le fotografie ottenute dall'ufficio stampa o dal permesso di un
+      fotografo. Entrano nello stesso catalogo delle altre e si scelgono
+      allo stesso modo. L'autore e la licenza non sono facoltativi: sono
+      quello che rende lecito pubblicarla.
+    </p>
+    <form method="post" enctype="multipart/form-data" class="modulo-foto">
+      <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
+      <input type="hidden" name="carica" value="1">
+      <input type="hidden" name="torna" value="<?= e($query ? '?' . $query : '') ?>">
+
+      <label>fotografia (JPEG o PNG, lato lungo almeno 900px)
+        <input type="file" name="foto" accept="image/jpeg,image/png" required>
+      </label>
+      <label>autore
+        <input type="text" name="autore" maxlength="200" required
+               placeholder="chi l'ha scattata">
+      </label>
+      <label>licenza o permesso
+        <input type="text" name="licenza" maxlength="80" required
+               placeholder="CC BY 4.0, oppure: permesso dell'autore">
+      </label>
+      <label>indirizzo della licenza <span class="facolt">facoltativo</span>
+        <input type="url" name="licenza_url" maxlength="400"
+               placeholder="https://creativecommons.org/licenses/by/4.0/">
+      </label>
+      <label>da dove viene <span class="facolt">facoltativo</span>
+        <input type="url" name="url_pagina" maxlength="600"
+               placeholder="la pagina originale, o il press kit">
+      </label>
+      <label>titolo <span class="facolt">facoltativo</span>
+        <input type="text" name="titolo" maxlength="200"
+               placeholder="Deftones @ Alcatraz, Milano">
+      </label>
+      <label>data di scatto <span class="facolt">anche solo l'anno</span>
+        <input type="text" name="data_foto" maxlength="10"
+               placeholder="2026-05-18, oppure 2026-05, oppure 2026">
+      </label>
+      <label>soggetto
+        <select name="soggetto">
+          <?php foreach (['band', 'chino', 'stephen', 'sergio',
+                          'abe', 'frank', 'chi'] as $sg): ?>
+            <option value="<?= e($sg) ?>"><?= e($sg) ?></option>
+          <?php endforeach ?>
+        </select>
+      </label>
+
+      <button type="submit" class="bottone bottone-acceso">
+        <?= icona('salva') ?> metti in catalogo
+      </button>
+    </form>
+  </details>
+
   <?php if ($log !== ''): ?>
     <details class="resoconto"<?= $messaggio ? ' open' : '' ?>>
       <summary>resoconto dell'ultima raccolta</summary>
