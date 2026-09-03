@@ -69,6 +69,39 @@ function db(bool $verifica = false): PDO
     return $pdo;
 }
 
+/**
+ * Il tipo di una colonna come lo scrive il database — `varchar(120)`,
+ * `enum('a','b')` — oppure null se quella colonna non esiste.
+ *
+ * Serve a due mestieri: sapere se una colonna c'è già prima di
+ * aggiungerla, e leggere i valori ammessi da una ENUM per riempirci un
+ * menù a tendina senza doverli riscrivere a mano nel codice.
+ *
+ * SHOW COLUMNS e non information_schema: su questo hosting l'accesso a
+ * information_schema dipende da quale utente MySQL sei — quello del
+ * database ce l'ha, l'utente cPanel no. A SHOW basta il permesso di
+ * lettura sulla tabella, che se sei qui hai già.
+ *
+ * Il nome della colonna finisce dentro la query invece che in un
+ * segnaposto, e non è una svista: MariaDB non accetta parametri nelle
+ * SHOW, e siccome le prepared qui sono native — EMULATE_PREPARES sta a
+ * false, poche righe più su — un `SHOW COLUMNS ... LIKE ?` è un errore
+ * di sintassi che arriva fino all'utente come una 500 muta. MySQL
+ * invece lo accetta, quindi in produzione non si vedeva niente e il
+ * guasto saltava fuori solo sull'ambiente di prova del NAS, dove la
+ * modifica di un articolo non si apriva più.
+ *
+ * Il nome arriva sempre dal codice e mai da fuori: il controllo qui
+ * sotto lo garantisce anche a chi passerà di qui domani.
+ */
+function colonnaTipo(PDO $pdo, string $tabella, string $colonna): ?string
+{
+    if (!preg_match('/^[A-Za-z0-9_]+$/', $colonna)) { return null; }
+    $r = $pdo->query('SHOW COLUMNS FROM `' . $tabella . '` LIKE ' . $pdo->quote($colonna))
+             ->fetch();
+    return $r === false ? null : (string)$r['Type'];
+}
+
 /** Nome tabella col prefisso configurato. */
 function t(string $nome): string
 {

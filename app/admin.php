@@ -543,10 +543,7 @@ if ($azione === 'nuovo') {
 /** I valori ammessi da una colonna ENUM, letti dalla colonna stessa. */
 function valoriEnum(PDO $pdo, string $tabella, string $colonna): array
 {
-    $q = $pdo->prepare('SHOW COLUMNS FROM `' . $tabella . '` LIKE ?');
-    $q->execute([$colonna]);
-    $r = $q->fetch();
-    preg_match_all("/'([^']*)'/", (string)($r['Type'] ?? ''), $m);
+    preg_match_all("/'([^']*)'/", (string)colonnaTipo($pdo, $tabella, $colonna), $m);
     return $m[1] ?? [];
 }
 
