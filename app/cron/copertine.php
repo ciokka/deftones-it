@@ -138,6 +138,10 @@ if ($altre) {
         : 'Licenze accettate: CC BY, BY-SA, CC0, pubblico dominio (niente NC)', 'copertine');
 
     $viste = $nuove = $scartate = 0;
+    // Va inizializzata qui: openverseCerca la riempie per riferimento, e
+    // PHP una variabile che non esiste la crea sì, ma la crea null —
+    // che a un parametro dichiarato bool non va bene.
+    $guasto = false;
     foreach ($ricerche as $domanda => $soggetto) {
         // Le ricerche sui singoli membri rendono meno: non ha senso
         // insistere per dodici pagine.
