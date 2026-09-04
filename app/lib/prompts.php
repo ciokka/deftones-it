@@ -43,6 +43,19 @@ Al contrario, abbassa sotto 40 gli articoli di servizio (orari, biglietti,
 come arrivare) di cui hai solo il titolo: senza i dettagli concreti non c'è
 niente da scrivere.
 
+- gia_scritto: true se il sito ha GIÀ un articolo su questo stesso fatto.
+
+Riceverai, quando ci sono, i titoli degli articoli già pubblicati di recente.
+Confrontali per FATTO, non per parole. «I Deftones riportano dal vivo Risk per
+la prima volta dal 2011» e «Risk torna nella setlist dei Deftones dopo quindici
+anni» sono lo stesso evento raccontato due volte: hanno due parole in comune e
+zero motivi per esistere entrambi.
+
+Uno sviluppo nuovo su una vicenda già raccontata NON è già scritto: se
+l'articolo esistente annunciava un tour e la notizia di oggi ne aggiunge le
+date italiane, è un evento nuovo. Nel dubbio metti false — un doppione si
+scarta in un secondo, una notizia persa non torna.
+
 Sii severo con la rilevanza. Un sito che pubblica tutto non lo legge nessuno.
 TXT;
 
@@ -104,8 +117,15 @@ function schemaRaggruppa(): array
                                             'description' => 'gli id di tutti gli item che raccontano questo evento'],
                         'id_principale' => ['type' => 'integer',
                                             'description' => 'id della fonte migliore fra quelle sopra'],
+                        // Il confronto per parole non basta e l'ho misurato:
+                        // fra i due titoli sullo stesso ritorno di "Risk" in
+                        // scaletta la somiglianza è 27%, quanto fra due notizie
+                        // estranee. Riconoscere che due frasi diverse
+                        // raccontano lo stesso fatto lo sa fare solo chi legge.
+                        'gia_scritto'   => ['type' => 'boolean',
+                                            'description' => 'true se fra gli articoli già pubblicati ce n\'è uno su questo stesso fatto'],
                     ],
-                    'required' => ['descrizione','categoria','rilevanza','attendibilita','item_ids','id_principale'],
+                    'required' => ['descrizione','categoria','rilevanza','attendibilita','item_ids','id_principale','gia_scritto'],
                     'additionalProperties' => false,
                 ],
             ],

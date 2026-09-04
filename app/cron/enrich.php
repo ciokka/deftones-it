@@ -64,12 +64,24 @@ $giro = 0;
 // prima di spendere. I titoli già pubblicati fermano il caso somigliante
 // dopo la scrittura: lì la chiamata è persa, ma la bozza doppia no.
 $urlUsati = $titoliUsati = [];
-foreach ($pdo->query('SELECT titolo_it, fonte_url FROM ' . t('articles'))->fetchAll() as $r) {
-    if ($r['fonte_url']) { $urlUsati[sha1((string)$r['fonte_url'])] = true; }
-    $t = normalizzaTitolo((string)$r['titolo_it']);
+foreach ($pdo->query('SELECT titolo_it, fonte_url FROM ' . t('articles'))->fetchAll() as $vecchio) {
+    if ($vecchio['fonte_url']) { $urlUsati[sha1((string)$vecchio['fonte_url'])] = true; }
+    $t = normalizzaTitolo((string)$vecchio['titolo_it']);
     if ($t !== '') { $titoliUsati[$t] = true; }
 }
 elog(sprintf('  %d articoli già scritti, non li rifaccio', count($titoliUsati)));
+
+// Gli ultimi tre mesi, da mostrare al modello quando raggruppa. Non
+// tutti: duemila titoli in ogni chiamata costerebbero più di quello che
+// fanno risparmiare, e i doppioni nascono fra cose vicine nel tempo.
+$recenti = $pdo->query('SELECT titolo_it, DATE(pubblicato_il) g
+                          FROM ' . t('articles') . '
+                         WHERE pubblicato_il >= CURDATE() - INTERVAL 3 MONTH
+                         ORDER BY pubblicato_il DESC LIMIT 120')->fetchAll();
+$elencoRecenti = '';
+foreach ($recenti as $rec) {
+    $elencoRecenti .= '- ' . $rec['g'] . '  ' . $rec['titolo_it'] . "\n";
+}
 
 /**
  * Un titolo che dice la stessa cosa di uno già pubblicato.
@@ -136,8 +148,12 @@ foreach ($items as $it) {
     );
 }
 
-$r = claudeJson(SYS_RAGGRUPPA, "Raggruppa queste notizie per evento.\n\n" . $elenco,
-                schemaRaggruppa(), 8000);
+$domanda = "Raggruppa queste notizie per evento.\n\n" . $elenco;
+if ($elencoRecenti !== '') {
+    $domanda .= "\nArticoli già pubblicati dal sito negli ultimi tre mesi "
+              . "(per il campo gia_scritto):\n\n" . $elencoRecenti;
+}
+$r = claudeJson(SYS_RAGGRUPPA, $domanda, schemaRaggruppa(), 8000);
 $tokIn += $r['in']; $tokOut += $r['out'];
 
 if (!$r['ok'] || !isset($r['dati']['eventi'])) {
@@ -151,8 +167,10 @@ usort($eventi, fn($a, $b) => $b['rilevanza'] <=> $a['rilevanza']);
 
 elog(sprintf('  %d eventi individuati (soglia %d)', count($eventi), $soglia));
 foreach ($eventi as $e) {
-    elog(sprintf('   %3d  %-12s %2d fonti  %s',
+    elog(sprintf('   %3d  %-12s %2d font%s  %s%s',
         $e['rilevanza'], $e['attendibilita'], count($e['item_ids']),
+        count($e['item_ids']) === 1 ? 'e' : 'i',
+        !empty($e['gia_scritto']) ? '[già scritto] ' : '',
         mb_substr($e['descrizione'], 0, 60)));
 }
 
@@ -213,6 +231,19 @@ foreach ($eventi as $e) {
             $it['pubblicato_il'] ? substr($it['pubblicato_il'], 0, 10) : 'senza data',
             $it['titolo'],
             mb_substr((string)$it['estratto'], 0, 900));
+    }
+
+    // Il modello ha riconosciuto che il fatto è già raccontato. È l'unico
+    // dei tre controlli che vede oltre le parole, ed è quello che serviva:
+    // fra i due titoli sul ritorno di "Risk" in scaletta la somiglianza
+    // lessicale è 27%, cioè indistinguibile da due notizie estranee.
+    if (!empty($e['gia_scritto'])) {
+        foreach ($ids as $id) {
+            $scarta->execute(['duplicato',
+                'già raccontato — ' . mb_substr($e['descrizione'], 0, 200), $id]);
+        }
+        elog('   già raccontato — ' . mb_substr($e['descrizione'], 0, 50));
+        continue;
     }
 
     // Prima di spendere: se la fonte principale è già stata usata per un
