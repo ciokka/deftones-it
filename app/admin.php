@@ -327,13 +327,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {
             cacheSvuota();
             $messaggio = ['ok', 'Ritirata dal sito, torna fra le bozze.'];
         } elseif ($che === 'multi') {
+            // Una sola bozza, dal pulsante nella sua riga. Le righe stanno
+            // dentro il modulo della selezione multipla e un modulo dentro
+            // l'altro non si può: il pulsante manda quindi l'id in un campo
+            // suo, e chi arriva qui guarda prima quello.
+            //
+            // Scartare non cancella: mette stato = 'scartato' e la riga
+            // resta. Serve a ripensarci, e serve a non riscrivere la stessa
+            // notizia — enrich confronta i titoli di tutti gli articoli, e
+            // una bozza cancellata sul serio tornerebbe al giro dopo.
+            $uno  = (int)($_POST['scartaId'] ?? 0);
+            $torna = (int)($_POST['ripristinaId'] ?? 0);
+            if ($uno > 0) {
+                $pdo->prepare('UPDATE ' . t('articles') . "
+                                  SET stato = 'scartato' WHERE id = ? AND stato = 'draft'")
+                    ->execute([$uno]);
+                $messaggio = ['ok', 'Bozza scartata. Resta fra le scartate, '
+                                  . 'e da lì si rimette in bozza in un clic.'];
+            } elseif ($torna > 0) {
+                $pdo->prepare('UPDATE ' . t('articles') . "
+                                  SET stato = 'draft' WHERE id = ? AND stato = 'scartato'")
+                    ->execute([$torna]);
+                $messaggio = ['ok', 'Rimessa fra le bozze.'];
+            } else {
             // Azione su una selezione esplicita: nessuna pubblicazione
             // in blocco alla cieca, gli id li scegli tu con le caselle.
             $ids = array_values(array_filter(array_map('intval', (array)($_POST['ids'] ?? []))));
             $come = (string)($_POST['come'] ?? '');
-            if ($ids && in_array($come, ['pubblica', 'scarta'], true)) {
+            if ($ids && in_array($come, ['pubblica', 'scarta', 'ripristina'], true)) {
                 $segni = implode(',', array_fill(0, count($ids), '?'));
-                if ($come === 'pubblica') {
+                if ($come === 'ripristina') {
+                    $pdo->prepare('UPDATE ' . t('articles') . "
+                                      SET stato = 'draft'
+                                    WHERE id IN ($segni) AND stato = 'scartato'")->execute($ids);
+                    $messaggio = ['ok', count($ids) . ' rimesse fra le bozze.'];
+                } elseif ($come === 'pubblica') {
                     $pdo->prepare('UPDATE ' . t('articles') . "
                                       SET stato = 'pubblicato',
                                           pubblicato_il = COALESCE(pubblicato_il, NOW())
@@ -348,6 +376,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {
                 }
             } else {
                 $messaggio = ['ko', 'Nessun articolo selezionato.'];
+            }
             }
         } elseif ($che === 'copertina-no') {
             // Due cose insieme, perché è quello che serve davvero: la
@@ -746,8 +775,18 @@ $anno      = (int)($_GET['anno'] ?? 0);
 $cat       = (string)($_GET['cat'] ?? '');
 $ordine    = (string)($_GET['ord'] ?? 'rilevanza');
 
-$dove = ["stato = 'draft'"];
-$par  = [];
+// Due viste sulla stessa tabella. Le scartate non spariscono: restano
+// qui, ripescabili, e restano soprattutto nel confronto che enrich fa
+// per non riscrivere una notizia già valutata.
+// Anche dal POST: le azioni passano da /admin/azione e tornano qui
+// senza querystring, e senza questo chi scarta dalla vista delle
+// scartate si ritroverebbe sbalzato fra le bozze a ogni clic.
+$vista = ((string)($_POST['vista'] ?? $_GET['vista'] ?? '')) === 'scartate'
+       ? 'scartate' : 'bozze';
+$statoVisto = $vista === 'scartate' ? 'scartato' : 'draft';
+
+$dove = ['stato = ?'];
+$par  = [$statoVisto];
 if ($cerca !== '') {
     $dove[] = '(titolo_it LIKE ? OR sommario_it LIKE ?)';
     $par[] = '%' . $cerca . '%';
@@ -781,12 +820,19 @@ $q->execute($par);
 $bozze = $q->fetchAll();
 
 // per i menu a tendina dei filtri
-$anni = $pdo->query('SELECT YEAR(pubblicato_il) AS a, COUNT(*) AS n
-                       FROM ' . t('articles') . " WHERE stato = 'draft'
-                      GROUP BY a ORDER BY a DESC")->fetchAll();
-$categorie = $pdo->query('SELECT categoria, COUNT(*) AS n
-                            FROM ' . t('articles') . " WHERE stato = 'draft'
-                           GROUP BY categoria ORDER BY n DESC")->fetchAll();
+$qa = $pdo->prepare('SELECT YEAR(pubblicato_il) AS a, COUNT(*) AS n
+                       FROM ' . t('articles') . ' WHERE stato = ?
+                      GROUP BY a ORDER BY a DESC');
+$qa->execute([$statoVisto]);
+$anni = $qa->fetchAll();
+$qc = $pdo->prepare('SELECT categoria, COUNT(*) AS n
+                       FROM ' . t('articles') . ' WHERE stato = ?
+                      GROUP BY categoria ORDER BY n DESC');
+$qc->execute([$statoVisto]);
+$categorie = $qc->fetchAll();
+
+$quanteScartate = (int)$pdo->query('SELECT COUNT(*) FROM ' . t('articles')
+                                 . " WHERE stato = 'scartato'")->fetchColumn();
 
 $pubblicate = $pdo->query('SELECT id, slug, titolo_it, pubblicato_il, fonte_nome, in_apertura
                              FROM ' . t('articles') . '
@@ -807,7 +853,7 @@ $ultimo = $pdo->query('SELECT job, finito_il, esito, item_elaborati, messaggio
 
 echo render('admin-bozze', [
     'bozze' => $bozze, 'pubblicate' => $pubblicate, 'ultimo' => $ultimo,
-    'coda' => $coda,
+    'coda' => $coda, 'vista' => $vista, 'quanteScartate' => $quanteScartate,
     'messaggio' => $messaggio ?? messaggioDiPassaggio(), 'totale' => $totale, 'pagina' => $pagina,
     'pagine' => $pagine, 'cerca' => $cerca, 'anno' => $anno, 'cat' => $cat,
     'ordine' => $ordine, 'anni' => $anni, 'categorie' => $categorie,

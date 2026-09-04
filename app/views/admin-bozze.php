@@ -1,9 +1,10 @@
 <?php
 /** Costruisce un URL del pannello conservando i filtri attivi. */
-$link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina): string {
+$link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina, $vista): string {
     $p = array_filter([
         'q' => $cerca, 'anno' => $anno ?: '', 'cat' => $cat,
         'ord' => $ordine, 'p' => $pagina > 1 ? $pagina : '',
+        'vista' => $vista === 'scartate' ? 'scartate' : '',
     ] + [], fn($v) => $v !== '' && $v !== 0);
     $p = array_merge($p, $cambia);
     $p = array_filter($p, fn($v) => $v !== '' && $v !== null);
@@ -27,7 +28,8 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
   </div>
 
   <div class="pannello-testa">
-    <h1>bozze <span class="conta"><?= (int)$totale ?></span></h1>
+    <h1><?= $vista === 'scartate' ? 'scartate' : 'bozze' ?>
+        <span class="conta"><?= (int)$totale ?></span></h1>
     <div class="azioni">
       <a class="bottone bottone-solo-icona" href="<?= u('admin/nuovo') ?>"
          aria-label="Nuovo articolo" title="Nuovo articolo"><?= icona('nuovo', 17) ?></a>
@@ -35,6 +37,15 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
       <a class="bottone bottone-tenue" href="<?= u('admin/raccolte') ?>">raccolte</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/foto') ?>"><?= icona('immagine') ?>foto</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/costi') ?>"><?= icona('costi') ?>costi</a>
+      <?php /* Le scartate non sono cancellate: si guardano, e da lì si
+               rimettono in bozza. La voce compare solo quando ce ne sono,
+               perché un pulsante che porta a una pagina vuota è un
+               pulsante che non serve. */ ?>
+      <?php if ($vista === 'scartate'): ?>
+        <a class="bottone bottone-tenue bottone-acceso" href="<?= e($link(['vista' => '', 'p' => ''])) ?>"><?= icona('indietro') ?>alle bozze</a>
+      <?php elseif ($quanteScartate > 0): ?>
+        <a class="bottone bottone-tenue" href="<?= e($link(['vista' => 'scartate', 'p' => ''])) ?>"><?= icona('scarta') ?>scartate <?= $quanteScartate ?></a>
+      <?php endif ?>
       <?php /* Il recupero dell'archivio non chiama l'IA e non spende:
                apre duecento pagine per volta e riempie la coda. Perciò
                niente conferma — quella la chiede "cerca notizie", che
@@ -99,12 +110,15 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
   </form>
 
   <?php if (!$bozze): ?>
-    <p class="vuoto">Nessuna bozza con questi filtri.</p>
+    <p class="vuoto"><?= $vista === 'scartate'
+        ? 'Nessuna scartata con questi filtri.'
+        : 'Nessuna bozza con questi filtri.' ?></p>
   <?php else: ?>
 
   <form method="post" action="<?= u('admin/azione') ?>">
     <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
     <input type="hidden" name="che" value="multi">
+    <input type="hidden" name="vista" value="<?= e($vista === 'scartate' ? 'scartate' : '') ?>">
 
     <?php foreach ($bozze as $b): ?>
       <article class="bozza">
@@ -134,14 +148,34 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
           <?php if ($b['fonte_url']): ?>
             <a class="bottone bottone-tenue" href="<?= e($b['fonte_url']) ?>" target="_blank" rel="noopener"><?= icona('fuori') ?>fonte</a>
           <?php endif ?>
+          <?php /* Il nome del campo non è "che" perché quello lo occupa già
+                   il modulo che ci sta attorno: un modulo dentro l'altro
+                   non si può, e questo pulsante manda l'id in un campo suo. */ ?>
+          <?php if ($vista === 'scartate'): ?>
+            <button class="bottone bottone-tenue" type="submit"
+                    name="ripristinaId" value="<?= (int)$b['id'] ?>"
+                    title="rimetti fra le bozze"><?= icona('cambia') ?>rimetti</button>
+          <?php else: ?>
+            <button class="bottone bottone-tenue" type="submit"
+                    name="scartaId" value="<?= (int)$b['id'] ?>"
+                    title="scarta: non viene cancellata, resta fra le scartate"><?= icona('scarta') ?>scarta</button>
+          <?php endif ?>
         </div>
       </article>
     <?php endforeach ?>
 
     <div class="barra-azioni">
       <label class="scelta"><input type="checkbox" id="tutti"> seleziona tutti in pagina</label>
-      <button class="bottone" type="submit" name="come" value="pubblica">pubblica selezionati</button>
-      <button class="bottone bottone-tenue" type="submit" name="come" value="scarta">scarta selezionati</button>
+      <?php /* Dalle scartate non si pubblica: si rimette in bozza e poi si
+               decide. Un salto diretto da "scartata" a "online" salterebbe
+               anche la rilettura, che è il momento in cui ci si accorge
+               del perché era stata scartata. */ ?>
+      <?php if ($vista === 'scartate'): ?>
+        <button class="bottone" type="submit" name="come" value="ripristina">rimetti selezionati fra le bozze</button>
+      <?php else: ?>
+        <button class="bottone" type="submit" name="come" value="pubblica">pubblica selezionati</button>
+        <button class="bottone bottone-tenue" type="submit" name="come" value="scarta">scarta selezionati</button>
+      <?php endif ?>
     </div>
   </form>
 
