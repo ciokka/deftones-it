@@ -188,6 +188,22 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
     <?php endforeach ?>
   <?php endif ?>
 
+  <?php if ((int)$coda['n'] > 0): ?>
+    <?php /* Il numero che dice quando smettere di premere "archivio" e
+             passare a enrich. Le date sono quelle degli articoli in
+             attesa: se il più vecchio è del 2021, il recupero sta
+             pescando dove deve. */ ?>
+    <p class="coda-stato">
+      <strong><?= (int)$coda['n'] ?></strong>
+      <?= (int)$coda['n'] === 1 ? 'articolo in coda' : 'articoli in coda' ?>,
+      da elaborare
+      <?php if ($coda['piuVecchio']): ?>
+        · dal <?= e(date('n/Y', strtotime((string)$coda['piuVecchio']))) ?>
+        al <?= e(date('n/Y', strtotime((string)$coda['piuRecente']))) ?>
+      <?php endif ?>
+    </p>
+  <?php endif ?>
+
   <?php if ($ultimo): ?>
     <h1 class="titoletto">ultimi giri</h1>
     <div class="bozza registro">

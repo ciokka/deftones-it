@@ -793,12 +793,21 @@ $pubblicate = $pdo->query('SELECT id, slug, titolo_it, pubblicato_il, fonte_nome
                             WHERE stato = \'pubblicato\'
                             ORDER BY pubblicato_il DESC LIMIT 15')->fetchAll();
 
+// La coda: quanti item aspettano di diventare qualcosa, e il più
+// vecchio fra loro. Serve a sapere quando smettere di premere
+// "archivio" e passare a enrich — finora quel numero stava solo nel
+// database, e per leggerlo bisognava aprire phpMyAdmin.
+$coda = $pdo->query('SELECT COUNT(*) n, MIN(pubblicato_il) piuVecchio,
+                            MAX(pubblicato_il) piuRecente
+                       FROM ' . t('raw_items') . " WHERE stato = 'nuovo'")->fetch();
+
 $ultimo = $pdo->query('SELECT job, finito_il, esito, item_elaborati, messaggio
                          FROM ' . t('run_log') . '
                         ORDER BY id DESC LIMIT 5')->fetchAll();
 
 echo render('admin-bozze', [
     'bozze' => $bozze, 'pubblicate' => $pubblicate, 'ultimo' => $ultimo,
+    'coda' => $coda,
     'messaggio' => $messaggio ?? messaggioDiPassaggio(), 'totale' => $totale, 'pagina' => $pagina,
     'pagine' => $pagine, 'cerca' => $cerca, 'anno' => $anno, 'cat' => $cat,
     'ordine' => $ordine, 'anni' => $anni, 'categorie' => $categorie,
