@@ -43,6 +43,9 @@ const ICONE = [
     'raccogli'  => '<path d="M8 1.8v8.4"/><path d="M4.8 7 8 10.2 11.2 7"/>'
                  . '<path d="M2.5 11.5v1.7a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-1.7"/>',
     'diagnosi'  => '<path d="M1.8 8h2.9l1.4 3.8 2.2-7.6 1.5 3.8h4.4"/>',
+    // Tre colonne: la spesa si guarda per capire com'è cambiata.
+    'costi'     => '<path d="M2.5 13.5h11"/><path d="M4.2 13.5v-4"/>'
+                 . '<path d="M8 13.5v-8"/><path d="M11.8 13.5v-5.5"/>',
 ];
 
 /**

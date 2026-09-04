@@ -20,6 +20,7 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
       <a class="bottone bottone-tenue" href="<?= u('admin/richieste') ?>">richieste</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/raccolte') ?>">raccolte</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/foto') ?>"><?= icona('immagine') ?>foto</a>
+      <a class="bottone bottone-tenue" href="<?= u('admin/costi') ?>"><?= icona('costi') ?>costi</a>
       <?php /* Ingest ed enrich in fila, che è l'unico ordine sensato:
                il primo riempie la coda e non costa niente, il secondo la
                svuota scrivendo gli articoli. La conferma c'è perché

@@ -391,6 +391,29 @@ smette di crescere può benissimo essere un programma che sta pensando.
 Senza JavaScript resta il messaggio e basta: si perde l'avanzamento, non
 la funzione.
 
+### I costi, in `admin/costi`
+
+Quanto costa il sito e dove. Oggi, ieri, sette giorni, trenta, il mese
+in corso e da sempre; poi il grafico dei trenta giorni, la ripartizione
+per lavoro e i dieci giri più cari mai fatti.
+
+**È una stima, non una fattura.** Anthropic non espone la spesa reale,
+quindi si moltiplicano i token contati da noi in `df_run_log` per le
+tariffe di `costoEuro()` — cinque dollari per milione in ingresso,
+venticinque in uscita, per 0,92. Se un giorno le tariffe cambiano, o si
+cambia modello, quella riga va aggiornata: è l'unico punto dove sono
+scritte.
+
+Il rapporto uno a cinque fra ingresso e uscita spiega da solo la forma
+della spesa: leggere diciassette feed non costa niente, scrivere un
+articolo sì. Ed è il motivo per cui `enrich` archivia gli eventi sotto
+soglia **senza** spendere una chiamata.
+
+Il riepilogo per posta dice quanto si è speso nelle ultime
+ventiquattr'ore e lo dice bene, ma ventiquattr'ore non bastano a
+rispondere a «sto spendendo più del mese scorso?», che è l'unica domanda
+per cui uno guarda i costi.
+
 ### Le raccolte fotografiche: dal pannello
 
 Nel catalogo fotografie ci sono tre pulsanti — Commons, Openverse, e la

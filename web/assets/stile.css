@@ -1834,3 +1834,58 @@ figure:has(> img.img-mancante) { display: none; }
   color: var(--testo-tenue);
 }
 .avanzamento:empty { display: none; }
+
+/* ---------------------------------- la barra dei pulsanti del pannello */
+
+/* Una riga sua, larga quanto la pagina. Prima stava accanto al titolo e
+   andava a capo da sé: i pulsanti si spezzavano su due righe con un
+   buco a destra, e quale gruppo finisse sopra dipendeva da quanti erano.
+   Occupando tutta la larghezza il problema non si pone più. */
+.pannello-testa .azioni { flex-basis: 100%; width: 100%; margin-top: 0; }
+.pannello-testa .azioni > *,
+.pannello-testa .azioni > form { flex: 1 1 auto; }
+.pannello-testa .azioni > form > .bottone { width: 100%; justify-content: center; }
+.pannello-testa .azioni > .bottone { justify-content: center; }
+/* Il "+" resta quadrato: allargarlo lo farebbe sembrare un altro
+   pulsante, e invece è l'unico che non ha una parola sopra. */
+.pannello-testa .azioni > .bottone-solo-icona { flex: 0 0 auto; }
+
+/* --------------------------------------------------- i costi dell'API */
+
+.costi-riquadri {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: .625rem;
+  margin: 0 0 2.5rem;
+}
+.costo-riquadro {
+  display: grid;
+  gap: .2rem;
+  padding: .8rem .9rem;
+  border: 1px solid var(--bordo);
+  border-radius: 3px;
+}
+.costo-forte { border-color: var(--accento-scuro); }
+.costo-nome  { font-size: .75rem; color: var(--testo-tenue); text-transform: lowercase; }
+.costo-cifra { font-family: var(--display); font-size: 1.6rem; line-height: 1.1; }
+.costo-forte .costo-cifra { color: var(--accento); }
+.costo-sotto { font-size: .7rem; color: var(--testo-tenue); }
+
+.costi-giorni { display: grid; gap: .2rem; margin: 0 0 2.5rem; }
+.costo-giorno {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr 4.5rem;
+  align-items: center;
+  gap: .6rem;
+  font-size: .78rem;
+  color: var(--testo-tenue);
+}
+.costo-barra {
+  display: block;
+  height: .7rem;
+  background: rgba(255,255,255,.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.costo-barra i { display: block; height: 100%; background: var(--accento-scuro); }
+.costo-valore { text-align: right; }

@@ -129,6 +129,67 @@ if (preg_match('#^anteprima/(\d+)$#', $azione, $m)) {
     exit;
 }
 
+// -------------------------------------------------------------- costi
+// Quanto costa il sito, e dove. Il riepilogo per posta dice quanto si è
+// speso nelle ultime ventiquattr'ore e lo dice bene, ma ventiquattr'ore
+// non bastano a rispondere a "sto spendendo più del mese scorso?" — che
+// è l'unica domanda per cui uno guarda i costi.
+if ($azione === 'costi') {
+    // Le tariffe sono per milione di token e il conto è aritmetica, non
+    // una fattura: Anthropic non espone la spesa reale via API, quindi
+    // questa è la nostra stima a partire dai token che abbiamo contato
+    // noi. Lo scarto col conto vero è nell'ordine dei centesimi, ma
+    // sapere che è una stima cambia come la si legge.
+    $periodi = [
+        'oggi'          => 'DATE(iniziato_il) = CURDATE()',
+        'ieri'          => 'DATE(iniziato_il) = CURDATE() - INTERVAL 1 DAY',
+        'ultimi 7 gg'   => 'iniziato_il >= CURDATE() - INTERVAL 6 DAY',
+        'ultimi 30 gg'  => 'iniziato_il >= CURDATE() - INTERVAL 29 DAY',
+        'questo mese'   => 'iniziato_il >= DATE_FORMAT(CURDATE(), \'%Y-%m-01\')',
+        'sempre'        => '1=1',
+    ];
+    $totali = [];
+    foreach ($periodi as $nome => $dove) {
+        $r = $pdo->query('SELECT COALESCE(SUM(token_in),0) ti,
+                                 COALESCE(SUM(token_out),0) tou,
+                                 COUNT(*) giri
+                            FROM ' . t('run_log') . " WHERE $dove")->fetch();
+        $totali[$nome] = [
+            'in' => (int)$r['ti'], 'out' => (int)$r['tou'], 'giri' => (int)$r['giri'],
+            'euro' => costoEuro((int)$r['ti'], (int)$r['tou']),
+        ];
+    }
+
+    $giorni = $pdo->query('SELECT DATE(iniziato_il) g,
+                                  COALESCE(SUM(token_in),0) ti,
+                                  COALESCE(SUM(token_out),0) tou,
+                                  COUNT(*) giri
+                             FROM ' . t('run_log') . '
+                            WHERE iniziato_il >= CURDATE() - INTERVAL 29 DAY
+                            GROUP BY g ORDER BY g')->fetchAll();
+
+    $perJob = $pdo->query('SELECT job,
+                                  COALESCE(SUM(token_in),0) ti,
+                                  COALESCE(SUM(token_out),0) tou,
+                                  COUNT(*) giri
+                             FROM ' . t('run_log') . '
+                            WHERE iniziato_il >= CURDATE() - INTERVAL 29 DAY
+                            GROUP BY job ORDER BY (SUM(token_in) + SUM(token_out)*5) DESC')
+                  ->fetchAll();
+
+    $cari = $pdo->query('SELECT id, job, iniziato_il, esito, item_elaborati,
+                                token_in, token_out
+                           FROM ' . t('run_log') . '
+                          WHERE token_in + token_out > 0
+                          ORDER BY (token_in + token_out * 5) DESC LIMIT 10')->fetchAll();
+
+    echo render('admin-costi', [
+        'totali' => $totali, 'giorni' => $giorni, 'perJob' => $perJob, 'cari' => $cari,
+        'modello' => cfg('modello') ?: 'claude-opus-5',
+    ], ['titolo' => 'Costi — pannello']);
+    exit;
+}
+
 // ---------------------------------------------------------- richieste
 if ($azione === 'richieste') {
     $msg = null;
