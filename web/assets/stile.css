@@ -801,6 +801,7 @@ body { overflow-x: clip; }
 .altro { display: flex; justify-content: center; margin: 2.5rem 0 1rem; }
 .bottone-altro {
   padding: .8rem 2rem;
+  line-height: 1.25;
   border: 1px solid var(--bordo);
   border-radius: 2px;
   color: var(--testo-tenue);
@@ -1446,6 +1447,13 @@ figure:has(> img.img-mancante) { display: none; }
   text-decoration: none;
   font-family: inherit;
   font-size: .875rem;
+  /* Dichiarata, o i pulsanti non sono alti uguale.
+     Un <a> eredita l'interlinea del corpo, 1.6; un <button> no — i
+     controlli di modulo partono da "normal" e nessun browser gliela
+     passa. Misurati: 46,77px il collegamento, 41,38 il pulsante. Il
+     testo dentro è identico, la differenza è tutta lì, e si vede solo
+     quando i due tipi stanno in fila. */
+  line-height: 1.25;
   text-transform: lowercase;
   cursor: pointer;
   transition: background .2s, border-color .2s;
