@@ -51,6 +51,47 @@ $maxEventi = (int)(cfg('max_eventi_per_giro') ?? 8);
 $scritti = $sottoSoglia = $falliti = 0;
 $giro = 0;
 
+// Quello che il sito ha già scritto, per non riscriverlo.
+//
+// enrich marca "elaborato" ogni item che consuma, e finché la notizia
+// arriva una volta sola basta. Ma la stessa notizia torna: da un'altra
+// testata, con un altro indirizzo, o ripescata da un recupero
+// d'archivio. Allora diventa un item nuovo, forma un evento nuovo e si
+// ritrova riscritta da zero — con l'aggravante che la chiamata l'abbiamo
+// pagata. È successo: otto bozze, tre delle quali erano già online.
+//
+// Due liste. Gli indirizzi delle fonti già usate fermano il caso esatto
+// prima di spendere. I titoli già pubblicati fermano il caso somigliante
+// dopo la scrittura: lì la chiamata è persa, ma la bozza doppia no.
+$urlUsati = $titoliUsati = [];
+foreach ($pdo->query('SELECT titolo_it, fonte_url FROM ' . t('articles'))->fetchAll() as $r) {
+    if ($r['fonte_url']) { $urlUsati[sha1((string)$r['fonte_url'])] = true; }
+    $t = normalizzaTitolo((string)$r['titolo_it']);
+    if ($t !== '') { $titoliUsati[$t] = true; }
+}
+elog(sprintf('  %d articoli già scritti, non li rifaccio', count($titoliUsati)));
+
+/**
+ * Un titolo che dice la stessa cosa di uno già pubblicato.
+ *
+ * Non l'uguaglianza: due testate raccontano la stessa notizia con parole
+ * diverse, e la traduzione in italiano le allontana ancora. Il
+ * confronto è sulla somiglianza, e la soglia sta alta — meglio una
+ * bozza doppia da scartare a mano che una notizia vera buttata via
+ * perché somigliava a un'altra.
+ */
+function giaScritto(string $titolo, array $titoliUsati): bool
+{
+    $t = normalizzaTitolo($titolo);
+    if ($t === '') { return false; }
+    if (isset($titoliUsati[$t])) { return true; }
+    foreach (array_keys($titoliUsati) as $vecchio) {
+        similar_text($t, $vecchio, $quanto);
+        if ($quanto >= 82.0) { return true; }
+    }
+    return false;
+}
+
 $scarta = $pdo->prepare('UPDATE ' . t('raw_items') . ' SET stato = ?, nota = ? WHERE id = ?');
 $segna  = $pdo->prepare('UPDATE ' . t('raw_items') . ' SET stato = \'elaborato\' WHERE id = ?');
 $salva  = $pdo->prepare(
@@ -174,6 +215,17 @@ foreach ($eventi as $e) {
             mb_substr((string)$it['estratto'], 0, 900));
     }
 
+    // Prima di spendere: se la fonte principale è già stata usata per un
+    // articolo, questa notizia l'abbiamo già raccontata.
+    if (isset($urlUsati[sha1((string)$princ['url_canonico'])])) {
+        foreach ($ids as $id) {
+            $scarta->execute(['duplicato',
+                'già scritto da ' . mb_substr((string)$princ['url_canonico'], 0, 200), $id]);
+        }
+        elog('   già scritto (stessa fonte) — ' . mb_substr($e['descrizione'], 0, 50));
+        continue;
+    }
+
     $prompt = "Evento: {$e['descrizione']}\n"
             . "Categoria: {$e['categoria']}\n"
             . "Attendibilità: {$e['attendibilita']}\n\n"
@@ -189,6 +241,18 @@ foreach ($eventi as $e) {
     }
 
     $d = $a['dati'];
+
+    // Dopo la scrittura, perché il titolo in italiano prima non c'era. La
+    // chiamata a questo punto è spesa, ma una bozza doppia costa più di
+    // una chiamata: costa il tempo di chi la rilegge.
+    if (giaScritto((string)$d['titolo_it'], $titoliUsati)) {
+        foreach ($ids as $id) {
+            $scarta->execute(['duplicato',
+                'già scritto: ' . mb_substr((string)$d['titolo_it'], 0, 200), $id]);
+        }
+        elog('   già scritto (titolo simile) — ' . mb_substr((string)$d['titolo_it'], 0, 50));
+        continue;
+    }
 
     // La testata da accreditare viene dal tag <source> del feed (colonna
     // editore); il nome del feed è l'ultima spiaggia.
@@ -212,6 +276,10 @@ foreach ($eventi as $e) {
     ]);
 
     foreach ($ids as $id) { $segna->execute([$id]); }
+    // Il giro successivo non deve riscriverlo: le liste vanno tenute
+    // aggiornate mentre si lavora, non solo caricate all'inizio.
+    $urlUsati[sha1($fonteUrl)] = true;
+    $titoliUsati[normalizzaTitolo((string)$d['titolo_it'])] = true;
     $scritti++; $scrittiGiro++;
     elog(sprintf('   ✓ %s', mb_substr($d['titolo_it'], 0, 70)));
 }
