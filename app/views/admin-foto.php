@@ -39,16 +39,16 @@ $query = (string)parse_url($link(), PHP_URL_QUERY);
     <?php /* Le raccolte partono staccate dalla pagina: durano troppo
              perché il browser le aspetti. Il resoconto arriva nel log
              qui sotto, che si aggiorna ricaricando. */ ?>
-    <?php foreach ([['--raccogli', 'raccogli', 'Wikimedia Commons',
+    <?php foreach ([['raccogli', 'raccogli', 'wikimedia commons',
                      'una ventina di secondi'],
-                    ['--raccogli-altre', 'raccogli', 'Openverse (Flickr)',
+                    ['raccogli-altre', 'raccogli', 'openverse (flickr)',
                      'cinque minuti — non più di una volta al giorno'],
-                    ['--diagnosi', 'diagnosi', 'prova Openverse',
+                    ['diagnosi', 'diagnosi', 'prova openverse',
                      'tre richieste, per sapere se risponde']]
                   as [$modo, $ico, $et, $quanto]): ?>
       <form method="post">
         <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
-        <input type="hidden" name="raccolta" value="<?= e($modo) ?>">
+        <input type="hidden" name="lavoro" value="<?= e($modo) ?>">
         <input type="hidden" name="torna" value="<?= e($query ? '?' . $query : '') ?>">
         <button type="submit" class="bottone bottone-tenue" title="<?= e($quanto) ?>">
           <?= icona($ico) ?> <?= e($et) ?>

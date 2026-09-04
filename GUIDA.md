@@ -366,6 +366,21 @@ Le richieste girano ogni mezz'ora perché a vuoto non costano niente: lo
 script prende un lock, non trova nulla in attesa ed esce. È la differenza
 fra ordinare un articolo e averlo entro mezz'ora, o il giorno dopo.
 
+### I lavori che si lanciano dal pannello
+
+Nella pagina delle bozze, **cerca notizie** fa ingest ed enrich in fila:
+il primo riempie la coda interrogando i diciassette feed e non costa
+niente, il secondo la svuota scrivendo le bozze. In fila con `&&`, così
+se l'ingest fallisce l'enrich non parte — un enrich su una coda mai
+riempita spende per niente. È l'unico pulsante del pannello che costa
+soldi, e per questo chiede conferma: il cron lo fa già da sé ogni quattro
+ore, e cliccarlo per abitudine è pagare due volte. Il risultato compare
+in «ultimi giri», in fondo alla stessa pagina.
+
+I lavori sono un elenco chiuso in `lavoriDisponibili()`, e il pulsante
+manda una chiave, non un comando: quello che arriva da un modulo lo
+scrive il browser, e un browser può essere chiunque.
+
 ### Le raccolte fotografiche: dal pannello
 
 Nel catalogo fotografie ci sono tre pulsanti — Commons, Openverse, e la

@@ -479,3 +479,113 @@ function inviaMail(string $a, string $oggetto, string $testo, string $html): boo
 
     return @mail($a, mb_encode_mimeheader($oggetto, 'UTF-8'), $corpo, $intestazioni);
 }
+
+// ------------------------------------ i lavori lanciati dal pannello
+
+/**
+ * Il percorso del PHP da riga di comando.
+ *
+ * Non è quello che sta girando: il web gira sotto un binario diverso,
+ * con un tempo massimo da pagina web. Su cPanel il CLI sta in un posto
+ * preciso, che si cambia da config.php se cambia versione.
+ */
+function phpCli(): string
+{
+    return (string)(cfg('php_cli') ?: '/opt/cpanel/ea-php83/root/usr/bin/php');
+}
+
+/**
+ * I lavori che si possono far partire da un pulsante.
+ *
+ * Un elenco chiuso, e non un comando che arriva dal modulo: quello che
+ * arriva da un modulo lo scrive il browser, e un browser può essere
+ * chiunque. Qui il pulsante manda una chiave, e la chiave o è in questa
+ * tabella o non se ne fa niente.
+ */
+function lavoriDisponibili(): array
+{
+    return [
+        'raccogli'       => ['passi' => [['copertine.php', '--raccogli']],
+                             'log' => 'copertine', 'quanto' => 'una ventina di secondi'],
+        'raccogli-altre' => ['passi' => [['copertine.php', '--raccogli-altre']],
+                             'log' => 'copertine', 'quanto' => 'cinque minuti circa'],
+        'diagnosi'       => ['passi' => [['copertine.php', '--diagnosi']],
+                             'log' => 'copertine', 'quanto' => 'un minuto'],
+        // I due mestieri in fila, perché uno senza l'altro non serve:
+        // ingest riempie la coda e non spende niente, enrich la svuota
+        // scrivendo gli articoli. Lanciare solo il primo lascia la roba
+        // in coda ad aspettare il cron delle quattro ore.
+        'novita'         => ['passi' => [['ingest.php', ''], ['enrich.php', '']],
+                             'log' => 'ingest', 'quanto' => 'qualche minuto, e costa'],
+    ];
+}
+
+/**
+ * Fa partire un lavoro e torna subito.
+ *
+ * I cron durano da venti secondi a qualche minuto: troppo per una
+ * pagina web, che verrebbe interrotta a metà lasciando il lucchetto
+ * chiuso. Quindi si lancia staccato — la pagina risponde subito e il
+ * lavoro racconta tutto nel suo log.
+ *
+ * L'ambiente va ripulito, o il programma parte azzoppato. Una pagina su
+ * cPanel gira con PHPRC impostata: dice a PHP quale configurazione
+ * leggere, e punta a quella del sito. Il programma lanciato da qui la
+ * eredita, legge quella invece della propria e si ritrova senza le
+ * estensioni che dalla riga di comando avrebbe — mbstring per prima,
+ * che serve alla nona riga di questo file. Lo stesso comando da un cron
+ * non eredita niente e funziona: era tutta lì la differenza, e mi è
+ * costata due ore.
+ */
+function lanciaLavoro(string $chiave): array
+{
+    $lavoro = lavoriDisponibili()[$chiave] ?? null;
+    if ($lavoro === null) { return ['ko', 'Lavoro sconosciuto.']; }
+
+    $pezzi = [];
+    foreach ($lavoro['passi'] as [$script, $argomenti]) {
+        $pezzi[] = escapeshellarg(phpCli()) . ' -q '
+                 . escapeshellarg(dirname(__DIR__) . '/cron/' . $script)
+                 . ($argomenti !== '' ? ' ' . $argomenti : '');
+    }
+    // In fila con &&: se il primo fallisce il secondo non parte, che è
+    // quello che vogliamo — un enrich su una coda mai riempita spende
+    // per niente.
+    $catena = implode(' && ', $pezzi);
+    $comando = '/usr/bin/env -u PHPRC -u PHP_INI_SCAN_DIR /bin/sh -c '
+             . escapeshellarg($catena);
+
+    $vietate = array_map('trim', explode(',', (string)ini_get('disable_functions')));
+    if (!function_exists('exec') || in_array('exec', $vietate, true)) {
+        return ['ko', 'Questo hosting non permette di lanciare programmi dalle pagine. '
+                    . 'Il comando da mettere in un processo cron è: ' . $catena];
+    }
+
+    // Una riga scritta da qui, prima di lanciare. Se nel resoconto
+    // compare questa e nient'altro, il programma non è mai partito; se
+    // non compare nemmeno questa, non è stato il pulsante a fallire.
+    // Senza, un avvio andato a vuoto è indistinguibile da un pulsante
+    // che non fa niente — ed è successo.
+    $log = dirname(__DIR__) . '/logs/' . $lavoro['log'] . '.log';
+    @file_put_contents($log, date('Y-m-d H:i:s') . '  Avvio ' . $chiave
+                           . " dal pannello.\n", FILE_APPEND | LOCK_EX);
+
+    // L'uscita normale va nel nulla — i programmi scrivono già nel log
+    // per conto loro — ma gli errori no: quelli finiscono nel log e si
+    // leggono dal pannello. Buttarli via significa che un errore fatale
+    // si presenta come silenzio, ed è la cosa più difficile da
+    // diagnosticare che ci sia.
+    @exec($comando . ' > /dev/null 2>> ' . escapeshellarg($log) . ' &');
+
+    return ['ok', 'Avviato: ci mette ' . $lavoro['quanto']
+                . '. Il resoconto arriva nel log, aggiorna la pagina per vederlo.'];
+}
+
+/** Le ultime righe di un log, per leggerlo dal pannello. */
+function codaLog(string $quale = 'copertine', int $righe = 40): string
+{
+    $f = dirname(__DIR__) . '/logs/' . basename($quale) . '.log';
+    if (!is_file($f)) { return ''; }
+    $tutte = @file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+    return implode("\n", array_slice($tutte, -$righe));
+}

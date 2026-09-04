@@ -20,6 +20,20 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
       <a class="bottone bottone-tenue" href="<?= u('admin/richieste') ?>">richieste</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/raccolte') ?>">raccolte</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/foto') ?>"><?= icona('immagine') ?>foto</a>
+      <?php /* Ingest ed enrich in fila, che è l'unico ordine sensato:
+               il primo riempie la coda e non costa niente, il secondo la
+               svuota scrivendo gli articoli. La conferma c'è perché
+               questo è l'unico pulsante del pannello che spende soldi —
+               qualche centesimo, ma il cron lo fa già da sé ogni quattro
+               ore, e cliccarlo per abitudine sarebbe pagare due volte. */ ?>
+      <form method="post" action="<?= u('admin/azione') ?>" style="display:inline"
+            onsubmit="return confirm('Cerca notizie nuove e scrive le bozze. Costa qualche centesimo di API. Procedo?')">
+        <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
+        <input type="hidden" name="che" value="lavoro">
+        <input type="hidden" name="quale" value="novita">
+        <button class="bottone bottone-tenue" type="submit"
+                title="ingest e poi enrich: cerca notizie e scrive le bozze"><?= icona('raccogli') ?>cerca notizie</button>
+      </form>
       <form method="post" action="<?= u('admin/azione') ?>" style="display:inline">
         <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
         <input type="hidden" name="che" value="svuota">

@@ -270,6 +270,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {
             cacheSvuota();
             $messaggio = ['ok', 'Copertina rifiutata: quella foto non verrà più scelta, '
                               . 'e al prossimo giro l\'articolo ne prende un\'altra.'];
+        } elseif ($che === 'lavoro') {
+            $messaggio = lanciaLavoro((string)($_POST['quale'] ?? ''));
         } elseif ($che === 'svuota') {
             $n = cacheSvuota();
             $messaggio = ['ok', "Cache svuotata ($n pagine)."];
@@ -300,8 +302,8 @@ if ($azione === 'foto') {
     $msg = messaggioDiPassaggio();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrfValido($_POST['csrf'] ?? null)) {
-        if (!empty($_POST['raccolta'])) {
-            $_SESSION['messaggio'] = lanciaRaccolta((string)$_POST['raccolta']);
+        if (!empty($_POST['lavoro'])) {
+            $_SESSION['messaggio'] = lanciaLavoro((string)$_POST['lavoro']);
         } elseif (!empty($_POST['carica'])) {
             try {
                 $_SESSION['messaggio'] = salvaFotoCaricata(
@@ -356,7 +358,7 @@ if ($azione === 'foto') {
     echo render('admin-foto', [
         'foto' => $foto, 'conti' => $conti, 'soggetti' => $soggetti,
         'stato' => $stato, 'sog' => $sog, 'cerca' => $cerca, 'messaggio' => $msg,
-        'log' => codaLog(),
+        'log' => codaLog('copertine'),
     ], ['titolo' => 'Catalogo fotografie — pannello']);
     exit;
 }
