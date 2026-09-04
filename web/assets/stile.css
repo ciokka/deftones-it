@@ -1842,6 +1842,12 @@ figure:has(> img.img-mancante) { display: none; }
    buco a destra, e quale gruppo finisse sopra dipendeva da quanti erano.
    Occupando tutta la larghezza il problema non si pone più. */
 .pannello-testa .azioni { flex-basis: 100%; width: 100%; margin-top: 0; }
+
+/* Le tre di servizio: in alto a destra, sopra il titolo, e larghe quanto
+   basta. Non lavorano sulle bozze e stare in fila con gli strumenti che
+   invece ci lavorano le faceva sembrare della stessa famiglia. */
+.azioni-servizio { justify-content: flex-end; margin: 0 0 1.25rem; }
+.azioni-servizio > * { flex: 0 0 auto; }
 .pannello-testa .azioni > *,
 .pannello-testa .azioni > form { flex: 1 1 auto; }
 .pannello-testa .azioni > form > .bottone { width: 100%; justify-content: center; }

@@ -12,6 +12,20 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
 ?>
 <div class="pannello">
 
+  <?php /* Le tre di servizio stanno sopra, in un angolo: non riguardano
+           le bozze e non c'è ragione che stiano in mezzo agli strumenti
+           che invece ci lavorano. Svuotare la cache, andare a vedere il
+           sito e uscire si fanno una volta, non venti. */ ?>
+  <div class="azioni azioni-servizio">
+    <form method="post" action="<?= u('admin/azione') ?>">
+      <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
+      <input type="hidden" name="che" value="svuota">
+      <button class="bottone bottone-tenue" type="submit"><?= icona('cache') ?>cache</button>
+    </form>
+    <a class="bottone bottone-tenue" href="<?= u('/') ?>"><?= icona('fuori') ?>il sito</a>
+    <a class="bottone bottone-tenue" href="<?= u('admin/esci') ?>"><?= icona('esci') ?>esci</a>
+  </div>
+
   <div class="pannello-testa">
     <h1>bozze <span class="conta"><?= (int)$totale ?></span></h1>
     <div class="azioni">
@@ -35,13 +49,6 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
         <button class="bottone bottone-tenue" type="submit"
                 title="ingest e poi enrich: cerca notizie e scrive le bozze"><?= icona('raccogli') ?>cerca notizie</button>
       </form>
-      <form method="post" action="<?= u('admin/azione') ?>" style="display:inline">
-        <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
-        <input type="hidden" name="che" value="svuota">
-        <button class="bottone bottone-tenue" type="submit"><?= icona('cache') ?>cache</button>
-      </form>
-      <a class="bottone bottone-tenue" href="<?= u('/') ?>"><?= icona('fuori') ?>il sito</a>
-      <a class="bottone bottone-tenue" href="<?= u('admin/esci') ?>"><?= icona('esci') ?>esci</a>
     </div>
   </div>
 
