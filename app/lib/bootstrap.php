@@ -521,6 +521,13 @@ function lavoriDisponibili(): array
         'novita'         => ['passi' => [['ingest.php', ''], ['enrich.php', '']],
                              'log' => ['ingest', 'enrich'],
                              'quanto' => 'qualche minuto, e costa'],
+        // Solo la scoperta, non la scrittura: apre duecento pagine per
+        // volta e riempie la coda, senza chiamare l'IA e senza spendere.
+        // Cosa poi diventi un articolo lo decide enrich, dove la soglia
+        // si sceglie a mano — e per quattro anni di arretrato va alzata.
+        'archivio'       => ['passi' => [['recupera-archivio.php', '--limite=200']],
+                             'log' => ['archivio'],
+                             'quanto' => 'tre o quattro minuti, e non costa niente'],
     ];
 }
 

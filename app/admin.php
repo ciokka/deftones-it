@@ -76,7 +76,7 @@ if ($azione === 'coda') {
     // Elenco chiuso: i nomi arrivano dalla pagina, e una pagina può
     // essere manomessa. Senza questo, "log=../../config" sarebbe una
     // richiesta legittima.
-    $ammessi = ['ingest', 'enrich', 'copertine', 'dischi'];
+    $ammessi = ['ingest', 'enrich', 'copertine', 'dischi', 'archivio', 'storico'];
     $quali = array_values(array_filter(
         explode(',', (string)($_GET['log'] ?? '')),
         fn($q) => in_array($q, $ammessi, true)));

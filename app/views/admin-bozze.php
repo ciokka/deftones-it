@@ -35,6 +35,17 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
       <a class="bottone bottone-tenue" href="<?= u('admin/raccolte') ?>">raccolte</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/foto') ?>"><?= icona('immagine') ?>foto</a>
       <a class="bottone bottone-tenue" href="<?= u('admin/costi') ?>"><?= icona('costi') ?>costi</a>
+      <?php /* Il recupero dell'archivio non chiama l'IA e non spende:
+               apre duecento pagine per volta e riempie la coda. Perciò
+               niente conferma — quella la chiede "cerca notizie", che
+               invece scrive. */ ?>
+      <form method="post" action="<?= u('admin/azione') ?>">
+        <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
+        <input type="hidden" name="che" value="lavoro">
+        <input type="hidden" name="quale" value="archivio">
+        <button class="bottone bottone-tenue" type="submit"
+                title="cerca sulla Wayback Machine gli articoli del 2021-2025 e riempie la coda"><?= icona('raccogli') ?>archivio</button>
+      </form>
       <?php /* Ingest ed enrich in fila, che è l'unico ordine sensato:
                il primo riempie la coda e non costa niente, il secondo la
                svuota scrivendo gli articoli. La conferma c'è perché

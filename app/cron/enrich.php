@@ -7,6 +7,7 @@
  *   php enrich.php              giro completo
  *   php enrich.php --prova      solo il raggruppamento, non scrive nulla
  *                               e non tocca il database (una chiamata sola)
+ *   php enrich.php --soglia=65  alza l'asticella per questo giro soltanto
  */
 declare(strict_types=1);
 
@@ -36,6 +37,16 @@ $tokIn = $tokOut = 0;
 // ---------------------------------------------- preparazione, una volta sola
 $maxItem = (int)(cfg('max_item_per_giro') ?? 60);
 $soglia = (int)(cfg('soglia_rilevanza') ?? 40);
+// Alzabile per un giro solo. Serve ai recuperi d'archivio: quattro anni
+// di arretrato passati con la soglia di tutti i giorni riempirebbero il
+// sito di notizie che nel 2023 valevano una riga e oggi zero — e
+// costerebbero una chiamata ciascuna. Cambiare config.php per due giri e
+// poi rimetterlo com'era è il genere di cosa che ci si dimentica.
+foreach ($argv ?? [] as $x) {
+    if (preg_match('/^--soglia=(\d{1,3})$/', $x, $m)) {
+        $soglia = max(0, min(100, (int)$m[1]));
+    }
+}
 $maxEventi = (int)(cfg('max_eventi_per_giro') ?? 8);
 $scritti = $sottoSoglia = $falliti = 0;
 $giro = 0;

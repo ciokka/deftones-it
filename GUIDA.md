@@ -498,6 +498,39 @@ che cambiano due volte all'anno.
 
 ## 6. Gli script
 
+### recupera-archivio.php — il buco fra il 2021 e il 2025
+Il sito ha l'archivio di WordPress fino al 2021 e le notizie nuove da
+settembre 2025. In mezzo, niente.
+
+`recupera-storico.php` non serve a colmarlo, e non per un difetto suo:
+chiede a Google News un mese alla volta, e **Google News quell'archivio
+non ce l'ha**. Misurato — «Deftones» senza date restituisce cento
+risultati, «Deftones after:2021-03-01 before:2021-04-01» ne restituisce
+zero. Resta utile per l'ultimo anno, non oltre.
+
+La Wayback Machine invece l'archivio ce l'ha, e ha un'API pubblica che
+elenca gli indirizzi salvati di un dominio. La si usa **solo per
+scoprirli**: la data e il titolo si prendono aprendo la pagina vera, che
+quasi sempre è ancora online e porta `og:title`, `og:description` e
+`article:published_time`. La data di cattura non serve — un articolo del
+2010 può essere stato archiviato nel 2023, e succede in continuazione.
+
+Dieci testate, quelle che l'ingest già segue. Il filtro è sullo slug:
+entrano gli articoli che hanno «deftones» nell'indirizzo, cioè quelli
+che gli sono stati dedicati. Su blabbermouth sono 770 indirizzi, su
+theprp 2536, su metalinjection 1503 — in tutto qualche migliaio, e
+vanno aperti uno per uno. Perciò `--limite`, che di default si ferma a
+duecento: ogni giro riprende da dove aveva lasciato, perché gli
+indirizzi già visti restano segnati anche quando vengono scartati.
+
+Non chiama l'IA e **non costa niente**: riempie la coda. Cosa poi
+diventi un articolo lo decide `enrich`.
+
+- `--prova` conta e basta
+- `--da=2021-01 --a=2025-08` il periodo (sono anche i valori predefiniti)
+- `--limite=300` quante pagine aprire in questo giro
+- `--solo=blabbermouth.net` una testata sola
+
 ### ingest.php — raccoglie
 Interroga 17 feed. Per ogni articolo: già visto? contiene una parola
 chiave? è un doppione di un titolo già arrivato? è più vecchio di 14
@@ -518,6 +551,14 @@ che scrive l'articolo in italiano.
 
 - `--prova` solo il raggruppamento, non scrive nulla (~6 centesimi)
 - `--tutto` ripete il ciclo finché la coda è vuota — per le code grosse
+- `--soglia=65` alza l'asticella per questo giro soltanto
+
+La soglia è la difesa contro la spesa, ed è per questo che si può
+cambiare da riga di comando. Quattro anni di arretrato passati con la
+soglia di tutti i giorni riempirebbero il sito di notizie che nel 2023
+valevano una riga e oggi zero — e costerebbero una chiamata ciascuna.
+Modificare `config.php` per due giri e poi rimetterlo com'era è
+esattamente il genere di cosa che ci si dimentica.
 
 ### riepilogo.php — avvisa
 Manda una mail con le bozze nuove, i guasti, quanto resta da rivedere e
