@@ -45,7 +45,7 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
   </div>
 
   <?php if ($messaggio): ?>
-    <div class="<?= $messaggio[0] === 'ok' ? 'avvisoOk' : 'avvisoKo' ?>"><?= e($messaggio[1]) ?></div>
+    <?= avviso($messaggio) ?>
   <?php endif ?>
 
   <!-- filtri -->

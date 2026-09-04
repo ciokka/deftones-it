@@ -381,6 +381,16 @@ I lavori sono un elenco chiuso in `lavoriDisponibili()`, e il pulsante
 manda una chiave, non un comando: quello che arriva da un modulo lo
 scrive il browser, e un browser può essere chiunque.
 
+**Il riquadro verde segue il lavoro riga per riga**, chiedendone
+l'avanzamento a `/admin/coda` ogni due secondi. Un lavoro può scrivere
+in più log — `novita` scrive in `ingest.log` e in `enrich.log` — e
+vengono letti tutti, ciascuno da dove si era arrivati. La catena chiude
+scrivendo `— fine —`, sempre, anche quando qualcosa si rompe per
+strada: è l'unico modo onesto di dire "ha finito", perché un log che
+smette di crescere può benissimo essere un programma che sta pensando.
+Senza JavaScript resta il messaggio e basta: si perde l'avanzamento, non
+la funzione.
+
 ### Le raccolte fotografiche: dal pannello
 
 Nel catalogo fotografie ci sono tre pulsanti — Commons, Openverse, e la

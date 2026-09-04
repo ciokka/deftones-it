@@ -14,7 +14,7 @@ $query = (string)parse_url($link(), PHP_URL_QUERY);
   <p><a class="torna" href="<?= u('admin/') ?>"><?= icona('indietro') ?> torna alle bozze</a></p>
 
   <?php if ($messaggio): ?>
-    <p class="avviso<?= $messaggio[0] === 'ok' ? 'Ok' : 'Ko' ?>"><?= e($messaggio[1]) ?></p>
+    <?= avviso($messaggio) ?>
   <?php endif ?>
 
   <div class="pannello-testa">

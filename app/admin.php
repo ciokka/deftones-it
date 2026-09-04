@@ -67,6 +67,55 @@ if (!loggato()) {
     exit;
 }
 
+// ------------------------------------------------------ avanzamento
+// Le righe che un lavoro sta scrivendo nel suo log, da un certo punto in
+// poi. Serve al riquadro verde: senza, un pulsante che avvia qualcosa di
+// lungo è indistinguibile da un pulsante che non fa niente — e per
+// saperlo bisognava aprire il gestore file.
+if ($azione === 'coda') {
+    // Elenco chiuso: i nomi arrivano dalla pagina, e una pagina può
+    // essere manomessa. Senza questo, "log=../../config" sarebbe una
+    // richiesta legittima.
+    $ammessi = ['ingest', 'enrich', 'copertine', 'dischi'];
+    $quali = array_values(array_filter(
+        explode(',', (string)($_GET['log'] ?? '')),
+        fn($q) => in_array($q, $ammessi, true)));
+    if (!$quali) {
+        http_response_code(400);
+        header('Content-Type: application/json; charset=utf-8');
+        exit('{"errore":"log sconosciuto"}');
+    }
+
+    // Un lavoro può scriverne in più d'uno — ingest ed enrich lo fanno —
+    // e ognuno va letto da dove si era arrivati.
+    $inizi = array_map('intval', explode(',', (string)($_GET['da'] ?? '')));
+    $testo = '';
+    $ora   = [];
+    foreach ($quali as $n => $quale) {
+        $file = dirname(__DIR__) . '/app/logs/' . $quale . '.log';
+        $da   = max(0, $inizi[$n] ?? 0);
+        $fine = is_file($file) ? (int)filesize($file) : 0;
+        $ora[] = $fine;
+        if ($fine <= $da) { continue; }
+        $fp = @fopen($file, 'rb');
+        if (!$fp) { continue; }
+        fseek($fp, $da);
+        $testo .= (string)fread($fp, min($fine - $da, 200_000));
+        fclose($fp);
+    }
+
+    // Il lavoro scrive "— fine —" quando la catena si chiude, riuscita o
+    // no. È l'unico modo onesto di dire "ha finito": un log che smette
+    // di crescere può benissimo essere un programma che sta pensando.
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'testo' => $testo,
+        'a'     => implode(',', $ora),
+        'fine'  => str_contains($testo, '— fine —'),
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
 // ---------------------------------------------------------- anteprima
 // Serve a leggere l'articolo intero prima di decidere: sull'archivio,
 // dove i pezzi sono lunghi migliaia di caratteri, il sommario non basta.

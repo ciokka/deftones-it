@@ -480,6 +480,53 @@ function misuraImmagine(string $percorso): ?array
 }
 
 /**
+ * Il riquadro dell'esito, e se il lavoro è ancora in corso lo segue.
+ *
+ * Un pulsante che avvia qualcosa di lungo, senza questo, è
+ * indistinguibile da un pulsante che non fa niente: la pagina risponde
+ * subito, il lavoro prosegue altrove, e per sapere a che punto è
+ * bisognava aprire il gestore file. Qui le righe arrivano da sole,
+ * mentre vengono scritte, e si fermano quando il lavoro scrive la sua
+ * riga finale.
+ *
+ * Senza JavaScript resta il messaggio e basta: si perde l'avanzamento,
+ * non la funzione.
+ */
+function avviso(?array $m): string
+{
+    if (!$m) { return ''; }
+
+    $classe = ($m[0] ?? 'ok') === 'ok' ? 'avvisoOk' : 'avvisoKo';
+    $html = '<div class="' . $classe . '"><p>' . e((string)($m[1] ?? '')) . '</p>';
+
+    $seguire = $m[2] ?? null;
+    if (!is_array($seguire)) { return $html . '</div>'; }
+
+    $html .= '<pre class="avanzamento" id="avanzamento" aria-live="polite"></pre></div>';
+    $url = u('admin/coda');
+    $html .= '<script>(function(){'
+        . 'var p=document.getElementById("avanzamento");'
+        . 'var da=' . json_encode((string)$seguire['da'])
+        . ',url=' . json_encode($url)
+        . ',log=' . json_encode((string)$seguire['log']) . ';'
+        // Un tetto ai giri: se qualcosa va storto là fuori, il browser
+        // non deve restare a chiedere per sempre.
+        . 'var restano=400;'
+        . 'function giro(){'
+        . 'if(restano--<0){p.textContent+="\n(smetto di seguire: troppo lungo)";return;}'
+        . 'fetch(url+"?log="+encodeURIComponent(log)+"&da="+encodeURIComponent(da),'
+        . '{credentials:"same-origin"})'
+        . '.then(function(r){return r.json()})'
+        . '.then(function(d){'
+        . 'if(d.testo){p.textContent+=d.testo;p.scrollTop=p.scrollHeight;}'
+        . 'da=d.a;'
+        . 'if(!d.fine){setTimeout(giro,2000);}'
+        . '}).catch(function(){setTimeout(giro,5000);});'
+        . '}giro();})();</script>';
+    return $html;
+}
+
+/**
  * Cosa scrivere sotto la miniatura di una fotografia.
  *
  * La data quando c'è: sapere che uno scatto è del 2009 evita di metterlo

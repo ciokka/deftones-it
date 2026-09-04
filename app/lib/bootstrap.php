@@ -506,17 +506,21 @@ function lavoriDisponibili(): array
 {
     return [
         'raccogli'       => ['passi' => [['copertine.php', '--raccogli']],
-                             'log' => 'copertine', 'quanto' => 'una ventina di secondi'],
+                             'log' => ['copertine'], 'quanto' => 'una ventina di secondi'],
         'raccogli-altre' => ['passi' => [['copertine.php', '--raccogli-altre']],
-                             'log' => 'copertine', 'quanto' => 'cinque minuti circa'],
+                             'log' => ['copertine'], 'quanto' => 'cinque minuti circa'],
         'diagnosi'       => ['passi' => [['copertine.php', '--diagnosi']],
-                             'log' => 'copertine', 'quanto' => 'un minuto'],
+                             'log' => ['copertine'], 'quanto' => 'un minuto'],
         // I due mestieri in fila, perché uno senza l'altro non serve:
         // ingest riempie la coda e non spende niente, enrich la svuota
         // scrivendo gli articoli. Lanciare solo il primo lascia la roba
         // in coda ad aspettare il cron delle quattro ore.
+        // Due log, perché i due programmi scrivono ciascuno nel
+        // proprio: seguendone uno solo il riquadro si fermerebbe a metà,
+        // e proprio durante la parte lunga.
         'novita'         => ['passi' => [['ingest.php', ''], ['enrich.php', '']],
-                             'log' => 'ingest', 'quanto' => 'qualche minuto, e costa'],
+                             'log' => ['ingest', 'enrich'],
+                             'quanto' => 'qualche minuto, e costa'],
     ];
 }
 
@@ -552,6 +556,16 @@ function lanciaLavoro(string $chiave): array
     // quello che vogliamo — un enrich su una coda mai riempita spende
     // per niente.
     $catena = implode(' && ', $pezzi);
+    // Il primo log è quello di controllo: ci vanno l'avvio e la riga
+    // finale, che riguardano la catena e non i singoli programmi.
+    $log = dirname(__DIR__) . '/logs/' . $lavoro['log'][0] . '.log';
+
+    // Una riga finale, sempre: con il punto e virgola arriva anche se la
+    // catena si è rotta per strada. È l'unico modo onesto di dire "ha
+    // finito" a chi sta guardando il riquadro — un log che smette di
+    // crescere può benissimo essere un programma che sta pensando.
+    $catena .= "; date '+%Y-%m-%d %H:%M:%S  — fine —' >> " . escapeshellarg($log);
+
     $comando = '/usr/bin/env -u PHPRC -u PHP_INI_SCAN_DIR /bin/sh -c '
              . escapeshellarg($catena);
 
@@ -561,12 +575,15 @@ function lanciaLavoro(string $chiave): array
                     . 'Il comando da mettere in un processo cron è: ' . $catena];
     }
 
-    // Una riga scritta da qui, prima di lanciare. Se nel resoconto
+    // Da dove guardare, per chi seguirà l'avanzamento: quello che il log
+    // conteneva prima di adesso non lo riguarda.
+    $da = is_file($log) ? (int)filesize($log) : 0;
+
+    // Una riga scritta da qui, prima di lanciare. Se nel riquadro
     // compare questa e nient'altro, il programma non è mai partito; se
     // non compare nemmeno questa, non è stato il pulsante a fallire.
     // Senza, un avvio andato a vuoto è indistinguibile da un pulsante
     // che non fa niente — ed è successo.
-    $log = dirname(__DIR__) . '/logs/' . $lavoro['log'] . '.log';
     @file_put_contents($log, date('Y-m-d H:i:s') . '  Avvio ' . $chiave
                            . " dal pannello.\n", FILE_APPEND | LOCK_EX);
 
@@ -577,8 +594,15 @@ function lanciaLavoro(string $chiave): array
     // diagnosticare che ci sia.
     @exec($comando . ' > /dev/null 2>> ' . escapeshellarg($log) . ' &');
 
-    return ['ok', 'Avviato: ci mette ' . $lavoro['quanto']
-                . '. Il resoconto arriva nel log, aggiorna la pagina per vederlo.'];
+    // Gli altri log si seguono da dove sono adesso.
+    $partenze = [$da];
+    foreach (array_slice($lavoro['log'], 1) as $altro) {
+        $f = dirname(__DIR__) . '/logs/' . $altro . '.log';
+        $partenze[] = is_file($f) ? (int)filesize($f) : 0;
+    }
+    return ['ok', 'Avviato: ci mette ' . $lavoro['quanto'] . '.',
+            ['log' => implode(',', $lavoro['log']),
+             'da'  => implode(',', $partenze)]];
 }
 
 /** Le ultime righe di un log, per leggerlo dal pannello. */
