@@ -521,7 +521,9 @@ che gli sono stati dedicati. Su blabbermouth sono 770 indirizzi, su
 theprp 2536, su metalinjection 1503 — in tutto qualche migliaio, e
 vanno aperti uno per uno. Perciò `--limite`, che di default si ferma a
 duecento: ogni giro riprende da dove aveva lasciato, perché gli
-indirizzi già visti restano segnati anche quando vengono scartati.
+indirizzi già visti restano segnati anche quando vengono scartati —
+quelli fuori periodo come `troppo_vecchio`, che è lo stato aggiunto il
+27 agosto e vuol dire esattamente questo.
 
 Non chiama l'IA e **non costa niente**: riempie la coda. Cosa poi
 diventi un articolo lo decide `enrich`.

@@ -22,6 +22,9 @@
  * articolo del 2010 può essere stato archiviato nel 2023, e infatti
  * succede di continuo.
  *
+ * Gli indirizzi fuori periodo restano segnati come "troppo_vecchio", o
+ * alla passata successiva li riapriremmo tutti da capo.
+ *
  * Non chiama l'IA e non costa nulla: riempie la coda, e sarà enrich a
  * decidere cosa merita un articolo. Per un recupero di quattro anni
  * conviene alzare la soglia — vedi enrich.php --soglia=N.
@@ -225,7 +228,12 @@ foreach (DOMINI as $dominio) {
         $dentro = $s['data'] >= $daData && $s['data'] <= $aData . ' 23:59:59';
         $conKeyword = contieneKeyword($s['titolo'] . ' ' . (string)$s['estratto']);
 
-        if (!$dentro)            { $stato = 'scartato_data';    $fuoriPeriodo++; }
+        // "troppo_vecchio" esiste dal 27 agosto e vuol dire esattamente
+        // questo: pertinente, ma fuori dal periodo che ci interessa.
+        // Avevo scritto un ALTER per aggiungere "scartato_data" prima di
+        // accorgermene — un valore nuovo per un significato che c'era
+        // già, e una migrazione da far girare per niente.
+        if (!$dentro)            { $stato = 'troppo_vecchio';  $fuoriPeriodo++; }
         elseif (!$conKeyword)    { $stato = 'scartato_keyword'; }
         else {
             $cercaDup->execute([sha1(normalizzaTitolo($s['titolo']))]);
