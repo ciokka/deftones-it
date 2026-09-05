@@ -39,6 +39,9 @@ const ICONE = [
                  . '<path d="M11.5 9.5v3.5a.9.9 0 0 1-.9.9H3.4a.9.9 0 0 1-.9-.9V5.9a.9.9 0 0 1 .9-.9H7"/>',
     'indietro'  => '<path d="M7 3.5 2.5 8 7 12.5"/><path d="M2.5 8h11"/>',
 
+    // il cuore degli articoli
+    'cuore'     => '<path d="M8 13.4 2.9 8.5a3 3 0 0 1 4.2-4.3L8 5.1l.9-.9a3 3 0 0 1 4.2 4.3z"/>',
+
     // raccolta fotografie
     'raccogli'  => '<path d="M8 1.8v8.4"/><path d="M4.8 7 8 10.2 11.2 7"/>'
                  . '<path d="M2.5 11.5v1.7a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-1.7"/>',

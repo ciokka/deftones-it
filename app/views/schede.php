@@ -24,6 +24,7 @@ $taglio = $taglio ?? 170;
     <p class="sommario"><?= e(mb_substr($a['sommario_it'], 0, $taglio)) ?>…</p>
     <div class="piede">
       <p class="fonte"><?= $a['fonte_nome'] ? e($a['fonte_nome']) : bollino() ?></p>
+      <?= piaceMini((int)$a['id'], (int)($a['piaciuto'] ?? 0)) ?>
       <?= condividiMini($a['slug'], $a['titolo_it']) ?>
     </div>
   </article>

@@ -43,7 +43,7 @@
 <link rel="icon" href="<?= u('favicon.ico') ?>" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="<?= u('apple-touch-icon.png') ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=83">
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=84">
 </head>
 <body>
 
@@ -297,6 +297,64 @@ $voci = [
       b.classList.add('fatto');
       setTimeout(function () { b.classList.remove('fatto'); }, 1600);
     }).catch(function () {});
+  });
+})();
+
+// Il cuore. Un clic conta uno, e il browser se lo ricorda per non
+// contarlo due volte — nel suo spazio locale, scritto solo dopo il clic:
+// prima non c'è niente da nessuna parte, che è il motivo per cui il sito
+// non ha bisogno di chiedere niente a nessuno.
+//
+// Se lo spazio locale non è disponibile — finestra anonima, o browser
+// che lo blocca — il cuore funziona lo stesso, semplicemente non si
+// ricorda. Meglio un contatore un po' generoso di una funzione che non
+// parte.
+(function () {
+  if (!window.fetch) {
+    var spenti = document.querySelectorAll('.piace');
+    for (var i = 0; i < spenti.length; i++) { spenti[i].remove(); }
+    return;
+  }
+  var dove = <?= json_encode(u('piace')) ?>;
+
+  function letti() {
+    try { return JSON.parse(localStorage.getItem('piaciuti') || '[]'); }
+    catch (x) { return []; }
+  }
+  function segna(id) {
+    try {
+      var v = letti();
+      if (v.indexOf(id) < 0) { v.push(id); localStorage.setItem('piaciuti', JSON.stringify(v)); }
+    } catch (x) {}
+  }
+
+  var miei = letti();
+  var tutti = document.querySelectorAll('.piace');
+  for (var i = 0; i < tutti.length; i++) {
+    if (miei.indexOf(+tutti[i].getAttribute('data-id')) >= 0) {
+      tutti[i].classList.add('piace-mio');
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('.piace') : null;
+    if (!b || b.classList.contains('piace-mio')) { return; }
+    var id = +b.getAttribute('data-id');
+    if (!id) { return; }
+
+    // Prima l'effetto, poi la richiesta: il cuore deve rispondere al dito
+    // subito, non fra due decimi di secondo.
+    b.classList.add('piace-mio');
+    var n = b.querySelector('.piace-n');
+    if (n) { n.textContent = (+n.textContent || 0) + 1; n.hidden = false; }
+    segna(id);
+
+    var corpo = new FormData();
+    corpo.append('id', String(id));
+    fetch(dove, { method: 'POST', body: corpo, credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (n && d && d.n !== null) { n.textContent = d.n; } })
+      .catch(function () {});
   });
 })();
 

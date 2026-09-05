@@ -391,6 +391,23 @@ smette di crescere può benissimo essere un programma che sta pensando.
 Senza JavaScript resta il messaggio e basta: si perde l'avanzamento, non
 la funzione.
 
+### Il cuore sotto gli articoli
+
+Un contatore e basta: la colonna `piaciuto` su `df_articles`, una rotta
+`POST /piace` che incrementa, e nient'altro. **Niente tabella dei voti,
+niente identificatori, nessun indirizzo IP.** A ricordare che hai già
+premuto ci pensa il browser nel proprio spazio locale, e solo dopo il
+clic: chi legge senza toccare niente non si porta via nulla, quindi non
+serve chiedere un consenso per una cosa che non succede.
+
+Il prezzo è che il numero è indicativo: chi volesse gonfiarlo potrebbe.
+L'unico modo di renderlo infallibile sarebbe identificare chi legge, che
+è esattamente ciò che questo sito non fa.
+
+Il numero mostrato viene dalla pagina in cache, quindi può avere fino a
+un quarto d'ora. Chi preme vede subito il proprio +1 perché
+l'incremento è fatto prima della richiesta, non dopo la risposta.
+
 ### I costi, in `admin/costi`
 
 Quanto costa il sito e dove. Oggi, ieri, sette giorni, trenta, il mese

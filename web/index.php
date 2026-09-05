@@ -74,7 +74,7 @@ $html = null;
 // --- home
 if ($percorso === '/') {
     $campi = 'id, slug, titolo_it, sommario_it, categoria, attendibilita,
-              fonte_nome, pubblicato_il, rilevanza, in_apertura,
+              fonte_nome, pubblicato_il, rilevanza, piaciuto, in_apertura,
               immagine_url, immagine_origine, immagine_autore,
               immagine_licenza, immagine_licenza_url, immagine_fonte_url,
               immagine_cercata_il';
@@ -271,8 +271,8 @@ elseif ($percorso === '/notizie') {
     $totale = (int)$st->fetchColumn();
 
     $salto = ($pag - 1) * $perPagina;
-    $st = $pdo->prepare('SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
-                                fonte_nome, pubblicato_il, rilevanza
+    $st = $pdo->prepare('SELECT id, slug, titolo_it, sommario_it, categoria, attendibilita,
+                                fonte_nome, pubblicato_il, rilevanza, piaciuto
                            FROM ' . t('articles') . "
                           WHERE $where
                           ORDER BY pubblicato_il DESC
@@ -372,8 +372,8 @@ elseif (preg_match('#^/notizie/([a-z0-9-]+)$#', $percorso, $m)) {
 
 // --- categoria
 elseif (preg_match('#^/categoria/([a-z]+)$#', $percorso, $m)) {
-    $q = $pdo->prepare('SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
-                               fonte_nome, pubblicato_il, rilevanza
+    $q = $pdo->prepare('SELECT id, slug, titolo_it, sommario_it, categoria, attendibilita,
+                               fonte_nome, pubblicato_il, rilevanza, piaciuto
                           FROM ' . t('articles') . '
                          WHERE stato = \'pubblicato\' AND categoria = ?
                          ORDER BY pubblicato_il DESC LIMIT 40');
@@ -386,8 +386,8 @@ elseif (preg_match('#^/categoria/([a-z]+)$#', $percorso, $m)) {
 // --- tag
 elseif (preg_match('#^/tag/(.+)$#', $percorso, $m)) {
     $tg = mb_substr($m[1], 0, 60);
-    $q = $pdo->prepare('SELECT slug, titolo_it, sommario_it, categoria, attendibilita,
-                               fonte_nome, pubblicato_il, rilevanza
+    $q = $pdo->prepare('SELECT id, slug, titolo_it, sommario_it, categoria, attendibilita,
+                               fonte_nome, pubblicato_il, rilevanza, piaciuto
                           FROM ' . t('articles') . '
                          WHERE stato = \'pubblicato\'
                            AND JSON_CONTAINS(tag, JSON_QUOTE(?))
@@ -430,6 +430,37 @@ elseif ($percorso === '/cerca.json') {
     header('Content-Type: application/json; charset=utf-8');
     header('X-Robots-Tag: noindex');
     echo json_encode($fuori, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+// --- il cuore di un articolo
+//
+// Incrementa e basta. Non sa chi ha premuto, non lo scrive da nessuna
+// parte e non se lo chiede: è la stessa scelta per cui il sito non ha
+// cookie e non chiama server altrui. A ricordarsi che l'hai già premuto
+// ci pensa il tuo browser, nel suo spazio locale e solo dopo il clic.
+//
+// Il prezzo è che il numero è indicativo e non un conteggio
+// certificato: chi volesse gonfiarlo potrebbe. Su un sito di fan è un
+// prezzo che si paga volentieri per non schedare nessuno.
+elseif ($percorso === '/piace' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id = (int)($_POST['id'] ?? 0);
+    header('Content-Type: application/json; charset=utf-8');
+    header('X-Robots-Tag: noindex');
+
+    $n = null;
+    if ($id > 0) {
+        $q = $pdo->prepare('UPDATE ' . t('articles') . "
+                               SET piaciuto = piaciuto + 1
+                             WHERE id = ? AND stato = 'pubblicato'");
+        $q->execute([$id]);
+        if ($q->rowCount() === 1) {
+            $l = $pdo->prepare('SELECT piaciuto FROM ' . t('articles') . ' WHERE id = ?');
+            $l->execute([$id]);
+            $n = (int)$l->fetchColumn();
+        }
+    }
+    echo json_encode(['n' => $n], JSON_UNESCAPED_SLASHES);
     exit;
 }
 

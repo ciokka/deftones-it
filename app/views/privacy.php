@@ -41,6 +41,27 @@
       esiste soltanto dopo aver fatto l'accesso ed è esente da consenso.
     </p>
 
+    <h3>Il cuore sotto gli articoli</h3>
+    <p>
+      Il contatore dei «mi piace» conta i clic e nient'altro: non c'è una
+      tabella dei voti, non viene registrato chi ha premuto, non viene
+      conservato nessun indirizzo IP. Il sito non sa chi sei e non se lo
+      chiede.
+    </p>
+    <p>
+      A ricordare quali articoli hai già segnato ci pensa il tuo browser,
+      nel proprio spazio locale, sul tuo dispositivo — e <strong>solo dopo
+      che hai premuto</strong>: chi legge senza toccare niente non si porta
+      via nulla. Quel dato non viene mai spedito da nessuna parte, serve
+      soltanto a non farti contare due volte lo stesso articolo, e si
+      cancella svuotando i dati del sito dalle impostazioni del browser.
+    </p>
+    <p>
+      La conseguenza di questa scelta è che il numero è indicativo e non un
+      conteggio certificato. È un prezzo che si paga volentieri: l'unico
+      modo di renderlo infallibile sarebbe identificare chi legge.
+    </p>
+
     <h3>Servizi di altri</h3>
     <p>
       Nessuno che si carichi da solo. In particolare i caratteri tipografici

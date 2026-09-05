@@ -59,6 +59,7 @@
               <?php endif ?>
               <div class="piede-destra">
                 <?= creditoImmagine($primo, 'p') ?>
+                <?= piaceMini((int)$primo['id'], (int)($primo['piaciuto'] ?? 0)) ?>
                 <?= condividiMini($primo['slug'], $primo['titolo_it']) ?>
               </div>
             </div>

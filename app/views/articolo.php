@@ -77,6 +77,7 @@
   ?>
   <div class="condividi" data-url="<?= e($indirizzo) ?>" data-titolo="<?= e($a['titolo_it']) ?>">
     <span class="condividi-etichetta">condividi</span>
+    <?= piaceMini((int)$a['id'], (int)($a['piaciuto'] ?? 0)) ?>
     <?= condividiMini($a['slug'], $a['titolo_it']) ?>
 
     <?php /* Link semplici, non pulsanti ufficiali: quelli caricherebbero

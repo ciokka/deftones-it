@@ -234,6 +234,35 @@ function bollino(bool $esteso = false): string
  * il pannello di sistema dove il browser lo espone e la copia
  * dell'indirizzo dove non lo espone. Vedi lo script in layout.php.
  */
+/**
+ * Il cuore con il suo contatore.
+ *
+ * Il numero arriva dal server, e con la cache può avere fino a un
+ * quarto d'ora: su un contatore di "mi piace" è un difetto che non fa
+ * male a nessuno, e tenerlo aggiornato al secondo costerebbe una
+ * richiesta in più su ogni pagina.
+ *
+ * Il pulsante non ha bisogno di sapere chi sei, e infatti non lo sa. A
+ * ricordare che l'hai già premuto ci pensa il tuo browser da solo,
+ * dopo il clic: prima non viene scritto niente, da nessuna parte.
+ */
+function piaceMini(int $id, int $quanti): string
+{
+    return '<button class="piace" type="button" data-id="' . $id . '"'
+         . ' aria-label="mi piace">'
+         // Il disegno sta qui e non in icone.php come le altre: quello
+         // lo carica solo il pannello, e questo cuore lo vedono i
+         // lettori. Fa compagnia a condividiMini, che per lo stesso
+         // motivo si porta dietro il suo.
+         . '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" '
+         . 'stroke="currentColor" stroke-width="1.3" stroke-linecap="round" '
+         . 'stroke-linejoin="round" aria-hidden="true">'
+         . '<path d="M8 13.4 2.9 8.5a3 3 0 0 1 4.2-4.3L8 5.1l.9-.9a3 3 0 0 1 4.2 4.3z"/>'
+         . '</svg>'
+         . '<span class="piace-n"' . ($quanti > 0 ? '' : ' hidden') . '>'
+         . $quanti . '</span></button>';
+}
+
 function condividiMini(string $slug, string $titolo): string
 {
     $svg = '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" '
@@ -360,7 +389,7 @@ function cercaArticoli(PDO $pdo, string $q, int $limite = 60): array
     $espressione = implode(' ', array_map(fn($p) => '+' . $p . '*', $parole));
     $limite = max(1, min(60, $limite));
 
-    $campi = 'slug, titolo_it, sommario_it, categoria, attendibilita,
+    $campi = 'id, slug, titolo_it, sommario_it, categoria, attendibilita, piaciuto,
               fonte_nome, pubblicato_il, rilevanza';
 
     // Il primo indice comprende il corpo dell'articolo; se non è ancora

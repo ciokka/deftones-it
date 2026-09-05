@@ -1213,7 +1213,7 @@ body { overflow-x: clip; }
   margin: 0 0 1.75rem;
   font-family: var(--display);
   font-weight: 400;
-  font-size: clamp(2.1rem, 6vw, 3.2rem);
+  font-size: clamp(2.4rem, 6vw, 3.2rem);
   line-height: 1.08;
   letter-spacing: -.01em;
 }
@@ -1917,3 +1917,33 @@ figure:has(> img.img-mancante) { display: none; }
   color: var(--testo-tenue);
 }
 .coda-stato strong { color: var(--accento); font-weight: 500; }
+
+/* ------------------------------------------- il cuore degli articoli */
+
+/* Sta accanto al pulsante di condivisione e ne prende i modi: stessa
+   misura, stesso grigio, stessa reazione al passaggio del dito. */
+.piace {
+  display: inline-flex; align-items: center; gap: .3rem;
+  border: 0; background: none; padding: .25rem;
+  color: var(--testo-tenue); cursor: pointer;
+  font: inherit; font-size: .78rem; line-height: 1;
+  transition: color .2s;
+}
+.piace:hover { color: var(--accento); }
+.piace svg { display: block; transition: fill .25s, transform .25s; }
+
+/* Premuto: il cuore si riempie e non si preme più. Il colore è quello
+   dell'accento e non un rosso: il rosso qui dentro sarebbe l'unico, e
+   si porterebbe dietro un tono che il sito non ha. */
+.piace-mio { color: var(--accento); cursor: default; }
+.piace-mio svg { fill: currentColor; transform: scale(1.12); }
+.piace-mio:hover { color: var(--accento); }
+.piace-n { font-variant-numeric: tabular-nums; }
+
+/* Nel piede delle schede il cuore e la condivisione stanno insieme a
+   destra, con il nome della fonte a sinistra. Il piede è già flex da
+   riga 1130 e non va ridichiarato: riscriverlo qui gli cambierebbe il
+   gap sotto il naso, in ogni scheda e nel banner, per una spaziatura
+   che riguarda solo questi due pulsanti. */
+.piede .piace { margin-left: auto; }
+.piede .piace + .condividi-mini { margin-left: -.4rem; }
