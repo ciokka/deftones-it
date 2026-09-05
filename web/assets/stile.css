@@ -1170,9 +1170,10 @@ body { overflow-x: clip; }
 .condividi-mini.fatto { color: var(--accento); }
 .condividi-mini.fatto::after { content: 'copiato'; }
 
-/* Nell'articolo la riga è alta e ariosa: l'icona ci sta dentro senza il
-   margine negativo che serve a incastonarla nel piede di una scheda. */
-.condividi .condividi-mini { margin: 0; padding: .4rem; }
+/* Nell'articolo la riga è alta e ariosa: le icone ci stanno dentro senza
+   il margine negativo che serve a incastonarle nel piede di una scheda. */
+.condividi .condividi-mini,
+.condividi .piace { margin: 0; padding: .4rem; }
 
 /* ----------------------------------------------------------- elenco */
 
@@ -1923,10 +1924,11 @@ figure:has(> img.img-mancante) { display: none; }
 /* Sta accanto al pulsante di condivisione e ne prende i modi: stessa
    misura, stesso grigio, stessa reazione al passaggio del dito. */
 .piace {
-  display: inline-flex; align-items: center; gap: .3rem;
-  border: 0; background: none; padding: .25rem;
+  display: inline-flex; align-items: center; gap: .35rem;
+  border: 0; background: none; padding: .35rem;
+  margin: -.35rem;
   color: var(--testo-tenue); cursor: pointer;
-  font: inherit; font-size: .78rem; line-height: 1;
+  font: inherit; font-size: .85rem; line-height: 1;
   transition: color .2s;
 }
 .piace:hover { color: var(--accento); }

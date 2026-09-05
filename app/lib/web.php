@@ -254,8 +254,8 @@ function piaceMini(int $id, int $quanti): string
          // lo carica solo il pannello, e questo cuore lo vedono i
          // lettori. Fa compagnia a condividiMini, che per lo stesso
          // motivo si porta dietro il suo.
-         . '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" '
-         . 'stroke="currentColor" stroke-width="1.3" stroke-linecap="round" '
+         . '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" '
+         . 'stroke="currentColor" stroke-width="1.25" stroke-linecap="round" '
          . 'stroke-linejoin="round" aria-hidden="true">'
          . '<path d="M8 13.4 2.9 8.5a3 3 0 0 1 4.2-4.3L8 5.1l.9-.9a3 3 0 0 1 4.2 4.3z"/>'
          . '</svg>'
@@ -265,8 +265,13 @@ function piaceMini(int $id, int $quanti): string
 
 function condividiMini(string $slug, string $titolo): string
 {
-    $svg = '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" '
-         . 'stroke="currentColor" stroke-width="1.15" stroke-linecap="round" '
+    // Diciotto e non quindici: a quindici pixel il cuore e i tre pallini
+    // erano leggibili ma non invitavano a premerli, e un pulsante che non
+    // si vede è un pulsante che non esiste. Il tratto si assottiglia un
+    // po' perché ingrandendolo restava lo stesso peso su un disegno più
+    // grande, e diventava pesante.
+    $svg = '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" '
+         . 'stroke="currentColor" stroke-width="1.05" stroke-linecap="round" '
          . 'aria-hidden="true">'
          . '<circle cx="12.2" cy="3.6" r="1.85"/>'
          . '<circle cx="12.2" cy="12.4" r="1.85"/>'
