@@ -487,19 +487,17 @@ body { overflow-x: clip; }
 }
 .carosello-punto.attivo span { height: 2.6rem; }
 
-/* Sul telefono le frecce non ci sono e la colonna sul fianco stringerebbe
-   il titolo, che lì è la pagina: gli indicatori scendono sotto il banner,
-   in riga, e le stanghette tornano coricate. */
+/* Sul telefono la colonna resta al suo posto, sul fianco: il movimento
+   è verticale lì come sul desktop, e due indicatori diversi per la stessa
+   cosa fanno sembrare due caroselli diversi.
+   Le stanghette si accorciano e si stringono al bordo, perché il titolo
+   del banner sul telefono è la pagina e non deve trovarsele addosso — a
+   tenerlo indietro ci pensa il padding di .hero-interno qui sotto. */
 @media (max-width: 47.99rem) {
-  .carosello-guida {
-    position: static; transform: none;
-    flex-direction: row; justify-content: center;
-    margin: .75rem auto 0; padding: 0 1.5rem;
-  }
-  .carosello-punti { flex-direction: row; }
-  .carosello-punto { padding: .6rem .25rem; }
-  .carosello-punto span { width: 2.2rem; height: 2px; }
-  .carosello-punto.attivo span { width: 2.8rem; height: 2px; }
+  .carosello-guida { right: .75rem; gap: .35rem; }
+  .carosello-punto { padding: .3rem .45rem; }
+  .carosello-punto span { height: 1.4rem; }
+  .carosello-punto.attivo span { height: 2rem; }
 }
 .carosello-punto:hover span { background: rgba(255,255,255,.45); }
 .carosello-punto.attivo span { background: var(--accento); }
@@ -592,6 +590,11 @@ body { overflow-x: clip; }
    banner, più largo c'è spazio di suo. */
 @media (min-width: 48rem) and (max-width: 62rem) {
   .hero-interno { padding-right: 3rem; }
+}
+/* Sul telefono i comandi stanno sul fianco destro come altrove, e il
+   testo si tira indietro quel tanto che basta a non finirci sotto. */
+@media (max-width: 47.99rem) {
+  .hero-interno { padding-right: 2.75rem; }
 }
 .hero-testo { max-width: 44rem; }
 .hero-testo .meta { margin-bottom: .55rem; }
