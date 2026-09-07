@@ -754,6 +754,30 @@ body { overflow-x: clip; }
 /* Nel banner tutto è un po' più grande, anche questo. */
 .hero .hot { font-size: .6875rem; }
 
+/* ---------------------------------------------------------- special */
+/* Il bollo che mette una persona, non il sistema.
+   Pieno invece che a contorno, e senza una tinta propria: bianco su nero
+   è il contrasto più forte che questa tavolozza abbia, e non serve
+   inventare un quarto colore per dire "questo conta". L'ambra è già di
+   "hot", il verde è l'accento di tutto il sito — un terzo accento li
+   indebolirebbe entrambi. */
+.speciale {
+  display: inline-flex;
+  align-items: center;
+  gap: .28em;
+  padding: .12rem .45rem .12rem .38rem;
+  border-radius: 2px;
+  background: var(--testo);
+  color: var(--fondo);
+  font-size: .625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  line-height: 1.4;
+}
+.speciale svg { flex: none; margin-top: -1px; }
+.hero .speciale { font-size: .6875rem; }
+
 /* --------------------------------------------------------- filtri */
 
 /* .filtri-archivio e non .filtri: il pannello di amministrazione aveva

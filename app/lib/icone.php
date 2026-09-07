@@ -40,6 +40,10 @@ const ICONE = [
     'indietro'  => '<path d="M7 3.5 2.5 8 7 12.5"/><path d="M2.5 8h11"/>',
 
     // il cuore degli articoli
+    // Quattro punte e non cinque: la stella a cinque è già "in apertura",
+    // e due stelle nella stessa riga di azioni non si distinguono.
+    'speciale'  => '<path d="M8 1.6c.6 3.3 1.5 4.2 4.8 4.8-3.3.6-4.2 1.5-4.8 4.8'
+                 . '-.6-3.3-1.5-4.2-4.8-4.8 3.3-.6 4.2-1.5 4.8-4.8Z"/>',
     'cuore'     => '<path d="M8 13.4 2.9 8.5a3 3 0 0 1 4.2-4.3L8 5.1l.9-.9a3 3 0 0 1 4.2 4.3z"/>',
 
     // raccolta fotografie

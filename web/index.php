@@ -74,7 +74,7 @@ $html = null;
 // --- home
 if ($percorso === '/') {
     $campi = 'id, slug, titolo_it, sommario_it, categoria, attendibilita,
-              fonte_nome, pubblicato_il, rilevanza, piaciuto, in_apertura,
+              fonte_nome, pubblicato_il, rilevanza, speciale, piaciuto, in_apertura,
               immagine_url, immagine_origine, immagine_autore,
               immagine_licenza, immagine_licenza_url, immagine_fonte_url,
               immagine_cercata_il';
@@ -272,7 +272,7 @@ elseif ($percorso === '/notizie') {
 
     $salto = ($pag - 1) * $perPagina;
     $st = $pdo->prepare('SELECT id, slug, titolo_it, sommario_it, categoria, attendibilita,
-                                fonte_nome, pubblicato_il, rilevanza, piaciuto
+                                fonte_nome, pubblicato_il, rilevanza, speciale, piaciuto
                            FROM ' . t('articles') . "
                           WHERE $where
                           ORDER BY pubblicato_il DESC
@@ -373,7 +373,7 @@ elseif (preg_match('#^/notizie/([a-z0-9-]+)$#', $percorso, $m)) {
 // --- categoria
 elseif (preg_match('#^/categoria/([a-z]+)$#', $percorso, $m)) {
     $q = $pdo->prepare('SELECT id, slug, titolo_it, sommario_it, categoria, attendibilita,
-                               fonte_nome, pubblicato_il, rilevanza, piaciuto
+                               fonte_nome, pubblicato_il, rilevanza, speciale, piaciuto
                           FROM ' . t('articles') . '
                          WHERE stato = \'pubblicato\' AND categoria = ?
                          ORDER BY pubblicato_il DESC LIMIT 40');
@@ -387,7 +387,7 @@ elseif (preg_match('#^/categoria/([a-z]+)$#', $percorso, $m)) {
 elseif (preg_match('#^/tag/(.+)$#', $percorso, $m)) {
     $tg = mb_substr($m[1], 0, 60);
     $q = $pdo->prepare('SELECT id, slug, titolo_it, sommario_it, categoria, attendibilita,
-                               fonte_nome, pubblicato_il, rilevanza, piaciuto
+                               fonte_nome, pubblicato_il, rilevanza, speciale, piaciuto
                           FROM ' . t('articles') . '
                          WHERE stato = \'pubblicato\'
                            AND JSON_CONTAINS(tag, JSON_QUOTE(?))

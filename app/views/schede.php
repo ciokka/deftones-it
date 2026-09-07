@@ -18,6 +18,7 @@ $taglio = $taglio ?? 170;
     <div class="meta">
       <span class="etichetta et-<?= e($a['categoria']) ?>"><?= e($a['categoria']) ?></span>
       <time datetime="<?= e($a['pubblicato_il']) ?>"><?= e(quandoIt($a['pubblicato_il'])) ?></time>
+      <?= etichettaSpeciale($a['speciale'] ?? null) ?>
       <?= etichettaHot($a['rilevanza'] ?? null) ?>
     </div>
     <h2><a href="<?= u('notizie/' . $a['slug'] . '/') ?>"><?= e($a['titolo_it']) ?></a></h2>

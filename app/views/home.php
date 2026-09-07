@@ -34,6 +34,7 @@
                   <span class="etichetta et-dubbio"><?= e($primo['attendibilita']) ?></span>
                 <?php endif ?>
                 <time datetime="<?= e($primo['pubblicato_il']) ?>"><?= e(quandoIt($primo['pubblicato_il'])) ?></time>
+                <?= etichettaSpeciale($primo['speciale'] ?? null) ?>
                 <?= etichettaHot($primo['rilevanza'] ?? null) ?>
               </div>
               <h1><a href="<?= u('notizie/' . $primo['slug'] . '/') ?>"><?= e($primo['titolo_it']) ?></a></h1>

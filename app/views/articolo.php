@@ -20,6 +20,7 @@
           <span class="etichetta et-dubbio"><?= e($a['attendibilita']) ?></span>
         <?php endif ?>
         <time datetime="<?= e($a['pubblicato_il']) ?>"><?= e(dataIt($a['pubblicato_il'])) ?></time>
+        <?= etichettaSpeciale($a['speciale'] ?? null) ?>
         <?= etichettaHot($a['rilevanza'] ?? null) ?>
       </div>
 

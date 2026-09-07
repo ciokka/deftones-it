@@ -43,8 +43,8 @@
 <link rel="icon" href="<?= u('favicon.ico') ?>" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="<?= u('apple-touch-icon.png') ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
-<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=86">
-<?php if (!empty($eAdmin)): ?><link rel="stylesheet" href="<?= u('assets/admin.css') ?>?v=1"><?php endif ?>
+<link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=87">
+<?php if (!empty($eAdmin)): ?><link rel="stylesheet" href="<?= u('assets/admin.css') ?>?v=2"><?php endif ?>
 </head>
 <body>
 

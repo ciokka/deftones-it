@@ -722,6 +722,12 @@ copertina e soglia hot; si ordina per rilevanza, data, lunghezza o
 titolo. I filtri si sommano, comprese le date con l'anno: scegliere il
 2013 e poi "dal 1º giugno" dà i mesi da giugno in poi di quell'anno.
 
+**L'etichetta "special"** è l'unica che mette una persona: la assegni tu
+dalla riga dell'elenco o dal modulo di modifica, e compare sul sito
+accanto a "hot". Ha una colonna sua, `speciale`, e non un punteggio di
+rilevanza alto — la rilevanza la riscrive il modello a ogni
+rielaborazione, questa resta. Si filtra come tutto il resto.
+
 La colonna della copertina porta la miniatura vera, non un pallino: si
 vede in un colpo d'occhio non solo che la foto c'è, ma se è quella
 giusta. E cliccandola si va a cambiarla.
@@ -933,6 +939,14 @@ tre notizie più recenti. Dal pannello, sulle pubblicate, l'interruttore
 recenti completano fino a tre. Se non ne fissi nessuna il comportamento
 è quello naturale, quindi la colonna non va gestita — esiste per le
 eccezioni.
+
+**"special" è bianco pieno, non un terzo colore.** La tavolozza ha nero,
+bianco, il verde dell'accento e l'ambra di "hot". Un quarto colore per
+dire "questo conta" avrebbe indebolito gli altri due: il bollo è invece
+pieno invece che a contorno, e bianco su nero è il contrasto più forte
+che questa tavolozza abbia. La stella a quattro punte, e non a cinque,
+perché quella a cinque è già "in apertura" e due stelle nella stessa riga
+di azioni non si distinguono.
 
 **Un testo senza fonti non si pubblica.** Gli strumenti che scrivono
 cercando sul web — le schede dei dischi e gli articoli su richiesta —

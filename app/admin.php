@@ -339,8 +339,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {
             $uno   = (int)($_POST['scartaId'] ?? 0);
             $torna = (int)($_POST['ripristinaId'] ?? 0);
             $apre  = (int)($_POST['aperturaId'] ?? 0);
+            $spec  = (int)($_POST['specialeId'] ?? 0);
             $ritira = (int)($_POST['ritiraId'] ?? 0);
-            if ($apre > 0) {
+            if ($spec > 0) {
+                // "special" è l'unica etichetta che mette una persona.
+                // Tutto il resto — rilevanza, categoria, attendibilità —
+                // lo decide il modello quando scrive.
+                $pdo->prepare('UPDATE ' . t('articles') . '
+                                  SET speciale = 1 - speciale WHERE id = ?')->execute([$spec]);
+                $qs = $pdo->prepare('SELECT speciale FROM ' . t('articles') . ' WHERE id = ?');
+                $qs->execute([$spec]);
+                cacheSvuota();
+                $messaggio = ['ok', $qs->fetchColumn()
+                    ? 'Segnata come special.' : 'Non è più special.'];
+            } elseif ($apre > 0) {
                 $pdo->prepare('UPDATE ' . t('articles') . '
                                   SET in_apertura = 1 - in_apertura WHERE id = ?')->execute([$apre]);
                 $qa = $pdo->prepare('SELECT in_apertura FROM ' . t('articles') . ' WHERE id = ?');
@@ -655,8 +667,9 @@ if ($azione === 'nuovo') {
             // vuol dire che conta.
             $q = $pdo->prepare('INSERT INTO ' . t('articles') . '
                   (slug, titolo_it, sommario_it, corpo_it, categoria, attendibilita,
-                   tag, rilevanza, fonte_nome, fonte_url, stato, pubblicato_il, creato_il)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW())');
+                   tag, rilevanza, fonte_nome, fonte_url, stato, pubblicato_il,
+                   speciale, creato_il)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())');
             $q->execute([
                 slugUnico($titolo), $titolo,
                 trim((string)($_POST['sommario_it'] ?? '')),
@@ -668,6 +681,7 @@ if ($azione === 'nuovo') {
                 trim((string)($_POST['fonte_nome'] ?? '')) ?: null,
                 trim((string)($_POST['fonte_url'] ?? '')) ?: null,
                 $stato, $quando,
+                !empty($_POST['speciale']) ? 1 : 0,
             ]);
             $id = (int)$pdo->lastInsertId();
 
@@ -702,7 +716,7 @@ if ($azione === 'nuovo') {
             'corpo_it' => '', 'categoria' => 'news', 'attendibilita' => 'confermato',
             'tag' => null, 'fonte_nome' => '', 'fonte_url' => '',
             'pubblicato_il' => date('Y-m-d H:i:s'), 'stato' => 'nuovo',
-            'immagine_origine' => null,
+            'immagine_origine' => null, 'speciale' => 0,
         ],
         'categorie' => valoriEnum($pdo, t('articles'), 'categoria'),
         'attendib'  => valoriEnum($pdo, t('articles'), 'attendibilita'),
@@ -746,7 +760,8 @@ if (preg_match('#^modifica/(\d+)$#', $azione, $m)) {
             $q = $pdo->prepare('UPDATE ' . t('articles') . '
                  SET titolo_it = ?, sommario_it = ?, corpo_it = ?,
                      categoria = ?, attendibilita = ?, tag = ?,
-                     fonte_nome = ?, fonte_url = ?, pubblicato_il = ?
+                     fonte_nome = ?, fonte_url = ?, pubblicato_il = ?,
+                     speciale = ?
                WHERE id = ?');
             $q->execute([
                 mb_substr(trim((string)($_POST['titolo_it'] ?? '')), 0, 300),
@@ -758,6 +773,7 @@ if (preg_match('#^modifica/(\d+)$#', $azione, $m)) {
                 trim((string)($_POST['fonte_nome'] ?? '')) ?: null,
                 trim((string)($_POST['fonte_url'] ?? '')) ?: null,
                 $quando,
+                !empty($_POST['speciale']) ? 1 : 0,
                 $id,
             ]);
             $n = cacheSvuota();
@@ -792,6 +808,7 @@ $anno      = (int)($_GET['anno'] ?? 0);
 $cat       = (string)($_GET['cat'] ?? '');
 $ordine    = (string)($_GET['ord'] ?? 'rilevanza');
 $hot       = !empty($_GET['hot']);
+$sp        = !empty($_GET['sp']);
 $cop       = (string)($_GET['cop'] ?? '');          // '' | con | senza
 $da        = trim((string)($_GET['da'] ?? ''));
 $a         = trim((string)($_GET['a'] ?? ''));
@@ -827,6 +844,7 @@ $quando = 'COALESCE(pubblicato_il, creato_il)';
 if ($anno > 0)   { $dove[] = "YEAR($quando) = ?"; $par[] = $anno; }
 if ($cat !== '') { $dove[] = 'categoria = ?';     $par[] = $cat; }
 if ($hot)        { $dove[] = 'rilevanza >= ' . HOT_DA; }
+if ($sp)         { $dove[] = 'speciale = 1'; }
 if ($cop === 'con')   { $dove[] = 'immagine_url IS NOT NULL'; }
 if ($cop === 'senza') { $dove[] = 'immagine_url IS NULL'; }
 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $da)) { $dove[] = "$quando >= ?"; $par[] = $da . ' 00:00:00'; }
@@ -850,7 +868,7 @@ $pagina = min($pagina, $pagine);
 
 $q = $pdo->prepare('SELECT id, slug, titolo_it, sommario_it, categoria, attendibilita,
                            rilevanza, fonte_nome, fonte_url, creato_il, pubblicato_il,
-                           stato, in_apertura, immagine_url, immagine_origine,
+                           stato, in_apertura, speciale, immagine_url, immagine_origine,
                            CHAR_LENGTH(COALESCE(corpo_it, \'\')) AS lunghezza
                       FROM ' . t('articles') . "
                      WHERE $filtro ORDER BY $orderBy
@@ -881,6 +899,8 @@ $senzaCopertina = (int)$pdo->query('SELECT COUNT(*) FROM ' . t('articles')
                                  . " WHERE $doveStato AND immagine_url IS NULL")->fetchColumn();
 $quantiHot = (int)$pdo->query('SELECT COUNT(*) FROM ' . t('articles')
                             . " WHERE $doveStato AND rilevanza >= " . HOT_DA)->fetchColumn();
+$quantiSpec = (int)$pdo->query('SELECT COUNT(*) FROM ' . t('articles')
+                             . " WHERE $doveStato AND speciale = 1")->fetchColumn();
 
 // La coda: quanti item aspettano di diventare qualcosa, e il più
 // vecchio fra loro. Serve a sapere quando smettere di premere
@@ -900,7 +920,8 @@ echo render('admin-bozze', [
     'messaggio' => $messaggio ?? messaggioDiPassaggio(),
     'totale' => $totale, 'pagina' => $pagina, 'pagine' => $pagine,
     'cerca' => $cerca, 'anno' => $anno, 'cat' => $cat, 'ordine' => $ordine,
-    'hot' => $hot, 'cop' => $cop, 'da' => $da, 'a' => $a,
+    'hot' => $hot, 'sp' => $sp, 'cop' => $cop, 'da' => $da, 'a' => $a,
     'anni' => $anni, 'categorie' => $categorie,
     'senzaCopertina' => $senzaCopertina, 'quantiHot' => $quantiHot,
+    'quantiSpec' => $quantiSpec,
 ], ['titolo' => 'Pannello — deftones.it']);

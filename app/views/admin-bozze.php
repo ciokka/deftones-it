@@ -1,10 +1,11 @@
 <?php
 /** Costruisce un URL del pannello conservando i filtri attivi. */
-$link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina, $stato, $hot, $cop, $da, $a): string {
+$link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina, $stato, $hot, $sp, $cop, $da, $a): string {
     $p = [
         'q' => $cerca, 'anno' => $anno ?: '', 'cat' => $cat, 'ord' => $ordine,
         'stato' => $stato === 'draft' ? '' : $stato,
-        'hot' => $hot ? '1' : '', 'cop' => $cop, 'da' => $da, 'a' => $a,
+        'hot' => $hot ? '1' : '', 'sp' => $sp ? '1' : '',
+        'cop' => $cop, 'da' => $da, 'a' => $a,
         'p' => $pagina > 1 ? $pagina : '',
     ];
     // Cambiando un filtro si torna sempre a pagina uno: restare alla
@@ -18,7 +19,7 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
 
 $etichetteStato = ['draft' => 'bozze', 'pubblicato' => 'online',
                    'scartato' => 'scartate', 'tutti' => 'tutti'];
-$filtriAttivi = $cerca || $anno || $cat || $hot || $cop || $da || $a;
+$filtriAttivi = $cerca || $anno || $cat || $hot || $sp || $cop || $da || $a;
 ?>
 <div class="pannello">
 
@@ -136,10 +137,15 @@ $filtriAttivi = $cerca || $anno || $cat || $hot || $cop || $da || $a;
       solo hot <span class="linguetta-n"><?= (int)$quantiHot ?></span>
     </label>
 
+    <label class="scelta scelta-speciale">
+      <input type="checkbox" name="sp" value="1" <?= $sp ? 'checked' : '' ?>>
+      solo special <span class="linguetta-n"><?= (int)$quantiSpec ?></span>
+    </label>
+
     <button class="bottone bottone-tenue" type="submit">filtra</button>
     <?php if ($filtriAttivi): ?>
       <a class="bottone bottone-tenue" href="<?= e($link(['q' => '', 'anno' => '', 'cat' => '',
-          'hot' => '', 'cop' => '', 'da' => '', 'a' => ''])) ?>">azzera</a>
+          'hot' => '', 'sp' => '', 'cop' => '', 'da' => '', 'a' => ''])) ?>">azzera</a>
     <?php endif ?>
   </form>
 
@@ -195,6 +201,7 @@ $filtriAttivi = $cerca || $anno || $cat || $hot || $cop || $da || $a;
                          meno peggio che perderle. */ ?>
                 <span class="solo-stretto punteggio<?= (int)$b['rilevanza'] >= HOT_DA ? ' punteggio-hot' : '' ?>"><?= (int)$b['rilevanza'] ?></span>
                 <span class="solo-stretto"><?= e(dataBreve($q)) ?></span>
+                <?php if ($b['speciale']): ?><span class="etichetta et-speciale">special</span><?php endif ?>
                 <span class="etichetta et-<?= e($b['categoria']) ?>"><?= e($b['categoria']) ?></span>
                 <?php if ($b['attendibilita'] !== 'confermato'): ?>
                   <span class="etichetta et-dubbio"><?= e($b['attendibilita']) ?></span>
@@ -215,6 +222,9 @@ $filtriAttivi = $cerca || $anno || $cat || $hot || $cop || $da || $a;
             <td class="c-data"><time datetime="<?= e((string)$q) ?>"><?= e(dataBreve($q)) ?></time></td>
 
             <td class="c-azioni">
+              <button class="azione<?= $b['speciale'] ? ' accesa' : '' ?>" type="submit"
+                      name="specialeId" value="<?= (int)$b['id'] ?>"
+                      title="<?= $b['speciale'] ? 'togli special' : 'segna come special' ?>"><?= icona('speciale', 14) ?></button>
               <a class="azione" href="<?= u('admin/modifica/' . (int)$b['id']) ?>"
                  title="modifica"><?= icona('modifica', 14) ?></a>
               <?php if ($b['stato'] === 'pubblicato'): ?>

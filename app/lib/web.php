@@ -414,7 +414,7 @@ function cercaArticoli(PDO $pdo, string $q, int $limite = 60): array
     $limite = max(1, min(60, $limite));
 
     $campi = 'id, slug, titolo_it, sommario_it, categoria, attendibilita, piaciuto,
-              fonte_nome, pubblicato_il, rilevanza';
+              fonte_nome, pubblicato_il, rilevanza, speciale';
 
     // Il primo indice comprende il corpo dell'articolo; se non è ancora
     // stato creato si ripiega su quello dello schema iniziale, che c'è
@@ -451,6 +451,25 @@ function cercaArticoli(PDO $pdo, string $q, int $limite = 60): array
  * numero solo, si alza qui.
  */
 const HOT_DA = 70;
+
+/**
+ * Il bollo "special": lo metti tu dal pannello, non lo calcola nessuno.
+ *
+ * Pieno e non a contorno, e senza colore proprio: bianco su nero è il
+ * contrasto più forte che questa tavolozza abbia, e non serve inventare
+ * una quarta tinta per dire "questo conta". L'ambra è già di "hot", il
+ * verde è l'accento di tutto il sito.
+ */
+function etichettaSpeciale(mixed $speciale): string
+{
+    if (empty($speciale)) { return ''; }
+
+    return '<span class="speciale" title="scelto dalla redazione">'
+         . '<svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" aria-hidden="true">'
+         . '<path d="M8 1.6c.6 3.3 1.5 4.2 4.8 4.8-3.3.6-4.2 1.5-4.8 4.8'
+         . '-.6-3.3-1.5-4.2-4.8-4.8 3.3-.6 4.2-1.5 4.8-4.8Z"/>'
+         . '</svg>special</span>';
+}
 
 /** Il bollo, con la fiammella. Vuoto quando non serve. */
 function etichettaHot(mixed $rilevanza): string

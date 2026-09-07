@@ -60,6 +60,14 @@
              value="<?= e(implode(', ', json_decode((string)$a['tag'], true) ?: [])) ?>">
     </label>
 
+    <?php /* L'unica etichetta che mette una persona: il resto — rilevanza,
+             categoria, attendibilità — lo decide il modello quando scrive. */ ?>
+    <label class="scelta scelta-riga">
+      <input type="checkbox" name="speciale" value="1" <?= $a['speciale'] ? 'checked' : '' ?>>
+      <span>special <em>— il bollo che metti tu, per i pezzi che contano
+        per una ragione che un punteggio non sa vedere</em></span>
+    </label>
+
     <div class="modulo-riga">
       <label>
         <span>Fonte</span>

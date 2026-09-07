@@ -67,6 +67,17 @@
   color-scheme: dark;
 }
 .scelta-hot { font-size: .875rem; color: var(--testo-tenue); white-space: nowrap; }
+.scelta-speciale { font-size: .875rem; color: var(--testo-tenue); white-space: nowrap; }
+.scelta-speciale input { accent-color: var(--testo); }
+
+/* Nel modulo di modifica la casella sta su una riga sua, con la
+   spiegazione di fianco. */
+.scelta-riga { display: flex; align-items: flex-start; gap: .6rem; cursor: pointer; }
+.scelta-riga input { margin-top: .15rem; accent-color: var(--accento); }
+.scelta-riga em {
+  display: block; font-style: normal; font-size: .8125rem;
+  color: var(--testo-tenue); margin-top: .15rem;
+}
 .scelta-hot input { accent-color: var(--avviso); }
 
 /* -------------------------------------------------------- tabella */
@@ -139,6 +150,18 @@
 }
 
 .et-apertura { color: var(--accento); border-color: var(--accento-scuro); }
+
+/* Nella sottoriga il bollo special resta pieno come sul sito: è lo
+   stesso segno, e riconoscerlo qui e là senza pensarci è metà del suo
+   valore. */
+.et-speciale {
+  background: var(--testo);
+  color: var(--fondo);
+  border-color: var(--testo);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 600;
+}
 
 .stato-punto {
   padding: .05rem .4rem;
