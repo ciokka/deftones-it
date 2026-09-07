@@ -713,10 +713,22 @@ invecchia mentre una notizia sì.
 
 Sta in `/admin`. Il primo accesso crea l'utente e poi si chiude da solo.
 
-**L'elenco delle bozze** si filtra per parola, anno e categoria, e si
-ordina per rilevanza, lunghezza o data. Con le caselle si pubblica o si
-scarta in blocco — ma solo una selezione esplicita, mai "tutte quelle che
-vedi".
+**L'elenco è uno solo, a colonne**, con quattro linguette in cima —
+bozze, online, scartate, tutti — ognuna col suo conteggio. Prima erano
+due viste separate più un elenco delle pubblicate in fondo alla pagina.
+
+Si filtra per parola, categoria, anno, intervallo di date, presenza della
+copertina e soglia hot; si ordina per rilevanza, data, lunghezza o
+titolo. I filtri si sommano, comprese le date con l'anno: scegliere il
+2013 e poi "dal 1º giugno" dà i mesi da giugno in poi di quell'anno.
+
+La colonna della copertina porta la miniatura vera, non un pallino: si
+vede in un colpo d'occhio non solo che la foto c'è, ma se è quella
+giusta. E cliccandola si va a cambiarla.
+
+Con le caselle si pubblica o si scarta in blocco — ma solo una selezione
+esplicita, mai "tutte quelle che vedi" — e un contatore dice quante ne
+hai scelte prima che tu prema il pulsante.
 
 **Nuovo articolo** — `/admin/nuovo` — scrive un pezzo a mano, senza IA: gli stessi campi
 della modifica, e in fondo tre modi di finire — *salva come bozza*,
@@ -1121,10 +1133,16 @@ sole senza reimportare nulla.
 giorni conservano i log, e se nel contratto c'è la nomina a responsabile
 del trattamento.
 
-**Il foglio di stile.** Ha passato le millecinquecento righe e in una sola
+**Il foglio di stile.** Ha passato le millenovecento righe e in una sola
 giornata ha prodotto tre collisioni — due di nomi di classe, una di
 specificità. Non è sfortuna: è cresciuto oltre la misura in cui si tiene
-a mente per intero. Prima o poi va diviso per blocchi con confini netti.
+a mente per intero.
+
+Il primo pezzo è staccato: `admin.css`, caricato solo dalle pagine del
+pannello, dove stanno le regole nuove dell'elenco. Le vecchie regole del
+pannello sono ancora in `stile.css` e vanno traslocate lì, ma cinque
+delle loro classi le usa anche il sito pubblico — spostarle alla cieca
+romperebbe delle pagine, e va fatto con una verifica pagina per pagina.
 
 ---
 

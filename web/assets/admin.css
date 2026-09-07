@@ -1,0 +1,229 @@
+/* =====================================================================
+   admin.css — le regole del solo pannello.
+
+   Caricato solo dalle pagine /admin, e per due motivi. Il primo è che
+   chi legge il sito non ha ragione di scaricarle. Il secondo conta di
+   più: il pannello e il sito pubblico avevano già litigato su un nome di
+   classe — .filtri esisteva in tutt'e due, e la regola del sito
+   incolonnava il modulo di ricerca dell'admin. In file separati un nome
+   preso qui non può più essere lo stesso preso là.
+
+   Le regole più vecchie del pannello stanno ancora in stile.css: vanno
+   traslocate qui, ma sono intrecciate con classi che usa anche il sito e
+   spostarle alla cieca romperebbe delle pagine. Qui c'è il nuovo.
+   ===================================================================== */
+
+/* Nascosto agli occhi, non ai lettori di schermo. */
+.sr {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+/* ------------------------------------------------------- linguette */
+/* Gli stati come linguette e non come voci di un menu a tendina: sono
+   quattro, si vedono tutti insieme, e ognuna porta il suo conteggio.
+   I numeri sono assoluti e non filtrati: servono a decidere dove andare,
+   e un numero che cambia con i filtri non risponderebbe a quella
+   domanda. */
+.linguette {
+  display: flex; flex-wrap: wrap; gap: .25rem;
+  margin: 0 0 1.25rem;
+  border-bottom: 1px solid var(--bordo);
+}
+.linguetta {
+  display: inline-flex; align-items: baseline; gap: .45em;
+  padding: .55rem .9rem;
+  margin-bottom: -1px;
+  border: 1px solid transparent;
+  border-bottom-color: transparent;
+  color: var(--testo-tenue);
+  text-decoration: none;
+  font-size: .875rem;
+  transition: color .15s;
+}
+.linguetta:hover { color: var(--testo); }
+.linguetta.attiva {
+  color: var(--accento);
+  border-color: var(--bordo);
+  border-bottom-color: var(--fondo);
+  background: rgba(255,255,255,.03);
+}
+.linguetta-n {
+  font-size: .6875rem;
+  opacity: .6;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------- filtri */
+
+.filtro-data {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-size: .8125rem; color: var(--testo-tenue);
+}
+.filtro-data input {
+  /* Safari disegna i campi data a modo suo: senza questo restano bianchi
+     su un pannello nero. */
+  color-scheme: dark;
+}
+.scelta-hot { font-size: .875rem; color: var(--testo-tenue); white-space: nowrap; }
+.scelta-hot input { accent-color: var(--avviso); }
+
+/* -------------------------------------------------------- tabella */
+/* A colonne e non a schede: con trenta righe per pagina, l'occhio deve
+   poter scorrere una colonna sola — i punteggi, o le date — invece di
+   rileggere ogni blocco per intero. */
+.tabella {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .875rem;
+}
+.tabella thead th {
+  padding: .5rem .6rem;
+  border-bottom: 1px solid var(--bordo);
+  text-align: left;
+  font-weight: 400;
+  font-size: .6875rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--testo-tenue);
+}
+.tabella thead a { color: inherit; text-decoration: none; }
+.tabella thead a:hover { color: var(--accento); }
+.tabella td {
+  padding: .7rem .6rem;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  vertical-align: middle;
+}
+.tabella tbody tr:hover { background: rgba(255,255,255,.025); }
+
+/* Le colonne strette hanno una misura fissa: così i punteggi e le date
+   restano incolonnati anche quando un titolo va a capo. */
+.c-sel    { width: 2rem; }
+.c-pt     { width: 3rem; text-align: center; }
+.tabella thead th.c-pt { text-align: center; }   /* thead vince, va ridetto */
+.c-cop    { width: 4.5rem; }
+.c-data   { width: 7rem; color: var(--testo-tenue); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.c-azioni { width: 8rem; text-align: right; white-space: nowrap; }
+
+.tabella .c-sel input { accent-color: var(--accento); width: 1rem; height: 1rem; }
+
+.titolo-riga {
+  display: block;
+  color: var(--testo);
+  text-decoration: none;
+  font-size: .9375rem;
+  line-height: 1.35;
+}
+.titolo-riga:hover { color: var(--accento); }
+
+.sottoriga {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
+  margin-top: .3rem;
+  font-size: .6875rem;
+  color: var(--testo-tenue);
+}
+
+/* Il punteggio in tabella è neutro, e diventa ambra solo quando conta.
+   Verde su tutti — com'era — diceva "buono" anche di un 12: in una
+   colonna di trenta numeri il colore deve distinguere, non decorare. */
+.tabella .punteggio {
+  min-width: 2.2rem;
+  border-color: var(--bordo);
+  color: var(--testo-tenue);
+}
+.tabella .punteggio-hot {
+  color: var(--avviso);
+  border-color: rgba(216,180,74,.45);
+  background: rgba(216,180,74,.06);
+}
+
+.et-apertura { color: var(--accento); border-color: var(--accento-scuro); }
+
+.stato-punto {
+  padding: .05rem .4rem;
+  border-radius: 2px;
+  border: 1px solid var(--bordo);
+  text-transform: lowercase;
+}
+.stato-pubblicato { color: var(--accento); border-color: var(--accento-scuro); }
+.stato-scartato   { color: rgba(255,255,255,.35); }
+
+/* ------------------------------------------------------ miniatura */
+/* La fotografia vera e non un pallino: si vede in un colpo d'occhio non
+   solo che la copertina c'è, ma se è quella giusta. */
+.mini {
+  display: block;
+  width: 4rem; height: 2.4rem;
+  border: 1px solid var(--bordo);
+  border-radius: 2px;
+  overflow: hidden;
+  background: #0a0a0b;
+}
+.mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mini-vuota {
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.22);
+  border-style: dashed;
+}
+.mini-vuota:hover { color: var(--accento); border-color: var(--accento-scuro); }
+
+/* -------------------------------------------------------- azioni */
+/* Solo icone: cinque pulsanti con la parola scritta su ogni riga di
+   trenta righe sono centocinquanta parole che nessuno legge. Il titolo
+   al passaggio del mouse resta, e l'aria-label pure. */
+.azione {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.9rem; height: 1.9rem;
+  border: 0; background: none; padding: 0;
+  color: var(--testo-tenue);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: color .15s, background .15s;
+}
+.azione:hover { color: var(--accento); background: rgba(255,255,255,.06); }
+.azione.accesa { color: var(--accento); }
+
+.selezionati {
+  font-size: .8125rem; color: var(--testo-tenue);
+  margin-right: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Punteggio e data compaiono nella sottoriga solo dove le colonne non
+   ci sono più. La regola base sta PRIMA della media query: messa dopo,
+   a parità di peso vincerebbe lei e non comparirebbero mai. */
+.solo-stretto { display: none; }
+
+/* ------------------------------------------------- schermi stretti */
+/* Il pannello si usa quasi sempre da scrivania, ma capita di aprirlo dal
+   telefono per pubblicare una notizia. Sotto i 52rem le colonne
+   diventano una griglia: casella, miniatura, e a destra titolo e azioni.
+   Punteggio e data non spariscono — scendono nella sottoriga, dove
+   costano una riga invece di due colonne. */
+@media (max-width: 52rem) {
+  .tabella, .tabella tbody, .tabella tr, .tabella td { display: block; }
+  .tabella thead { display: none; }
+
+  /* Dopo la riga qui sopra e non prima: display:block su .tabella td è
+     più specifico di .c-pt, e messo dopo rimetterebbe in vista proprio
+     le colonne che vogliamo togliere. */
+  .tabella .c-pt, .tabella .c-data { display: none; }
+  .solo-stretto { display: inline; }
+
+  .tabella tr {
+    display: grid;
+    grid-template-columns: 1.5rem 4rem minmax(0, 1fr);
+    gap: .2rem .7rem;
+    padding: .85rem 0;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+  .tabella td { border: 0; padding: 0; }
+  .tabella .c-sel    { grid-column: 1; grid-row: 1; }
+  .tabella .c-cop    { grid-column: 2; grid-row: 1 / span 2; }
+  .tabella .c-titolo { grid-column: 3; grid-row: 1; }
+  .tabella .c-azioni { grid-column: 3; grid-row: 2; text-align: left; margin-top: .35rem; }
+
+  .filtri { gap: .4rem; }
+  .filtri input[type="search"] { flex: 1 1 100%; min-width: 0; }
+}

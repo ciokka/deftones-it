@@ -336,9 +336,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $azione === 'azione') {
             // resta. Serve a ripensarci, e serve a non riscrivere la stessa
             // notizia — enrich confronta i titoli di tutti gli articoli, e
             // una bozza cancellata sul serio tornerebbe al giro dopo.
-            $uno  = (int)($_POST['scartaId'] ?? 0);
+            $uno   = (int)($_POST['scartaId'] ?? 0);
             $torna = (int)($_POST['ripristinaId'] ?? 0);
-            if ($uno > 0) {
+            $apre  = (int)($_POST['aperturaId'] ?? 0);
+            $ritira = (int)($_POST['ritiraId'] ?? 0);
+            if ($apre > 0) {
+                $pdo->prepare('UPDATE ' . t('articles') . '
+                                  SET in_apertura = 1 - in_apertura WHERE id = ?')->execute([$apre]);
+                $qa = $pdo->prepare('SELECT in_apertura FROM ' . t('articles') . ' WHERE id = ?');
+                $qa->execute([$apre]);
+                cacheSvuota();
+                $messaggio = ['ok', $qa->fetchColumn()
+                    ? 'Fissata in apertura: resta nel carosello anche quando escono notizie nuove.'
+                    : 'Tolta dall\'apertura: torna a contare solo la data.'];
+            } elseif ($ritira > 0) {
+                $pdo->prepare('UPDATE ' . t('articles') . "
+                                  SET stato = 'draft' WHERE id = ? AND stato = 'pubblicato'")
+                    ->execute([$ritira]);
+                cacheSvuota();
+                $messaggio = ['ok', 'Ritirata dal sito, torna fra le bozze.'];
+            } elseif ($uno > 0) {
                 $pdo->prepare('UPDATE ' . t('articles') . "
                                   SET stato = 'scartato' WHERE id = ? AND stato = 'draft'")
                     ->execute([$uno]);
@@ -768,39 +785,60 @@ if (preg_match('#^modifica/(\d+)$#', $azione, $m)) {
 // filtri e paginazione la pagina sarebbe inutilizzabile, e senza ordine
 // per lunghezza non troveresti mai i venti articoli che valgono davvero.
 
-$perPagina = 25;
+$perPagina = 30;
 $pagina    = max(1, (int)($_GET['p'] ?? 1));
 $cerca     = trim((string)($_GET['q'] ?? ''));
 $anno      = (int)($_GET['anno'] ?? 0);
 $cat       = (string)($_GET['cat'] ?? '');
 $ordine    = (string)($_GET['ord'] ?? 'rilevanza');
+$hot       = !empty($_GET['hot']);
+$cop       = (string)($_GET['cop'] ?? '');          // '' | con | senza
+$da        = trim((string)($_GET['da'] ?? ''));
+$a         = trim((string)($_GET['a'] ?? ''));
 
-// Due viste sulla stessa tabella. Le scartate non spariscono: restano
-// qui, ripescabili, e restano soprattutto nel confronto che enrich fa
-// per non riscrivere una notizia già valutata.
-// Anche dal POST: le azioni passano da /admin/azione e tornano qui
-// senza querystring, e senza questo chi scarta dalla vista delle
-// scartate si ritroverebbe sbalzato fra le bozze a ogni clic.
-$vista = ((string)($_POST['vista'] ?? $_GET['vista'] ?? '')) === 'scartate'
-       ? 'scartate' : 'bozze';
-$statoVisto = $vista === 'scartate' ? 'scartato' : 'draft';
+// Una lista sola per tutti gli stati, invece di due viste separate più un
+// elenco delle pubblicate in fondo. Le scartate non spariscono: restano
+// qui, ripescabili, e restano soprattutto nel confronto che enrich fa per
+// non riscrivere una notizia già valutata.
+//
+// Anche dal POST: le azioni passano da /admin/azione e tornano qui senza
+// querystring, e senza questo chi scarta stando fra le scartate si
+// ritroverebbe sbalzato fra le bozze a ogni clic.
+$statiValidi = ['draft', 'pubblicato', 'scartato', 'tutti'];
+$stato = (string)($_POST['stato'] ?? $_GET['stato'] ?? '');
+// I vecchi indirizzi con vista=scartate restano validi.
+if ($stato === '' && (($_POST['vista'] ?? $_GET['vista'] ?? '') === 'scartate')) {
+    $stato = 'scartato';
+}
+if (!in_array($stato, $statiValidi, true)) { $stato = 'draft'; }
 
-$dove = ['stato = ?'];
-$par  = [$statoVisto];
+$dove = [];
+$par  = [];
+if ($stato !== 'tutti') { $dove[] = 'stato = ?'; $par[] = $stato; }
 if ($cerca !== '') {
     $dove[] = '(titolo_it LIKE ? OR sommario_it LIKE ?)';
     $par[] = '%' . $cerca . '%';
     $par[] = '%' . $cerca . '%';
 }
-if ($anno > 0)   { $dove[] = 'YEAR(pubblicato_il) = ?'; $par[] = $anno; }
-if ($cat !== '') { $dove[] = 'categoria = ?';           $par[] = $cat; }
-$filtro = implode(' AND ', $dove);
+// COALESCE e non pubblicato_il secco: una bozza mai pubblicata ha quella
+// colonna vuota, e con il filtro sull'anno sarebbe stata invisibile
+// qualunque anno si scegliesse.
+$quando = 'COALESCE(pubblicato_il, creato_il)';
+if ($anno > 0)   { $dove[] = "YEAR($quando) = ?"; $par[] = $anno; }
+if ($cat !== '') { $dove[] = 'categoria = ?';     $par[] = $cat; }
+if ($hot)        { $dove[] = 'rilevanza >= ' . HOT_DA; }
+if ($cop === 'con')   { $dove[] = 'immagine_url IS NOT NULL'; }
+if ($cop === 'senza') { $dove[] = 'immagine_url IS NULL'; }
+if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $da)) { $dove[] = "$quando >= ?"; $par[] = $da . ' 00:00:00'; }
+if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $a))  { $dove[] = "$quando <= ?"; $par[] = $a  . ' 23:59:59'; }
+$filtro = $dove ? implode(' AND ', $dove) : '1';
 
 $ordinamenti = [
-    'rilevanza' => 'rilevanza DESC, pubblicato_il DESC',
-    'lunghi'    => 'CHAR_LENGTH(COALESCE(corpo_it, sommario_it)) DESC',
-    'recenti'   => 'pubblicato_il DESC',
-    'vecchi'    => 'pubblicato_il ASC',
+    'rilevanza' => "rilevanza DESC, $quando DESC",
+    'lunghi'    => "CHAR_LENGTH(COALESCE(corpo_it, sommario_it)) DESC",
+    'recenti'   => "$quando DESC",
+    'vecchi'    => "$quando ASC",
+    'titolo'    => 'titolo_it ASC',
 ];
 $orderBy = $ordinamenti[$ordine] ?? $ordinamenti['rilevanza'];
 
@@ -812,6 +850,7 @@ $pagina = min($pagina, $pagine);
 
 $q = $pdo->prepare('SELECT id, slug, titolo_it, sommario_it, categoria, attendibilita,
                            rilevanza, fonte_nome, fonte_url, creato_il, pubblicato_il,
+                           stato, in_apertura, immagine_url, immagine_origine,
                            CHAR_LENGTH(COALESCE(corpo_it, \'\')) AS lunghezza
                       FROM ' . t('articles') . "
                      WHERE $filtro ORDER BY $orderBy
@@ -819,25 +858,29 @@ $q = $pdo->prepare('SELECT id, slug, titolo_it, sommario_it, categoria, attendib
 $q->execute($par);
 $bozze = $q->fetchAll();
 
-// per i menu a tendina dei filtri
-$qa = $pdo->prepare('SELECT YEAR(pubblicato_il) AS a, COUNT(*) AS n
-                       FROM ' . t('articles') . ' WHERE stato = ?
-                      GROUP BY a ORDER BY a DESC');
-$qa->execute([$statoVisto]);
-$anni = $qa->fetchAll();
-$qc = $pdo->prepare('SELECT categoria, COUNT(*) AS n
-                       FROM ' . t('articles') . ' WHERE stato = ?
-                      GROUP BY categoria ORDER BY n DESC');
-$qc->execute([$statoVisto]);
-$categorie = $qc->fetchAll();
+// I conteggi delle linguette. Non risentono dei filtri: dicono quanto
+// c'è in tutto in ogni stato, che è l'informazione che serve per
+// decidere dove andare.
+$conta = ['draft' => 0, 'pubblicato' => 0, 'scartato' => 0, 'tutti' => 0];
+foreach ($pdo->query('SELECT stato, COUNT(*) n FROM ' . t('articles')
+                   . ' GROUP BY stato') as $r) {
+    $conta[$r['stato']] = (int)$r['n'];
+    $conta['tutti'] += (int)$r['n'];
+}
 
-$quanteScartate = (int)$pdo->query('SELECT COUNT(*) FROM ' . t('articles')
-                                 . " WHERE stato = 'scartato'")->fetchColumn();
-
-$pubblicate = $pdo->query('SELECT id, slug, titolo_it, pubblicato_il, fonte_nome, in_apertura
-                             FROM ' . t('articles') . '
-                            WHERE stato = \'pubblicato\'
-                            ORDER BY pubblicato_il DESC LIMIT 15')->fetchAll();
+// Anni e categorie dello stato che si sta guardando: elencare anni in cui
+// non c'è niente da vedere è un invito a un vicolo cieco.
+$doveStato = $stato === 'tutti' ? '1' : 'stato = ' . $pdo->quote($stato);
+$anni = $pdo->query("SELECT YEAR($quando) AS a, COUNT(*) AS n
+                       FROM " . t('articles') . " WHERE $doveStato
+                      GROUP BY a ORDER BY a DESC")->fetchAll();
+$categorie = $pdo->query('SELECT categoria, COUNT(*) AS n
+                            FROM ' . t('articles') . " WHERE $doveStato
+                           GROUP BY categoria ORDER BY n DESC")->fetchAll();
+$senzaCopertina = (int)$pdo->query('SELECT COUNT(*) FROM ' . t('articles')
+                                 . " WHERE $doveStato AND immagine_url IS NULL")->fetchColumn();
+$quantiHot = (int)$pdo->query('SELECT COUNT(*) FROM ' . t('articles')
+                            . " WHERE $doveStato AND rilevanza >= " . HOT_DA)->fetchColumn();
 
 // La coda: quanti item aspettano di diventare qualcosa, e il più
 // vecchio fra loro. Serve a sapere quando smettere di premere
@@ -852,9 +895,12 @@ $ultimo = $pdo->query('SELECT job, finito_il, esito, item_elaborati, messaggio
                         ORDER BY id DESC LIMIT 5')->fetchAll();
 
 echo render('admin-bozze', [
-    'bozze' => $bozze, 'pubblicate' => $pubblicate, 'ultimo' => $ultimo,
-    'coda' => $coda, 'vista' => $vista, 'quanteScartate' => $quanteScartate,
-    'messaggio' => $messaggio ?? messaggioDiPassaggio(), 'totale' => $totale, 'pagina' => $pagina,
-    'pagine' => $pagine, 'cerca' => $cerca, 'anno' => $anno, 'cat' => $cat,
-    'ordine' => $ordine, 'anni' => $anni, 'categorie' => $categorie,
+    'bozze' => $bozze, 'ultimo' => $ultimo, 'coda' => $coda,
+    'stato' => $stato, 'conta' => $conta,
+    'messaggio' => $messaggio ?? messaggioDiPassaggio(),
+    'totale' => $totale, 'pagina' => $pagina, 'pagine' => $pagine,
+    'cerca' => $cerca, 'anno' => $anno, 'cat' => $cat, 'ordine' => $ordine,
+    'hot' => $hot, 'cop' => $cop, 'da' => $da, 'a' => $a,
+    'anni' => $anni, 'categorie' => $categorie,
+    'senzaCopertina' => $senzaCopertina, 'quantiHot' => $quantiHot,
 ], ['titolo' => 'Pannello — deftones.it']);

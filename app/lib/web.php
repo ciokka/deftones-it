@@ -29,6 +29,19 @@ function dataIt(?string $sql): string
 }
 
 /** "3 ore fa", "ieri", "5 giorni fa" — per le notizie recenti. */
+/**
+ * La data in forma corta, per le colonne strette: "14 mar 2013".
+ * L'anno c'è sempre, perché in un archivio che copre vent'anni una data
+ * senza anno non dice niente.
+ */
+function dataBreve(?string $quando): string
+{
+    if (!$quando) { return '—'; }
+    $mesi = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+    $t = strtotime($quando);
+    return date('j', $t) . ' ' . $mesi[(int)date('n', $t) - 1] . ' ' . date('Y', $t);
+}
+
 function quandoIt(?string $sql): string
 {
     if (!$sql) { return ''; }
@@ -105,6 +118,12 @@ function render(string $vista, array $dati = [], array $meta = []): string
             'alt'    => $x['alt'] ?? ($nostra ? 'deftones.it — the italian Deftones family' : null),
         ];
     }
+
+    // Il pannello ha un foglio di stile suo, caricato solo dalle sue
+    // pagine: le sue regole non riguardano chi legge il sito, e tenerle
+    // separate evita che due componenti diversi si contendano un nome di
+    // classe — cosa già successa, con i filtri.
+    $eAdmin = str_starts_with($vista, 'admin-');
 
     ob_start();
     require dirname(__DIR__) . '/views/layout.php';
