@@ -17,6 +17,18 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
     return u('admin/') . ($p ? '?' . http_build_query($p) : '');
 };
 
+/* I filtri correnti, da portarsi dietro nei moduli che agiscono: dopo un
+   POST la querystring non c'è più, e senza questi l'elenco tornerebbe
+   senza filtri e alla prima pagina a ogni clic. Solo chiavi note, da
+   valori già convalidati. */
+$filtriCorrenti = http_build_query(array_filter([
+    'q' => $cerca, 'anno' => $anno ?: '', 'cat' => $cat, 'ord' => $ordine,
+    'stato' => $stato === 'draft' ? '' : $stato,
+    'hot' => $hot ? '1' : '', 'sp' => $sp ? '1' : '',
+    'cop' => $cop, 'da' => $da, 'a' => $a,
+    'p' => $pagina > 1 ? $pagina : '',
+], fn($v) => $v !== '' && $v !== null && $v !== 0));
+
 $etichetteStato = ['draft' => 'bozze', 'pubblicato' => 'online',
                    'scartato' => 'scartate', 'tutti' => 'tutti'];
 $filtriAttivi = $cerca || $anno || $cat || $hot || $sp || $cop || $da || $a;
@@ -30,6 +42,7 @@ $filtriAttivi = $cerca || $anno || $cat || $hot || $sp || $cop || $da || $a;
     <form method="post" action="<?= u('admin/azione') ?>">
       <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
       <input type="hidden" name="che" value="svuota">
+      <input type="hidden" name="filtri" value="<?= e($filtriCorrenti) ?>">
       <button class="bottone bottone-tenue" type="submit"><?= icona('cache') ?>cache</button>
     </form>
     <a class="bottone bottone-tenue" href="<?= u('/') ?>"><?= icona('fuori') ?>il sito</a>
@@ -54,6 +67,7 @@ $filtriAttivi = $cerca || $anno || $cat || $hot || $sp || $cop || $da || $a;
         <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
         <input type="hidden" name="che" value="lavoro">
         <input type="hidden" name="quale" value="archivio">
+        <input type="hidden" name="filtri" value="<?= e($filtriCorrenti) ?>">
         <button class="bottone bottone-tenue" type="submit"
                 title="cerca sulla Wayback Machine gli articoli del 2021-2025 e riempie la coda"><?= icona('raccogli') ?>archivio</button>
       </form>
@@ -66,6 +80,7 @@ $filtriAttivi = $cerca || $anno || $cat || $hot || $sp || $cop || $da || $a;
         <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
         <input type="hidden" name="che" value="lavoro">
         <input type="hidden" name="quale" value="novita">
+        <input type="hidden" name="filtri" value="<?= e($filtriCorrenti) ?>">
         <button class="bottone bottone-tenue" type="submit"
                 title="ingest e poi enrich: cerca notizie e scrive le bozze"><?= icona('raccogli') ?>cerca notizie</button>
       </form>
@@ -157,6 +172,7 @@ $filtriAttivi = $cerca || $anno || $cat || $hot || $sp || $cop || $da || $a;
     <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
     <input type="hidden" name="che" value="multi">
     <input type="hidden" name="stato" value="<?= e($stato) ?>">
+    <input type="hidden" name="filtri" value="<?= e($filtriCorrenti) ?>">
 
     <table class="tabella">
       <thead>

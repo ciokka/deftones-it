@@ -801,6 +801,19 @@ if (preg_match('#^modifica/(\d+)$#', $azione, $m)) {
 // filtri e paginazione la pagina sarebbe inutilizzabile, e senza ordine
 // per lunghezza non troveresti mai i venti articoli che valgono davvero.
 
+// Le azioni della riga passano da un POST a /admin/azione e tornano qui,
+// dove la querystring non esiste più: senza questo, ogni clic su
+// "scarta" o "special" riportava all'elenco senza filtri, alla prima
+// pagina. I filtri viaggiano quindi in un campo nascosto del modulo e
+// qui vengono rimessi al loro posto.
+//
+// Sono solo le chiavi che il modulo ha costruito da valori già
+// convalidati, e vengono rilette qui con gli stessi controlli di sempre.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['filtri'])) {
+    parse_str((string)$_POST['filtri'], $daPost);
+    $_GET += is_array($daPost) ? $daPost : [];
+}
+
 $perPagina = 30;
 $pagina    = max(1, (int)($_GET['p'] ?? 1));
 $cerca     = trim((string)($_GET['q'] ?? ''));
