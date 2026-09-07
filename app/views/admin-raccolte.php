@@ -2,7 +2,6 @@
   <div class="pannello-testa">
     <h1>raccolte</h1>
     <div class="azioni">
-      <a class="bottone bottone-tenue" href="<?= u('admin/') ?>">torna alle bozze</a>
       <a class="bottone bottone-tenue" href="<?= u('raccolte/') ?>">vedi il sito</a>
     </div>
   </div>

@@ -125,6 +125,14 @@ function render(string $vista, array $dati = [], array $meta = []): string
     // classe — cosa già successa, con i filtri.
     $eAdmin = str_starts_with($vista, 'admin-');
 
+    // Dentro il pannello, ad accesso fatto. Le due pagine dell'accesso
+    // portano anche loro il prefisso admin- ma non hanno una sessione
+    // dietro: mostrare lì la testata del pannello significherebbe
+    // offrire "esci" a chi non è ancora entrato, e una barra di sezioni
+    // che rimandano tutte alla stessa schermata di login.
+    $adminDentro = $eAdmin
+        && !in_array($vista, ['admin-accesso', 'admin-primo'], true);
+
     ob_start();
     require dirname(__DIR__) . '/views/layout.php';
     return (string)ob_get_clean();

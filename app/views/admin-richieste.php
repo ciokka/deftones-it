@@ -1,9 +1,6 @@
 <div class="pannello">
   <div class="pannello-testa">
     <h1>richieste</h1>
-    <div class="azioni">
-      <a class="bottone bottone-tenue" href="<?= u('admin/') ?>">torna alle bozze</a>
-    </div>
   </div>
 
   <?php if ($messaggio): ?>

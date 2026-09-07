@@ -44,7 +44,7 @@
 <link rel="apple-touch-icon" href="<?= u('apple-touch-icon.png') ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
 <link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=87">
-<?php if (!empty($eAdmin)): ?><link rel="stylesheet" href="<?= u('assets/admin.css') ?>?v=2"><?php endif ?>
+<?php if (!empty($eAdmin)): ?><link rel="stylesheet" href="<?= u('assets/admin.css') ?>?v=3"><?php endif ?>
 </head>
 <body>
 
@@ -88,6 +88,68 @@ $voci = [
     u('categoria/tour/')    => 'Tour',
 ];
 ?>
+<?php if (!empty($adminDentro)): ?>
+<?php
+/* La testata del pannello non è quella del sito, e non deve somigliarle:
+   il logo qui riporta all'elenco degli articoli, non alla home, e al
+   posto del menu ci sono le tre azioni che non appartengono a nessuna
+   sezione — svuotare la cache, andare a vedere il sito, uscire.
+
+   Prima vivevano dentro la pagina delle bozze. Il che voleva dire che da
+   "raccolte" o da "foto" non c'era modo di uscire senza prima tornare
+   indietro: erano azioni di tutto il pannello messe in una stanza sola. */
+
+/* Le sezioni, e per ognuna le viste che devono accenderla. Modifica,
+   copertina e anteprima non sono sezioni a sé: sono l'articolo aperto,
+   quindi accendono "articoli" — altrimenti entrando in un articolo la
+   barra si spegnerebbe tutta e non diresti più dove sei. */
+$sezioni = [
+    'articoli'  => ['admin/',          ['admin-bozze', 'admin-modifica',
+                                        'admin-copertina', 'admin-anteprima']],
+    'richieste' => ['admin/richieste', ['admin-richieste']],
+    'raccolte'  => ['admin/raccolte',  ['admin-raccolte']],
+    'foto'      => ['admin/foto',      ['admin-foto']],
+    'costi'     => ['admin/costi',     ['admin-costi']],
+];
+?>
+<header class="testata testata-admin">
+  <div class="contenitore testata-int">
+    <div class="marchio-blocco">
+      <a class="marchio" href="<?= u('admin/') ?>"><?php require __DIR__ . '/logo.php'; ?></a>
+      <p class="sottotitolo">Pannello <span>di redazione</span></p>
+    </div>
+    <div class="azioni azioni-servizio">
+      <form method="post" action="<?= u('admin/azione') ?>">
+        <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
+        <input type="hidden" name="che" value="svuota">
+        <?php /* I filtri dell'elenco viaggiano col modulo: dopo il POST
+                 la querystring non c'è più, e senza questo svuotare la
+                 cache ti riporterebbe alle bozze senza filtri. Solo la
+                 pagina dell'elenco lo definisce; dalle altre parte vuoto. */ ?>
+        <input type="hidden" name="filtri" value="<?= e($filtriCorrenti ?? '') ?>">
+        <button class="bottone bottone-tenue" type="submit"><?= icona('cache') ?>cache</button>
+      </form>
+      <a class="bottone bottone-tenue" href="<?= u('/') ?>"><?= icona('fuori') ?>il sito</a>
+      <a class="bottone bottone-tenue" href="<?= u('admin/esci') ?>"><?= icona('esci') ?>esci</a>
+    </div>
+  </div>
+</header>
+
+<?php /* La barra delle sezioni sta fuori dalla testata e non dentro, per
+         la stessa ragione per cui ci sta quella del sito: un elemento
+         sticky si sblocca quando il suo contenitore esce dalla vista. */ ?>
+<nav class="admin-barra" aria-label="Sezioni del pannello">
+  <div class="contenitore admin-menu">
+    <a class="bottone bottone-solo-icona" href="<?= u('admin/nuovo') ?>"
+       aria-label="Nuovo articolo" title="Nuovo articolo"><?= icona('nuovo', 16) ?></a>
+    <?php foreach ($sezioni as $etichetta => [$dove, $viste]): ?>
+      <?php $qui = in_array($vista, $viste, true); ?>
+      <a href="<?= u($dove) ?>"<?= $qui ? ' class="attiva" aria-current="page"' : '' ?>><?= $etichetta ?></a>
+    <?php endforeach ?>
+  </div>
+</nav>
+
+<?php else: ?>
 <header class="testata">
   <div class="contenitore testata-int">
     <div class="marchio-blocco">
@@ -120,6 +182,7 @@ $voci = [
     <?php foreach ($voci as $href => $et): ?><a href="<?= $href ?>"><?= $et ?></a><?php endforeach ?><a class="menu-lente" href="<?= u('cerca') ?>" aria-label="Cerca" title="Cerca"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.6"/><path d="M10.5 10.5 14 14"/></svg></a>
   </div>
 </nav>
+<?php endif ?>
 
 <main class="contenitore">
 <?= $contenuto ?>

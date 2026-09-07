@@ -17,7 +17,6 @@ foreach ($giorni as $g) {
 }
 ?>
 <div class="pannello">
-  <p><a class="torna" href="<?= u('admin/') ?>"><?= icona('indietro') ?> torna alle bozze</a></p>
 
   <div class="pannello-testa">
     <h1>costi <span class="conta"><?= e($euro($totali['questo mese']['euro'])) ?></span></h1>

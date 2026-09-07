@@ -11,7 +11,6 @@ $link = function (array $cambia = []) use ($stato, $sog, $cerca, $ord): string {
 $query = (string)parse_url($link(), PHP_URL_QUERY);
 ?>
 <div class="pannello">
-  <p><a class="torna" href="<?= u('admin/') ?>"><?= icona('indietro') ?> torna alle bozze</a></p>
 
   <?php if ($messaggio): ?>
     <?= avviso($messaggio) ?>

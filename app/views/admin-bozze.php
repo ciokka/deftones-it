@@ -35,30 +35,14 @@ $filtriAttivi = $cerca || $anno || $cat || $hot || $sp || $cop || $da || $a;
 ?>
 <div class="pannello">
 
-  <?php /* Le tre di servizio stanno sopra, in un angolo: non riguardano
-           le bozze e non c'è ragione che stiano in mezzo agli strumenti
-           che invece ci lavorano. */ ?>
-  <div class="azioni azioni-servizio">
-    <form method="post" action="<?= u('admin/azione') ?>">
-      <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
-      <input type="hidden" name="che" value="svuota">
-      <input type="hidden" name="filtri" value="<?= e($filtriCorrenti) ?>">
-      <button class="bottone bottone-tenue" type="submit"><?= icona('cache') ?>cache</button>
-    </form>
-    <a class="bottone bottone-tenue" href="<?= u('/') ?>"><?= icona('fuori') ?>il sito</a>
-    <a class="bottone bottone-tenue" href="<?= u('admin/esci') ?>"><?= icona('esci') ?>esci</a>
-  </div>
-
   <div class="pannello-testa">
     <h1><?= e($etichetteStato[$stato]) ?>
         <span class="conta"><?= (int)$totale ?></span></h1>
+    <?php /* Qui restano i due pulsanti che lavorano sugli articoli. Le
+             sezioni e il "+" sono saliti nella barra sotto la testata:
+             sono navigazione, e la navigazione deve stare dove si trova
+             anche dalle altre pagine. */ ?>
     <div class="azioni">
-      <a class="bottone bottone-solo-icona" href="<?= u('admin/nuovo') ?>"
-         aria-label="Nuovo articolo" title="Nuovo articolo"><?= icona('nuovo', 17) ?></a>
-      <a class="bottone bottone-tenue" href="<?= u('admin/richieste') ?>">richieste</a>
-      <a class="bottone bottone-tenue" href="<?= u('admin/raccolte') ?>">raccolte</a>
-      <a class="bottone bottone-tenue" href="<?= u('admin/foto') ?>"><?= icona('immagine') ?>foto</a>
-      <a class="bottone bottone-tenue" href="<?= u('admin/costi') ?>"><?= icona('costi') ?>costi</a>
       <?php /* Il recupero dell'archivio non chiama l'IA e non spende:
                apre duecento pagine per volta e riempie la coda. Perciò
                niente conferma — quella la chiede "cerca notizie", che

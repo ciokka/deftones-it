@@ -20,6 +20,121 @@
   clip-path: inset(50%); white-space: nowrap;
 }
 
+/* --------------------------------------------------------- testata */
+/* Il pannello ha una testata sua. Riusa .testata di stile.css — sticky,
+   fondo velato, stessa altezza — e cambia solo ciò che differisce: al
+   posto del menu del sito ci sono le tre azioni che non appartengono a
+   nessuna sezione, cache, il sito, esci.
+
+   Stavano dentro la pagina delle bozze, e questo le rendeva
+   irraggiungibili da tutte le altre: da "foto" non c'era modo di uscire
+   senza prima tornare all'elenco. */
+.testata-admin .azioni-servizio { margin: 0; }
+.testata-admin .sottotitolo { letter-spacing: .18em; }
+
+@media (max-width: 40rem) {
+  /* Su schermo stretto la testata si incolonna già di suo. Qui si
+     stringe: tre pulsanti sotto il logo sono più alti del menu del
+     sito, e a lasciarli respirare si mangiano mezzo schermo — che poi
+     è lo schermo dove l'elenco degli articoli serve di più. */
+  .testata-admin .testata-int { padding: 1rem 0 1.15rem; gap: .7rem; }
+
+  /* width: 100% non è cosmesi. La testata su schermo stretto è una
+     colonna con align-items: center, e lì dentro un blocco prende la
+     sua larghezza naturale: le tre azioni in fila misuravano più di un
+     telefono, non andavano a capo perché non avevano un limite entro
+     cui farlo, e allargavano l'intera pagina — la tabella degli
+     articoli finiva tagliata a destra. Con una larghezza da rispettare
+     il flex torna a fare il suo mestiere e manda a capo. */
+  .testata-admin .azioni-servizio {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: .4rem;
+  }
+}
+
+/* ----------------------------------------------- barra delle sezioni */
+/* Sempre presente, in ogni pagina del pannello: è l'unica navigazione
+   che il pannello abbia. Prima le sezioni erano collegate solo
+   dall'elenco degli articoli, quindi per andare da "foto" a "raccolte"
+   si passava per forza dall'elenco.
+
+   Sta fuori dalla testata e si aggancia sotto di essa con la stessa
+   variabile che usa la barra del sito: --alta-testata, misurata da
+   layout.php, perché l'altezza dipende da logo e spaziature e scriverla
+   a mano invecchierebbe male. */
+.admin-barra {
+  position: sticky;
+  top: var(--alta-testata, 0px);
+  z-index: 9;                    /* sotto la testata, sopra il contenuto */
+  background: rgba(0,0,0,.62);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid var(--bordo);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .admin-barra { background: rgba(0,0,0,.95); }
+}
+
+/* Allineata ai bordi come la testata e non alla colonna del testo, così
+   il "+" cade esattamente sotto il logo. */
+.admin-menu {
+  max-width: none;
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  padding: .5rem 1.75rem;
+  /* Su telefono le sei voci scorrono invece di andare a capo: una barra
+     fissa che diventa alta due righe ruba spazio a ogni pagina. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.admin-menu::-webkit-scrollbar { display: none; }
+@media (min-width: 64rem) { .admin-menu { padding: .5rem 2.5rem; } }
+
+.admin-menu a:not(.bottone) {
+  color: var(--testo-tenue);
+  text-decoration: none;
+  font-size: .8125rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;         /* il maiuscolo senza spazio si legge male */
+  white-space: nowrap;
+  padding: .3rem 0;
+  border-bottom: 2px solid transparent;
+  transition: color .2s, border-color .2s;
+}
+.admin-menu a:not(.bottone):hover { color: var(--testo); }
+
+/* La sezione in cui sei si segna con la riga verde sotto, non solo col
+   colore: fra voci tutte grigie una voce colorata si legge come "questa
+   fa una cosa diversa", non come "sei qui". */
+.admin-menu a.attiva {
+  color: var(--testo);
+  border-bottom-color: var(--accento);
+}
+
+/* Il "+" è un pulsante e non una voce, e sta prima di tutte: apre una
+   cosa nuova invece di portarti in una che esiste già. */
+.admin-menu .bottone-solo-icona {
+  flex: 0 0 auto;
+  padding: .4rem;
+  margin-right: .25rem;
+}
+
+/* ------------------------------------------------- azioni della pagina */
+/* I pulsanti della testa di pagina si dividevano la riga in parti uguali:
+   con sette voci era una griglia ordinata, con le due rimaste — archivio
+   e cerca notizie — diventano due bottoni larghi mezza pagina, che
+   gridano molto più di quanto contino. Tornano a occupare lo spazio delle
+   loro parole; sotto i 40rem si riallargano, perché lì una riga di
+   pulsanti stretti allineati a sinistra si tocca male col pollice. */
+@media (min-width: 40rem) {
+  .pannello-testa .azioni > *,
+  .pannello-testa .azioni > form { flex: 0 0 auto; }
+  .pannello-testa .azioni > form > .bottone { width: auto; }
+}
+
 /* ------------------------------------------------------- linguette */
 /* Gli stati come linguette e non come voci di un menu a tendina: sono
    quattro, si vedono tutti insieme, e ognuna porta il suo conteggio.
