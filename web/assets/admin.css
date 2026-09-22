@@ -365,3 +365,59 @@
   .filtri { gap: .4rem; }
   .filtri input[type="search"] { flex: 1 1 100%; min-width: 0; }
 }
+
+/* ------------------------------------------- le parole che cerchiamo */
+
+/* Il titolo di una delle due sezioni — Openverse, Commons. Non è una
+   .pannello-testa: quella porta con sé la riga dei pulsanti larghi
+   quanto la pagina, e qui sotto il titolo ci va una tabella. */
+.sezione-ricerche {
+  margin: 2.75rem 0 .75rem;
+  padding-bottom: .6rem;
+  border-bottom: 1px solid var(--bordo);
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.375rem;
+  text-transform: lowercase;
+}
+
+/* Colonne sue e non .c-data / .c-pt: quelle su schermo stretto
+   spariscono, ed è giusto per punteggi e date delle bozze — ma qui i
+   due numeri sono il motivo per cui si apre la pagina. */
+.c-num { width: 4.5rem; text-align: center; font-variant-numeric: tabular-nums; }
+.tabella thead th.c-num { text-align: center; }
+.c-quando {
+  width: 7rem; white-space: nowrap;
+  color: var(--testo-tenue); font-variant-numeric: tabular-nums;
+}
+
+/* Una ricerca sospesa resta leggibile ma si tira indietro. I pulsanti
+   no: quello per riaccenderla dev'essere nitido come gli altri, o
+   riaccenderla sembra una cosa che non si può fare. */
+.tabella tr.sospesa td { opacity: .45; }
+.tabella tr.sospesa .c-azioni { opacity: 1; }
+
+/* Su schermo stretto la griglia delle bozze — casella, miniatura,
+   titolo — non c'entra niente con questa tabella, che quelle colonne
+   non le ha. Qui le celle si mettono in fila e vanno a capo da sé. */
+@media (max-width: 52rem) {
+  .tabella-ricerche tr {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    gap: .3rem .75rem; padding: .85rem 0;
+  }
+  .tabella-ricerche td { flex: 0 0 auto; }
+  .tabella-ricerche td:first-child { flex: 1 1 100%; }
+  .tabella-ricerche .c-azioni { margin-left: auto; text-align: right; }
+}
+
+/* Il modulo per aggiungere viene subito dopo la tabella: senza un po'
+   d'aria sembra l'ultima riga. */
+.tabella-ricerche + .caricamento { margin-top: 1.25rem; }
+
+/* Un campo da uno a dodici largo trentaquattro centimetri prometteva di
+   accettare tutt'altro. */
+.modulo-foto input[type="number"] { width: 6rem; }
+
+/* Le etichette che compaiono al posto dell'intestazione: tenui, perché
+   sono un promemoria e non il dato. */
+.tabella-ricerche .solo-stretto { color: var(--testo-tenue); font-size: .8em; }

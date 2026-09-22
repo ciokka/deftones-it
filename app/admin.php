@@ -463,6 +463,105 @@ function messaggioDiPassaggio(): ?array
     return is_array($m) ? $m : null;
 }
 
+// ------------------------------------------ le parole che cerchiamo
+
+/*
+ * Le domande con cui si vanno a prendere le fotografie.
+ *
+ * Stavano dentro copertine.php, in due elenchi scritti in PHP. Il che
+ * voleva dire che per cercare "deftones knotfest 2026" bisognava aprire
+ * l'editor, ricordarsi la sintassi di un array e ricaricare il file sul
+ * server — cioè: non si cercava mai niente di nuovo, e il catalogo
+ * cresceva solo di quello che le stesse quattordici domande di sempre
+ * riuscivano ancora a trovare.
+ */
+if ($azione === 'ricerche') {
+    require_once __DIR__ . '/lib/copertine.php';
+    $msg = messaggioDiPassaggio();
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrfValido($_POST['csrf'] ?? null)) {
+        $che = (string)($_POST['che'] ?? '');
+
+        if ($che === 'lavoro') {
+            $_SESSION['messaggio'] = lanciaLavoro((string)($_POST['quale'] ?? ''));
+
+        } elseif ($che === 'nuova') {
+            $fonte = ($_POST['fonte'] ?? '') === 'commons' ? 'commons' : 'openverse';
+            // Su Commons il prefisso fa parte del titolo della pagina ma
+            // non del nome della categoria: chi copia dalla barra degli
+            // indirizzi se lo porta dietro, e la chiamata all'API
+            // cercherebbe "Category:Category:Deftones".
+            $domanda = trim((string)($_POST['domanda'] ?? ''));
+            $domanda = preg_replace('/^category:\s*/i', '', $domanda);
+            $domanda = trim(preg_replace('/\s+/u', ' ', (string)$domanda));
+
+            $soggetto = (string)($_POST['soggetto'] ?? 'band');
+            if (!in_array($soggetto, soggetti(), true)) { $soggetto = 'band'; }
+            // Openverse dà venti risultati per pagina e ci mette sei
+            // secondi a pagina: dodici sono già più di un minuto per una
+            // domanda sola.
+            $pagine = min(12, max(1, (int)($_POST['pagine'] ?? 4)));
+
+            if (mb_strlen($domanda) < 3) {
+                $_SESSION['messaggio'] = ['ko', 'Scrivi almeno tre caratteri.'];
+            } elseif (mb_strlen($domanda) > 120) {
+                $_SESSION['messaggio'] = ['ko', 'Troppo lunga: al massimo 120 caratteri.'];
+            } else {
+                try {
+                    // Se c'era già ed era sospesa la si riaccende, invece
+                    // di rispondere "esiste" e lasciare a chi guarda il
+                    // compito di andarla a cercare fra le sospese.
+                    $pdo->prepare('INSERT INTO ' . t('ricerche') . '
+                          (fonte, domanda, soggetto, pagine) VALUES (?,?,?,?)
+                        ON DUPLICATE KEY UPDATE
+                          soggetto = VALUES(soggetto), pagine = VALUES(pagine), attiva = 1')
+                        ->execute([$fonte, $domanda, $soggetto, $pagine]);
+                    $_SESSION['messaggio'] = ['ok', $fonte === 'commons'
+                        ? 'Categoria aggiunta. Verrà visitata alla prossima raccolta da Commons.'
+                        : 'Ricerca aggiunta. Verrà chiesta alla prossima raccolta da Openverse.'];
+                } catch (Throwable $e) {
+                    $_SESSION['messaggio'] = ['ko', 'Non salvata: ' . $e->getMessage()];
+                }
+            }
+
+        } elseif ($che === 'attiva') {
+            // Un interruttore: sospesa resta scritta, coi suoi conti, ma
+            // non viene più interrogata. Serve a provare se una parola
+            // rende senza perderla per sempre quando non rende.
+            $pdo->prepare('UPDATE ' . t('ricerche') . '
+                 SET attiva = 1 - attiva WHERE id = ?')->execute([(int)($_POST['id'] ?? 0)]);
+
+        } elseif ($che === 'elimina') {
+            // Le fotografie che quella ricerca aveva portato restano in
+            // catalogo: sono buone o no per conto loro, e chi le ha
+            // trovate non c'entra.
+            $pdo->prepare('DELETE FROM ' . t('ricerche') . ' WHERE id = ?')
+                ->execute([(int)($_POST['id'] ?? 0)]);
+            $_SESSION['messaggio'] = ['ok', 'Ricerca tolta. Le foto che aveva portato restano.'];
+        }
+        vaiA('admin/ricerche');
+    }
+
+    try {
+        $ricerche = $pdo->query('SELECT * FROM ' . t('ricerche') . '
+                                  ORDER BY fonte, attiva DESC, domanda')->fetchAll();
+        $tabella = true;
+    } catch (Throwable) {
+        // La migrazione si esegue a mano, e finché non è stata eseguita
+        // questa pagina non ha niente da mostrare. Dirlo è meglio che
+        // una pagina bianca: la raccolta intanto continua a funzionare
+        // con gli elenchi scritti nel programma.
+        $ricerche = [];
+        $tabella = false;
+    }
+
+    echo render('admin-ricerche', [
+        'ricerche' => $ricerche, 'tabella' => $tabella, 'messaggio' => $msg,
+        'soggetti' => soggetti(), 'log' => codaLog('copertine'),
+    ], ['titolo' => 'Le parole che cerchiamo — pannello']);
+    exit;
+}
+
 // --------------------------------------------- catalogo fotografie
 
 if ($azione === 'foto') {

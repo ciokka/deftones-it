@@ -9,6 +9,10 @@
  *                quello che qualcuno si prende la briga di trasferire.
  *                Non serve nessuna chiave.
  *
+ *  Che cosa si cerca — le parole per Openverse, le categorie per
+ *  Commons — non sta più qui dentro: sta in df_ricerche, e si aggiunge
+ *  dal pannello, in fotografie → le parole che cerchiamo.
+ *
  *   --raccogli   interroga Wikimedia Commons e riempie il catalogo
  *                df_immagini. Va fatto ogni tanto, non ogni giorno: le
  *                foto libere dei Deftones non nascono al ritmo delle
@@ -96,34 +100,16 @@ if ($diagnosi) {
 //  Raccolta: Openverse (Flickr e altri) -> df_immagini
 // =====================================================================
 if ($altre) {
-    // Le domande. Openverse cerca nel titolo, nella descrizione e nei
-    // tag: per le persone si mette anche "deftones", o "chino" da solo
-    // porta indietro mezzo mondo.
-    // Le ultime quattro non cercano una persona ma una situazione. Per
-    // un pezzo scritto a mano serve una fotografia che c'entri con
-    // quello che racconta, e "deftones" e basta riporta indietro sempre
-    // gli stessi ritratti di scena: chi cerca il palco, la folla o il
-    // festival deve chiederlo. Restano soggetto 'band' perché valgono
-    // per qualunque articolo.
-    $ricerche = [
-        'deftones'                  => 'band',
-        'deftones chino moreno'     => 'chino',
-        'deftones stephen carpenter'=> 'stephen',
-        'deftones sergio vega'      => 'sergio',
-        'deftones abe cunningham'   => 'abe',
-        'deftones frank delgado'    => 'frank',
-        'deftones chi cheng'        => 'chi',
-        'deftones live'             => 'band',
-        'deftones concert'          => 'band',
-        'deftones festival'         => 'band',
-        'deftones tour'             => 'band',
-        // Gli anni servono a farsi dare il recente. Le altre domande
-        // pescano dal mucchio, e nel mucchio il 2011 pesa vent'anni
-        // più del 2025.
-        'deftones 2025'             => 'band',
-        'deftones 2026'             => 'band',
-        'deftones private music'    => 'band',
-    ];
+    // Le domande le tiene df_ricerche, e si aggiungono dal pannello:
+    // pannello → fotografie → le parole che cerchiamo. Qui non c'è più
+    // niente da modificare per cercare una cosa nuova.
+    $ricerche = ricercheDi($pdo, 'openverse');
+    if (!$ricerche) {
+        logline('Nessuna ricerca attiva: non c\'è niente da chiedere.', 'copertine');
+        if (is_resource($lock)) { flock($lock, LOCK_UN); fclose($lock); }
+        exit(0);
+    }
+    logline(sprintf('%d ricerche attive su Openverse', count($ricerche)), 'copertine');
 
     $inserisci = $pdo->prepare('INSERT INTO ' . t('immagini') . '
           (riferimento, titolo, provenienza, url_file, url_pagina, autore, licenza, licenza_url,
@@ -142,10 +128,12 @@ if ($altre) {
     // PHP una variabile che non esiste la crea sì, ma la crea null —
     // che a un parametro dichiarato bool non va bene.
     $guasto = false;
-    foreach ($ricerche as $domanda => $soggetto) {
-        // Le ricerche sui singoli membri rendono meno: non ha senso
-        // insistere per dodici pagine.
-        $foto = openverseCerca($domanda, $soggetto === 'band' ? 8 : 4, $guasto);
+    foreach ($ricerche as $r) {
+        [$domanda, $soggetto] = [$r['domanda'], $r['soggetto']];
+        // Quante pagine chiedere lo dice la ricerca: quelle sui singoli
+        // membri rendono meno, e insistere per dodici pagine spende
+        // quota per riportare indietro le stesse quattro foto.
+        $foto = openverseCerca($domanda, $r['pagine'], $guasto);
         // Se l'archivio non risponde si smette subito. Andare avanti a
         // interrogare un server che ci sta ignorando non porta foto e
         // allunga il periodo in cui ci ignora.
@@ -154,13 +142,13 @@ if ($altre) {
                 . 'Riprovare fra ventiquattr\'ore, non prima.', 'copertine');
             break;
         }
-        $buone = 0;
+        $buone = $nuoveQui = 0;
         foreach ($foto as $i) {
             $viste++;
             if (!immagineAdatta($i)) { $scartate++; continue; }
             $buone++;
             if ($soloProva) {
-                if (!isset(giaInCatalogo($pdo)[$i['riferimento']])) { $nuove++; }
+                if (!isset(giaInCatalogo($pdo)[$i['riferimento']])) { $nuoveQui++; }
                 continue;
             }
             try {
@@ -170,13 +158,18 @@ if ($altre) {
                     $i['autore'] ?: null, $i['licenza'], $i['licenza_url'] ?: null,
                     $i['larghezza'], $i['altezza'], $i['data'], $soggetto,
                 ]);
-                if ($inserisci->rowCount() === 1) { $nuove++; }
+                if ($inserisci->rowCount() === 1) { $nuoveQui++; }
             } catch (Throwable $e) {
                 logline('Non salvata: ' . $i['riferimento'] . ' — ' . $e->getMessage(), 'copertine');
             }
         }
-        logline(sprintf('  %-30s %3d trovate  %3d utilizzabili',
-            mb_substr($domanda, 0, 30), count($foto), $buone), 'copertine');
+        $nuove += $nuoveQui;
+        // I conti restano attaccati alla ricerca, e il pannello li
+        // mostra accanto alle parole: è così che si vede quale sta
+        // portando foto e quale sta solo consumando quota.
+        if (!$soloProva) { ricercaSegna($pdo, $r['id'], count($foto), $nuoveQui); }
+        logline(sprintf('  %-30s %3d trovate  %3d utilizzabili  %3d nuove',
+            mb_substr($domanda, 0, 30), count($foto), $buone, $nuoveQui), 'copertine');
     }
 
     logline(sprintf('Openverse: %d viste, %d nuove, %d non utilizzabili',
@@ -191,16 +184,36 @@ if ($altre) {
 if ($raccogli) {
     $trovate = $nuove = $scartate = 0;
 
+    // Le categorie le tiene df_ricerche, come le domande a Openverse, e
+    // si aggiungono dal pannello.
+    //
     // Le sottocategorie di Category:Deftones sono i singoli concerti:
     // Hellfest 2010, Knotfest México 2016, Rock im Park 2022… È lì che
     // stanno le foto buone, non nella categoria madre.
+    $categorie = ricercheDi($pdo, 'commons');
+    if (!$categorie) {
+        logline('Nessuna categoria attiva: non c\'è niente da visitare.', 'copertine');
+        if (is_resource($lock)) { flock($lock, LOCK_UN); fclose($lock); }
+        exit(0);
+    }
+
     $daVisitare = [];
-    foreach (COMMONS_CATEGORIE as $cat => $soggetto) {
-        $daVisitare[$cat] = $soggetto;
-        if ($soggetto === 'band') {
-            foreach (commonsSottocategorie($cat) as $sub) { $daVisitare[$sub] = 'band'; }
+    // Da quale riga del pannello viene ogni categoria visitata: le
+    // sottocategorie non stanno in tabella — le scopriamo adesso — ma
+    // quello che portano va contato sulla categoria madre, che è
+    // l'unica cosa che una persona può togliere o aggiungere.
+    $radice = [];
+    foreach ($categorie as $r) {
+        $daVisitare[$r['domanda']] = $r['soggetto'];
+        $radice[$r['domanda']] = $r['id'];
+        if ($r['soggetto'] === 'band') {
+            foreach (commonsSottocategorie($r['domanda']) as $sub) {
+                $daVisitare[$sub] = 'band';
+                $radice[$sub] = $r['id'];
+            }
         }
     }
+    $resa = [];     // id della ricerca => [viste, nuove]
     logline(sprintf('%d categorie da visitare', count($daVisitare)), 'copertine');
     logline(cfg('foto_non_commerciali')
         ? 'Licenze accettate: anche le NC'
@@ -224,12 +237,20 @@ if ($raccogli) {
         $file = commonsFileDi($cat);
         if (!$file) { continue; }
         foreach ($file as $f) { $visti[$f] = true; }
+        $id = $radice[$cat] ?? null;
+        if ($id !== null) {
+            $resa[$id] ??= [0, 0];
+            $resa[$id][0] += count($file);
+        }
         foreach (commonsMetadati($file) as $i) {
             $trovate++;
             if (!immagineAdatta($i)) { $scartate++; continue; }
             $rif = substr($i['commons'], strlen('File:'));
             if ($soloProva) {
-                if (!isset(giaInCatalogo($pdo)[$rif])) { $nuove++; }
+                if (!isset(giaInCatalogo($pdo)[$rif])) {
+                    $nuove++;
+                    if ($id !== null) { $resa[$id][1]++; }
+                }
                 continue;
             }
             try {
@@ -240,12 +261,22 @@ if ($raccogli) {
                     $i['licenza_url'] ?: null,
                     $i['larghezza'], $i['altezza'], $i['data'], $soggetto,
                 ]);
-                if ($inserisci->rowCount() === 1) { $nuove++; }
+                if ($inserisci->rowCount() === 1) {
+                    $nuove++;
+                    if ($id !== null) { $resa[$id][1]++; }
+                }
             } catch (Throwable $e) {
                 logline('Non salvata: ' . $i['commons'] . ' — ' . $e->getMessage(), 'copertine');
             }
         }
         logline(sprintf('  %-46s %3d file', mb_substr($cat, 0, 46), count($file)), 'copertine');
+    }
+
+    // I conti si scrivono qui e non dentro il giro: una categoria madre
+    // riceve anche quello che hanno portato le sue sottocategorie, e
+    // finché il giro non è finito quel totale non è completo.
+    if (!$soloProva) {
+        foreach ($resa as $id => [$v, $n]) { ricercaSegna($pdo, (int)$id, $v, $n); }
     }
 
     // --- i file che nessuno ha ancora categorizzato --------------------

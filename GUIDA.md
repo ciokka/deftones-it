@@ -124,6 +124,7 @@ dove viene una colonna.
 | `apertura.sql` | `in_apertura`, per fissare una notizia in vetrina |
 | `data-foto.sql` | `data_foto`, quando è stata scattata |
 | `flickr.sql` | `commons` diventa `riferimento`, e nasce `provenienza` |
+| `ricerche.sql` | `df_ricerche`, le parole e le categorie con cui si cercano le foto |
 | `controllo.sql`, `ispezione.sql` | non modificano niente: servono a guardare |
 
 ---
@@ -437,6 +438,10 @@ Nel catalogo fotografie ci sono tre pulsanti — Commons, Openverse, e la
 prova di Openverse che costa tre richieste invece di sessanta — e sotto
 il resoconto dell'ultima raccolta, che legge lo stesso log dei cron. Non
 serve più creare processi temporanei per raccogliere.
+
+Accanto c'è **le parole che cerchiamo**, che è *che cosa* vanno a
+chiedere quei pulsanti: sta in `df_ricerche` e si modifica da lì, non più
+dentro `copertine.php`.
 
 Partono staccate dalla pagina: una raccolta dura da venti secondi a sei
 minuti, e aspettarla dentro una richiesta web significa vedersela
@@ -753,6 +758,25 @@ Deftones sono grandi — mediana tremila pixel — ma la qualità
 *fotografica* varia moltissimo, e nessun filtro automatico la può
 giudicare: buio, sfocato e nuca sono cose che si vedono solo guardando.
 Mezz'ora spesa lì migliora ogni assegnazione futura.
+
+**Le parole che cerchiamo** — `/admin/ricerche` — è da dove vengono le
+fotografie che stanno nel catalogo: le domande a testo libero per
+Openverse, i nomi delle categorie per Commons. Si aggiungono, si
+sospendono e si tolgono senza toccare il programma, ed è il motivo per
+cui esiste la pagina: finché l'elenco stava scritto in PHP, cercare una
+cosa nuova voleva dire aprire l'editor, e quindi non si cercava mai.
+
+Accanto a ogni riga ci sono le due colonne che contano — *trovate* e
+*nuove*, dell'ultimo giro. Una ricerca che ha portato zero nuove per tre
+raccolte di fila sta consumando quota: si sospende, e resta lì coi suoi
+numeri nel caso ci si ripensi. Riaggiungere una parola che c'è già non
+fa un doppione: ne cambia il soggetto e le pagine, ed è così che si
+correggono.
+
+Il soggetto non è un'etichetta descrittiva: è a chi verranno attribuite
+le foto che tornano, e quindi su quali articoli finiranno. Una ricerca
+su Chino Moreno lasciata a soggetto *band* mette il suo ritratto in cima
+a un pezzo sul chitarrista.
 
 **Copertina** — `/admin/copertina/{id}` — apre il catalogo delle
 fotografie e ne fa scegliere una a mano. Vengono prima quelle del soggetto giusto e quelle usate meno, e si

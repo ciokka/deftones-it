@@ -57,6 +57,14 @@ $query = (string)parse_url($link(), PHP_URL_QUERY);
     <a class="bottone bottone-tenue" href="<?= e($link()) ?>" title="rileggi il resoconto">
       <?= icona('cambia') ?> aggiorna
     </a>
+    <?php /* Dove si decide che cosa vanno a cercare i tre pulsanti qui
+             accanto. Sta di fianco a loro e non nel menu del pannello
+             perché è a loro che serve: ci si arriva quando una raccolta
+             ha portato poco. */ ?>
+    <a class="bottone bottone-tenue" href="<?= u('admin/ricerche') ?>"
+       title="le parole e le categorie con cui si cercano le foto">
+      <?= icona('modifica') ?> le parole che cerchiamo
+    </a>
   </div>
 
   <details class="caricamento">
@@ -105,8 +113,10 @@ $query = (string)parse_url($link(), PHP_URL_QUERY);
       </label>
       <label>soggetto
         <select name="soggetto">
-          <?php foreach (['band', 'chino', 'stephen', 'sergio',
-                          'abe', 'frank', 'chi'] as $sg): ?>
+          <?php /* L'elenco lo tiene la libreria: qui e nella pagina
+                   delle ricerche dev'essere lo stesso, e due liste
+                   scritte a mano prima o poi divergono. */ ?>
+          <?php foreach (soggetti() as $sg): ?>
             <option value="<?= e($sg) ?>"><?= e($sg) ?></option>
           <?php endforeach ?>
         </select>

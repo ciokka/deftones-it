@@ -56,6 +56,95 @@ const NOMI_SOGGETTO = [
     'chi cheng'         => 'chi',
 ];
 
+/**
+ * I soggetti possibili, in un posto solo.
+ *
+ * Sono i valori della colonna soggetto del catalogo: "band" più le
+ * persone che NOMI_SOGGETTO sa riconoscere. Scriverli di nuovo a mano
+ * nel pannello vorrebbe dire che prima o poi le due liste divergono, e
+ * a divergere sarebbe quella che si vede.
+ */
+function soggetti(): array
+{
+    return array_values(array_unique(array_merge(['band'], array_values(NOMI_SOGGETTO))));
+}
+
+// ------------------------------------------------------- le ricerche
+
+/**
+ * Le parole con cui cercare le fotografie, e su quale archivio.
+ *
+ * Stanno in df_ricerche perché si aggiungono dal pannello: un elenco
+ * scritto in PHP si modifica solo aprendo l'editor, e quindi non si
+ * modifica mai. Gli elenchi qui sopra restano come rete: finché la
+ * migrazione sql/ricerche.sql non è stata eseguita — e su questo
+ * hosting le migrazioni si lanciano a mano — la raccolta deve
+ * continuare a funzionare come prima invece di trovarsi senza niente da
+ * chiedere.
+ *
+ * Torna righe con id, domanda, soggetto e pagine. Dal ripiego l'id
+ * arriva null, e ricercaSegna() sa che su quelle non c'è niente da
+ * annotare.
+ */
+function ricercheDi(PDO $pdo, string $fonte): array
+{
+    try {
+        $q = $pdo->prepare('SELECT id, domanda, soggetto, pagine FROM ' . t('ricerche') . '
+                             WHERE fonte = ? AND attiva = 1 ORDER BY id');
+        $q->execute([$fonte]);
+        $righe = $q->fetchAll();
+    } catch (Throwable) {
+        $righe = [];
+    }
+
+    if ($righe) {
+        return array_map(fn($r) => [
+            'id'       => (int)$r['id'],
+            'domanda'  => (string)$r['domanda'],
+            'soggetto' => (string)$r['soggetto'],
+            'pagine'   => max(1, (int)$r['pagine']),
+        ], $righe);
+    }
+
+    // Il ripiego: lo stretto necessario, non la copia dell'elenco che
+    // sta nella migrazione. Due liste lunghe da tenere allineate a mano
+    // divergono, e quella giusta sarebbe comunque la tabella.
+    $scorta = $fonte === 'commons' ? COMMONS_CATEGORIE : [
+        'deftones'                   => 'band',
+        'deftones live'              => 'band',
+        'deftones chino moreno'      => 'chino',
+        'deftones stephen carpenter' => 'stephen',
+        'deftones sergio vega'       => 'sergio',
+    ];
+
+    $out = [];
+    foreach ($scorta as $domanda => $soggetto) {
+        $out[] = ['id' => null, 'domanda' => (string)$domanda,
+                  'soggetto' => $soggetto, 'pagine' => $soggetto === 'band' ? 8 : 4];
+    }
+    return $out;
+}
+
+/**
+ * Annota com'è andata una ricerca: quando, quante foto, quante nuove.
+ *
+ * È l'unica risposta possibile alla domanda che ci si fa appena si
+ * possono aggiungere parole a volontà — questa qui porta foto o consuma
+ * e basta? Senza, dopo sei mesi ci si ritrova con quaranta ricerche e
+ * nessun motivo per togliere nessuna.
+ */
+function ricercaSegna(PDO $pdo, ?int $id, int $viste, int $nuove): void
+{
+    if ($id === null) { return; }
+    try {
+        $pdo->prepare('UPDATE ' . t('ricerche') . '
+                          SET ultimo_giro = NOW(), viste = ?, nuove = ?
+                        WHERE id = ?')->execute([$viste, $nuove, $id]);
+    } catch (Throwable $e) {
+        logline('Conti della ricerca non salvati: ' . $e->getMessage(), 'copertine');
+    }
+}
+
 // ---------------------------------------------------------------- API
 
 /** Una chiamata all'API di Commons. Torna l'array decodificato o null. */

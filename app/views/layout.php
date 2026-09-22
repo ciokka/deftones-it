@@ -44,7 +44,7 @@
 <link rel="apple-touch-icon" href="<?= u('apple-touch-icon.png') ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= e(cfg('site_name')) ?>" href="<?= u('feed.xml') ?>">
 <link rel="stylesheet" href="<?= u('assets/stile.css') ?>?v=87">
-<?php if (!empty($eAdmin)): ?><link rel="stylesheet" href="<?= u('assets/admin.css') ?>?v=3"><?php endif ?>
+<?php if (!empty($eAdmin)): ?><link rel="stylesheet" href="<?= u('assets/admin.css') ?>?v=4"><?php endif ?>
 </head>
 <body>
 
@@ -108,7 +108,9 @@ $sezioni = [
                                         'admin-copertina', 'admin-anteprima']],
     'richieste' => ['admin/richieste', ['admin-richieste']],
     'raccolte'  => ['admin/raccolte',  ['admin-raccolte']],
-    'foto'      => ['admin/foto',      ['admin-foto']],
+    // Le parole che cerchiamo non sono una sezione a sé: sono da dove
+    // viene la roba che sta nel catalogo, e accendono "foto".
+    'foto'      => ['admin/foto',      ['admin-foto', 'admin-ricerche']],
     'costi'     => ['admin/costi',     ['admin-costi']],
 ];
 ?>
