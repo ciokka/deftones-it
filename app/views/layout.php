@@ -112,6 +112,7 @@ $sezioni = [
     // viene la roba che sta nel catalogo, e accendono "foto".
     'foto'      => ['admin/foto',      ['admin-foto', 'admin-ricerche']],
     'costi'     => ['admin/costi',     ['admin-costi']],
+    'visite'    => ['admin/visite',    ['admin-visite']],
 ];
 ?>
 <header class="testata testata-admin">

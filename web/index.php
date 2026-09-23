@@ -63,6 +63,9 @@ if ($cachabile && ($html = cacheLeggi($percorso)) !== null) {
     }
     header('X-Cache: hit');
     echo $html;
+    // Dopo l'echo e non prima: chi legge non aspetta il contatore.
+    // Feed e sitemap no, li chiedono i programmi e non le persone.
+    if (!str_ends_with($percorso, '.xml')) { contaVisita($percorso); }
     exit;
 }
 
@@ -579,4 +582,7 @@ if ($html !== null) {
     if ($cachabile) { cacheScrivi($percorso, $html); }
     header('X-Cache: miss');
     echo $html;
+    // Qui arrivano solo le pagine trovate: i 404 escono prima, e il
+    // pannello pure. Chi è loggato sei tu, e tu non sei una visita.
+    if ($metodo === 'GET' && !loggato()) { contaVisita($percorso); }
 }

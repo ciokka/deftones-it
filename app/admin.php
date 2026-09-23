@@ -190,6 +190,77 @@ if ($azione === 'costi') {
     exit;
 }
 
+// ------------------------------------------------------------- visite
+// Quanto si legge il sito, e cosa. I numeri vengono da ar_visite, che
+// conta le pagine e non le persone: vedi sql/visite.sql per il perché.
+if ($azione === 'visite') {
+    $tab = t('visite');
+    $periodi = [
+        'oggi'          => 'giorno = CURDATE()',
+        'ieri'          => 'giorno = CURDATE() - INTERVAL 1 DAY',
+        'ultimi 7 gg'   => 'giorno >= CURDATE() - INTERVAL 6 DAY',
+        'ultimi 30 gg'  => 'giorno >= CURDATE() - INTERVAL 29 DAY',
+        'questo mese'   => 'giorno >= DATE_FORMAT(CURDATE(), \'%Y-%m-01\')',
+        'sempre'        => '1=1',
+    ];
+
+    // La tabella arriva con sql/visite.sql: finché non lo si esegue la
+    // pagina deve dirlo, non rispondere con un errore del database.
+    try {
+        $totali = [];
+        foreach ($periodi as $nome => $dove) {
+            $r = $pdo->query("SELECT COALESCE(SUM(visite),0) v,
+                                     COALESCE(SUM(CASE WHEN origine <> 'interno' THEN visite END),0) fuori
+                                FROM $tab WHERE $dove")->fetch();
+            $totali[$nome] = ['v' => (int)$r['v'], 'fuori' => (int)$r['fuori']];
+        }
+
+        // I giorni senza visite non hanno righe, ma nel grafico ci vanno
+        // lo stesso: un buco nel calendario si legge come un dato perso.
+        $perGiorno = $pdo->query("SELECT giorno g, SUM(visite) v FROM $tab
+                                   WHERE giorno >= CURDATE() - INTERVAL 29 DAY
+                                   GROUP BY giorno")->fetchAll(PDO::FETCH_KEY_PAIR);
+        $oggi = (string)$pdo->query('SELECT CURDATE()')->fetchColumn();
+        $giorni = [];
+        for ($i = 29; $i >= 0; $i--) {
+            $g = date('Y-m-d', strtotime("$oggi -$i day"));
+            $giorni[$g] = (int)($perGiorno[$g] ?? 0);
+        }
+
+        $pagine = $pdo->query("SELECT percorso, SUM(visite) v FROM $tab
+                                WHERE giorno >= CURDATE() - INTERVAL 29 DAY
+                                GROUP BY percorso ORDER BY v DESC LIMIT 25")->fetchAll();
+
+        // Un percorso dice poco: /notizie/<slug> diventa il suo titolo.
+        $titoli = [];
+        $slug = [];
+        foreach ($pagine as $p) {
+            if (preg_match('#^/notizie/([a-z0-9-]+)$#', $p['percorso'], $m)) { $slug[] = $m[1]; }
+        }
+        if ($slug) {
+            $q = $pdo->prepare('SELECT slug, titolo_it FROM ' . t('articles') . '
+                                 WHERE slug IN (' . implode(',', array_fill(0, count($slug), '?')) . ')');
+            $q->execute($slug);
+            $titoli = $q->fetchAll(PDO::FETCH_KEY_PAIR);
+        }
+
+        $origini = $pdo->query("SELECT origine, SUM(visite) v FROM $tab
+                                 WHERE giorno >= CURDATE() - INTERVAL 29 DAY
+                                   AND origine <> 'interno'
+                                 GROUP BY origine ORDER BY v DESC LIMIT 15")->fetchAll();
+        $manca = false;
+    } catch (PDOException) {
+        $totali = $giorni = $pagine = $titoli = $origini = [];
+        $manca = true;
+    }
+
+    echo render('admin-visite', [
+        'totali' => $totali, 'giorni' => $giorni, 'pagine' => $pagine,
+        'titoli' => $titoli, 'origini' => $origini, 'manca' => $manca,
+    ], ['titolo' => 'Visite — pannello']);
+    exit;
+}
+
 // ---------------------------------------------------------- richieste
 if ($azione === 'richieste') {
     $msg = null;

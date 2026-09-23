@@ -3,9 +3,9 @@
 
   <div class="corpo">
     <p class="occhiello">
-      Questo sito non usa cookie, non ha strumenti di statistica, non carica
-      niente da server di altri. Non c'è nessun banner da accettare perché
-      non c'è niente su cui dare un consenso.
+      Questo sito non usa cookie, non profila nessuno, non carica niente da
+      server di altri. Non c'è nessun banner da accettare perché non c'è
+      niente su cui dare un consenso.
     </p>
 
     <h3>Chi tratta i dati</h3>
@@ -27,8 +27,19 @@
       server in Italia, e cancellati automaticamente dopo pochi giorni.
     </p>
     <p>
-      <strong>Nient'altro.</strong> Non ci sono strumenti di statistica,
-      non c'è registrazione, non ci sono moduli di contatto, non c'è
+      <strong>Quante volte si legge ogni pagina.</strong> Il sito tiene un
+      contatore delle letture: per ogni giorno, quante volte è stata aperta
+      ciascuna pagina e da quale sito si è arrivati — solo il nome del sito,
+      per esempio «google.com», mai l'indirizzo completo. Non viene
+      registrato né l'indirizzo IP, né il browser, né l'ora, né nient'altro
+      che permetta di distinguere un lettore da un altro: il contatore non
+      sa chi sei, e nemmeno se sei già passato di qui. Sono dati anonimi e
+      aggregati, non escono dal sito e non vengono dati a nessuno. Il tuo
+      browser non conserva niente per questo.
+    </p>
+    <p>
+      <strong>Nient'altro.</strong> Non ci sono strumenti di statistica di
+      terze parti, non c'è registrazione, non ci sono moduli di contatto, non c'è
       newsletter. Quello che scrivi nel campo di ricerca viene usato per
       cercare e finisce nei log del server come qualunque altro indirizzo
       richiesto; non viene salvato da nessun'altra parte.

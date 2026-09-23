@@ -177,6 +177,56 @@ function cacheSvuota(): int
     return $n;
 }
 
+// ---------------------------------------------------------------- visite
+//
+// Conta una lettura, e basta. Come il cuore sotto gli articoli: niente
+// IP, niente browser, niente ora — solo "questa pagina, oggi, arrivando
+// da lì, una volta in più". Lo user-agent si guarda per scartare i
+// programmi, ma non si scrive da nessuna parte.
+
+function contaVisita(string $percorso): void
+{
+    // Chi dice di essere un programma non è un lettore. Chi non dice
+    // niente, nemmeno: un browser vero lo user-agent ce l'ha sempre.
+    $ua = (string)($_SERVER['HTTP_USER_AGENT'] ?? '');
+    if ($ua === '' || preg_match('#bot|crawl|spider|slurp|preview|fetch|feed|scan|monitor'
+            . '|uptime|curl|wget|python|java/|go-http|okhttp|axios|php|headless|lighthouse'
+            . '|facebookexternalhit|whatsapp|telegram|skype#i', $ua)) {
+        return;
+    }
+
+    // Le pagine caricate in anticipo dal browser, "nel caso", non sono
+    // lette da nessuno finché non ci si clicca — e allora arrivano di
+    // nuovo, stavolta vere.
+    $scopo = (string)($_SERVER['HTTP_SEC_PURPOSE'] ?? $_SERVER['HTTP_PURPOSE'] ?? '');
+    if (stripos($scopo, 'prefetch') !== false) { return; }
+
+    // Della provenienza si tiene il dominio e nient'altro: l'indirizzo
+    // intero può contenere quello che uno ha cercato.
+    $senzaWww = fn(string $h): string => preg_replace('#^www\.#', '', strtolower($h));
+    $origine = '';
+    $da = (string)parse_url((string)($_SERVER['HTTP_REFERER'] ?? ''), PHP_URL_HOST);
+    if ($da !== '') {
+        $noi = (string)parse_url((string)cfg('site_url'), PHP_URL_HOST);
+        $origine = $senzaWww($da) === $senzaWww($noi) ? 'interno' : mb_substr($senzaWww($da), 0, 100);
+    }
+
+    // Si chiama per ultima, a pagina già scritta: qui la si consegna e
+    // si chiude, così chi legge non aspetta il database per una cosa che
+    // a lui non serve. Dove PHP non gira sotto FPM la funzione non c'è,
+    // e la pagina arriva lo stesso un attimo dopo.
+    if (function_exists('fastcgi_finish_request')) { fastcgi_finish_request(); }
+
+    // Un contatore rotto non deve rompere la pagina che conta.
+    try {
+        db()->prepare('INSERT INTO ' . t('visite') . ' (giorno, percorso, origine, visite)
+                       VALUES (CURDATE(), ?, ?, 1)
+                       ON DUPLICATE KEY UPDATE visite = visite + 1')
+            ->execute([mb_substr($percorso, 0, 255), $origine]);
+    } catch (Throwable) {
+    }
+}
+
 // ---------------------------------------------------------------- admin
 
 function sessioneAvvia(): void
