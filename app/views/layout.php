@@ -111,6 +111,7 @@ $sezioni = [
     // Le parole che cerchiamo non sono una sezione a sé: sono da dove
     // viene la roba che sta nel catalogo, e accendono "foto".
     'foto'      => ['admin/foto',      ['admin-foto', 'admin-ricerche']],
+    'modello'   => ['admin/modello',   ['admin-modello']],
     'costi'     => ['admin/costi',     ['admin-costi']],
     'visite'    => ['admin/visite',    ['admin-visite']],
 ];

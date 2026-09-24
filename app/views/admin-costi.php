@@ -25,10 +25,13 @@ foreach ($giorni as $g) {
   <p class="occhiello">
     Una stima, non una fattura: Anthropic non espone la spesa reale, e
     questi numeri vengono dai token contati da noi moltiplicati per le
-    tariffe di <?= e($modello) ?> — cinque dollari per milione in
-    ingresso, venticinque in uscita, convertiti in euro. L'uscita costa
-    cinque volte l'ingresso, ed è il motivo per cui scrivere articoli
-    costa e leggere feed no.
+    tariffe di <?= e($modello) ?> — <?= e(number_format($tariffe[0], 2, ',', '.')) ?> dollari
+    per milione in ingresso, <?= e(number_format($tariffe[1], 2, ',', '.')) ?> in uscita,
+    convertiti in euro<?= $tariffe[2] ? '' : ' (tariffe non ancora note: stimate come Opus 5)' ?>.
+    L'uscita costa cinque volte l'ingresso, ed è il motivo per cui
+    scrivere articoli costa e leggere feed no. Il conto usa le tariffe
+    del modello di adesso anche per i giorni passati: se il modello è
+    cambiato da poco, quelli sono approssimati.
   </p>
 
   <div class="costi-riquadri">

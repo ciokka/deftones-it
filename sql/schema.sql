@@ -235,3 +235,17 @@ INSERT INTO df_sources (nome, url_feed, tipo, lingua, peso, filtra_keyword, atti
 -- deftones.com non espone un feed RSS (404 su /feed/ e /news):
 -- servirà uno scraper dedicato, lo aggiungiamo più avanti
 ('Deftones.com', 'https://deftones.com/feed/', 'rss', 'en', 100, 0, 0);
+
+
+-- ---------------------------------------------------------------------
+-- IMPOSTAZIONI — le scelte fatte dal pannello invece che da
+--     config.php. Per ora il modello: 'modello' è 'auto' o un id,
+--     'modello_auto' è l'Opus che l'automatico ha scelto, e l'elenco
+--     dei modelli dell'API ci resta in copia per un giorno.
+-- ---------------------------------------------------------------------
+CREATE TABLE df_impostazioni (
+  chiave         VARCHAR(60) NOT NULL,
+  valore         TEXT        NOT NULL,
+  aggiornato_il  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (chiave)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

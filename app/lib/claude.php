@@ -8,8 +8,7 @@
  */
 declare(strict_types=1);
 
-const CLAUDE_URL     = 'https://api.anthropic.com/v1/messages';
-const CLAUDE_VERSION = '2023-06-01';
+const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 
 /**
  * Una chiamata al modello, con retry su 429 e 5xx.
@@ -25,19 +24,7 @@ function claude(array $corpo, int $tentativi = 3): array
                 'in' => 0, 'out' => 0, 'errore' => 'anthropic_key non impostata in config.php'];
     }
 
-    $intestazioni = [
-        'content-type: application/json',
-        'x-api-key: ' . $chiave,
-        'anthropic-version: ' . CLAUDE_VERSION,
-    ];
-    // Le chiavi "identity-linked" (legate al tuo utente invece che a un
-    // workspace) devono dichiarare in quale workspace opera la richiesta,
-    // altrimenti l'API risponde 400. Le chiavi normali ignorano l'header,
-    // quindi lo mandiamo solo se configurato.
-    $workspace = (string)(cfg('workspace_id') ?? '');
-    if ($workspace !== '') {
-        $intestazioni[] = 'anthropic-workspace-id: ' . $workspace;
-    }
+    $intestazioni = anthropicIntestazioni();
 
     $payload = json_encode($corpo, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $ultimoErrore = null;
@@ -71,6 +58,23 @@ function claude(array $corpo, int $tentativi = 3): array
             $ultimoErrore = "HTTP $http: " . mb_substr((string)($dati['error']['message'] ?? $risposta), 0, 200);
             if ($n < $tentativi) { sleep($attesa); continue; }
             break;
+        }
+
+        // Un modello nuovo può cambiare le regole: Opus 5.5, per dire,
+        // rifiuta con un 400 cose che Opus 5 accettava. Se il modello
+        // scelto dal pannello — o arrivato da solo con l'automatico —
+        // non va, si rifà la stessa richiesta con quello di config.php,
+        // che è provato, e lo si scrive nel log: il giro non si perde, e
+        // chi legge il log sa che c'è da guardare.
+        if (in_array($http, [400, 404], true)
+            && ($corpo['model'] ?? '') !== modelloRiserva()) {
+            allarme(sprintf('%s ha risposto HTTP %d (%s): ripiego su %s',
+                $corpo['model'] ?? '?', $http,
+                mb_substr((string)($dati['error']['message'] ?? ''), 0, 160),
+                modelloRiserva()), 'modello');
+            $corpo['model'] = modelloRiserva();
+            $payload = json_encode($corpo, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            continue;
         }
 
         // 4xx: è colpa nostra, non ha senso riprovare
@@ -111,7 +115,7 @@ function claude(array $corpo, int $tentativi = 3): array
 function claudeJson(string $system, string $prompt, array $schema, int $maxTokens = 8000): array
 {
     return claude([
-        'model'      => cfg('modello') ?: 'claude-opus-5',
+        'model'      => modello(),
         'max_tokens' => $maxTokens,
         'system'     => $system,
         'messages'   => [['role' => 'user', 'content' => $prompt]],
@@ -144,7 +148,7 @@ function claudeConRicerca(string $sistema, string $prompt,
 
     for ($ripresa = 0; $ripresa <= $maxRiprese; $ripresa++) {
         $r = claude([
-            'model'      => cfg('modello') ?: 'claude-opus-5',
+            'model'      => modello(),
             'max_tokens' => 16000,
             'system'     => $sistema,
             'messages'   => $messaggi,

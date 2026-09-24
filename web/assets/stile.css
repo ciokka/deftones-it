@@ -1973,3 +1973,9 @@ figure:has(> img.img-mancante) { display: none; }
    che riguarda solo questi due pulsanti. */
 .piede .piace { margin-left: auto; }
 .piede .piace + .condividi-mini { margin-left: -.4rem; }
+
+/* La scelta del modello: una riga per modello, tutta cliccabile. */
+.scelta-modello label { display: block; padding: .55rem 0; border-bottom: 1px solid var(--bordo); cursor: pointer; }
+.scelta-modello input[type=radio] { margin-right: .5rem; accent-color: var(--accento); }
+.scelta-modello code { font-size: .75rem; }
+.scelta-modello p { margin: 1rem 0 0; }

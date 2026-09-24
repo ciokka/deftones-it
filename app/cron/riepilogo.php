@@ -76,7 +76,16 @@ if ($oreFerme > 12) {
     ];
 }
 
-if (!$nuove && !$guasti && !$forza) {
+// --------------------------------------------------- e se è cambiato il modello
+// Con la scelta automatica il modello cambia da solo quando ne esce uno
+// nuovo (lib/modello.php). Un modello nuovo scrive in modo diverso: è
+// una notizia, anche in un giorno senza bozze.
+$cambio = json_decode((string)(impostazione('modello_cambiato') ?? ''), true);
+if (!is_array($cambio) || strtotime((string)($cambio['il'] ?? '')) < time() - ORE * 3600) {
+    $cambio = null;
+}
+
+if (!$nuove && !$guasti && !$cambio && !$forza) {
     rlog(sprintf('Niente di nuovo, nessun guasto, ultimo ingest %.0f ore fa: non mando niente.',
         $oreFerme));
     exit(0);
@@ -116,7 +125,10 @@ if ($nuove) {
 
 $t .= sprintf("Ultima raccolta riuscita: %.0f ore fa\n", $oreFerme);
 $t .= sprintf("In attesa di revisione: %d\n", $inAttesa);
-$t .= sprintf("Speso nelle ultime 24 ore: %.2f €\n\n", $costo);
+$t .= sprintf("Speso nelle ultime 24 ore: %.2f €\n", $costo);
+$t .= $cambio
+    ? sprintf("Modello: passato da %s a %s\n\n", $cambio['da'], $cambio['a'])
+    : sprintf("Modello: %s\n\n", modello());
 $t .= "Pannello: $pannello\n";
 
 // --- HTML, per chi la legge normalmente
@@ -160,7 +172,12 @@ $h .= '<div style="border-top:1px solid #262629;margin-top:22px;padding-top:18px
     . sprintf('%.0f', $oreFerme) . ' ore fa</b><br>'
     . 'In attesa di revisione: <b style="color:#e8e6e3">' . $inAttesa . '</b><br>'
     . 'Speso nelle ultime 24 ore: <b style="color:#e8e6e3">'
-    . number_format($costo, 2, ',', '.') . ' €</b></div>';
+    . number_format($costo, 2, ',', '.') . ' €</b><br>'
+    . ($cambio
+        ? 'Modello: passato da ' . e((string)$cambio['da']) . ' a <b style="color:#d8b44a">'
+          . e((string)$cambio['a']) . '</b>'
+        : 'Modello: <b style="color:#e8e6e3">' . e(modello()) . '</b>')
+    . '</div>';
 $h .= '<div style="margin-top:24px"><a href="' . e($pannello) . '" '
     . 'style="display:inline-block;border:1px solid rgba(255,255,255,.35);'
     . 'color:#fff;text-decoration:none;padding:11px 24px;font-size:14px">'

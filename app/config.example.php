@@ -24,6 +24,9 @@ return [
     // Con una chiave normale lascialo vuoto.
     'workspace_id' => '',
 
+    // Il modello si sceglie dal pannello (admin/modello). Questo è la
+    // riserva: vale finché lì non si è scelto niente, e quando il
+    // modello scelto viene rifiutato dall'API.
     'modello' => 'claude-opus-5',
     'effort'  => 'medium',
 

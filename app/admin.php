@@ -185,8 +185,40 @@ if ($azione === 'costi') {
 
     echo render('admin-costi', [
         'totali' => $totali, 'giorni' => $giorni, 'perJob' => $perJob, 'cari' => $cari,
-        'modello' => cfg('modello') ?: 'claude-opus-5',
+        'modello' => modello(), 'tariffe' => tariffe(),
     ], ['titolo' => 'Costi — pannello']);
+    exit;
+}
+
+// ------------------------------------------------------------ modello
+// Con quale modello scrive il sito. Vedi lib/modello.php: la scelta sta
+// nel database, e "automatico" segue da solo l'Opus più recente.
+if ($azione === 'modello') {
+    $messaggio = null;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $scelta = (string)($_POST['modello'] ?? '');
+        $ammessi = array_column(elencoModelli() ?? [], 'id');
+        if (!csrfValido($_POST['csrf'] ?? null)) {
+            $messaggio = ['ko', 'Sessione scaduta, riprova.'];
+        } elseif ($scelta !== 'auto' && !in_array($scelta, $ammessi, true)) {
+            $messaggio = ['ko', 'Modello sconosciuto.'];
+        } else {
+            impostaValore('modello', $scelta);
+            // Chi passa all'automatico vuole vederlo scegliere adesso,
+            // non fra un giorno: il controllo si rifà subito.
+            if ($scelta === 'auto') { impostaValore('modello_auto_controllo', '0'); }
+            $messaggio = ['ok', 'Salvato: dal prossimo giro scrive ' . modello(true) . '.'];
+        }
+    }
+
+    echo render('admin-modello', [
+        'messaggio' => $messaggio,
+        'scelta'    => sceltaModello(),
+        'inUso'     => modello(),
+        'riserva'   => modelloRiserva(),
+        'elenco'    => elencoModelli() ?? [],
+        'cambiato'  => json_decode((string)(impostazione('modello_cambiato') ?? ''), true),
+    ], ['titolo' => 'Modello — pannello']);
     exit;
 }
 

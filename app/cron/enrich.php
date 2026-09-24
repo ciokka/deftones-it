@@ -302,7 +302,7 @@ foreach ($eventi as $e) {
         mb_substr($fonteNome, 0, 120),
         mb_substr($fonteUrl, 0, 1000),
         $princ['pubblicato_il'] ?: date('Y-m-d H:i:s'),
-        cfg('modello') ?: 'claude-opus-5',
+        modello(),
         json_encode(['in' => $a['in'], 'out' => $a['out']]),
     ]);
 

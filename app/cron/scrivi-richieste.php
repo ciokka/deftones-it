@@ -239,7 +239,7 @@ foreach ($attesa as $r) {
         riparaEscape($d['sommario_it']),
         riparaEscape($d['corpo_html']),
         json_encode(array_map('riparaEscape', $d['tag']), JSON_UNESCAPED_UNICODE),
-        cfg('modello') ?: 'claude-opus-5',
+        modello(),
         json_encode(['in' => $tin, 'out' => $tout]),
     ]);
     $articoloId = (int)$pdo->lastInsertId();

@@ -163,14 +163,18 @@ function prendiLock(string $job): mixed
 }
 
 /**
- * Costo in euro di una chiamata, dalle tariffe di Claude Opus 5.
- * Sta qui e non nel client dell'API perché è aritmetica: la usa anche
- * il riepilogo, che con l'API non parla.
+ * Costo in euro di una chiamata, dalle tariffe del modello in uso
+ * (vedi tariffe() in modello.php). Sta qui e non nel client dell'API
+ * perché è aritmetica: la usa anche il riepilogo, che con l'API non
+ * parla.
  */
-function costoEuro(int $in, int $out): float
+function costoEuro(int $in, int $out, ?string $modello = null): float
 {
-    return ($in / 1_000_000 * 5.00 + $out / 1_000_000 * 25.00) * 0.92;
+    [$tIn, $tOut] = tariffe($modello);
+    return ($in / 1_000_000 * $tIn + $out / 1_000_000 * $tOut) * 0.92;
 }
+
+require_once __DIR__ . '/modello.php';
 
 // ---------------------------------------------------------------- HTTP
 
