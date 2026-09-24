@@ -421,3 +421,211 @@
 /* Le etichette che compaiono al posto dell'intestazione: tenui, perché
    sono un promemoria e non il dato. */
 .tabella-ricerche .solo-stretto { color: var(--testo-tenue); font-size: .8em; }
+
+/* =====================================================================
+   REVISIONI — il confronto fra un articolo e la versione che il modello
+   ne propone.
+
+   Tutta questa parte serve a far vedere una differenza. Le due colonne
+   da sole non bastano: due muri di parole quasi identici si guardano e
+   si approvano senza leggerli. Quello che si legge davvero sono i segni
+   — il rosso tolto, il verde messo — e la motivazione in cima.
+   ===================================================================== */
+
+/* --- il richiamo sulla pagina dell'articolo ------------------------- */
+.revisione-pronta p { margin: 0 0 .6rem; }
+.revisione-pronta p:last-child { margin-bottom: 0; }
+.revisione-motivo {
+  color: var(--testo-tenue);
+  font-size: .8125rem;
+  line-height: 1.6;
+}
+
+/* Chiuso e discreto: è un campo facoltativo sopra le azioni, e uno
+   sempre aperto sembrerebbe da riempire. Non si perde per questo — il
+   pulsante «migliora con IA» lo apre da sé al primo clic — ma il
+   sommario si legge, quindi non è nemmeno grigio quanto una nota. */
+.indicazioni-rilettura { margin: .5rem 0 1rem; }
+.indicazioni-rilettura > summary {
+  cursor: pointer;
+  font-size: .8125rem;
+  color: var(--testo);
+  list-style: none;
+  padding: .3rem 0;
+}
+.indicazioni-rilettura > summary::before { content: "+ "; }
+.indicazioni-rilettura[open] > summary::before { content: "− "; }
+.indicazioni-rilettura > summary:hover { color: var(--accento); }
+.indicazioni-rilettura > summary em { font-style: normal; opacity: .7; }
+.indicazioni-rilettura[open] > summary::marker,
+.indicazioni-rilettura > summary::-webkit-details-marker { display: none; }
+
+/* Compare solo quando è il pulsante ad aver aperto il campo: dice
+   perché la pagina si è mossa da sé e cosa succede al clic dopo. */
+.indicazioni-nota {
+  margin: .5rem 0 0;
+  font-size: .8125rem;
+  line-height: 1.6;
+  color: var(--testo-tenue);
+}
+.indicazioni-nota[hidden] { display: none; }
+
+/* --- la motivazione, in cima al confronto --------------------------- */
+.revisione-motivazione {
+  border-left: 2px solid var(--accento-scuro);
+  padding: .25rem 0 .25rem 1rem;
+  margin: 0 0 2rem;
+  font-size: .9375rem;
+  line-height: 1.7;
+}
+.revisione-motivazione h2 {
+  font-family: var(--display);
+  font-size: .8125rem;
+  text-transform: lowercase;
+  letter-spacing: .06em;
+  color: var(--testo-tenue);
+  margin: 0 0 .5rem;
+}
+.revisione-nota { color: var(--accento); margin: 0 0 .5rem; }
+
+/* --- le due colonne ------------------------------------------------- */
+.confronto h2 {
+  font-family: var(--display);
+  font-size: .875rem;
+  text-transform: lowercase;
+  letter-spacing: .06em;
+  color: var(--testo-tenue);
+  margin: 2rem 0 .6rem;
+  padding-bottom: .4rem;
+  border-bottom: 1px solid var(--bordo);
+}
+.confronto-riga {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+.confronto-prima, .confronto-dopo {
+  border: 1px solid var(--bordo);
+  padding: .875rem 1rem;
+  font-size: .9375rem;
+  line-height: 1.7;
+  /* Il corpo di un articolo può essere lungo: le colonne scorrono
+     ciascuna per conto suo invece di allungare la pagina a due schermi,
+     dove il confronto smette di essere un confronto. */
+  max-height: 34rem;
+  overflow-y: auto;
+}
+/* Il "dopo" è quello che stai valutando: ha il bordo dell'accento, così
+   a colpo d'occhio si sa da che parte guardare. */
+.confronto-dopo { border-color: var(--accento-scuro); }
+.confronto-prima > p:first-of-type, .confronto-dopo > p:first-of-type { margin-top: .4rem; }
+.confronto-prima p:last-child, .confronto-dopo p:last-child { margin-bottom: 0; }
+
+.confronto-eti {
+  display: block;
+  font-size: .6875rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--testo-tenue);
+}
+.confronto-dopo .confronto-eti { color: var(--accento); }
+.confronto-vuoto { color: var(--testo-tenue); font-style: italic; }
+
+/* Dentro le colonne il corpo dell'articolo va rimpicciolito: i titoli
+   da 1.9rem pensati per la pagina vera, in mezza colonna, diventano il
+   contenuto invece del contenuto. */
+.confronto .corpo { font-size: .9375rem; line-height: 1.7; }
+.confronto .corpo h2 {
+  font-size: 1.0625rem; margin: 1.25rem 0 .5rem;
+  border: 0; padding: 0; text-transform: none; letter-spacing: 0;
+  color: var(--testo);
+}
+.confronto .corpo h3 { font-size: .9375rem; }
+.confronto .corpo p { margin: 0 0 .875rem; }
+
+/* --- i segni: quello che cambia ------------------------------------- */
+/* Sottolineature e non solo colore: il verde e il rosso da soli non si
+   distinguono per una parte dei lettori, e questa è una pagina in cui
+   non vedere una differenza è il modo di sbagliare. */
+.confronto del {
+  background: rgba(242,100,123,.16);
+  color: var(--avviso);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  padding: .05em .15em;
+  border-radius: 2px;
+}
+.confronto ins {
+  background: rgba(99,210,232,.16);
+  color: var(--ghiaccio);
+  text-decoration: underline;
+  text-underline-offset: .2em;
+  padding: .05em .15em;
+  border-radius: 2px;
+}
+
+.rev-tag {
+  display: inline-block;
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  padding: .1rem .6rem;
+  margin: 0 .3rem .3rem 0;
+  font-size: .75rem;
+  color: var(--testo-tenue);
+}
+.rev-tag-tolto { border-color: rgba(242,100,123,.5); color: var(--avviso); text-decoration: line-through; }
+.rev-tag-messo { border-color: rgba(99,210,232,.5); color: var(--ghiaccio); }
+
+/* --- le pagine consultate ------------------------------------------- */
+.revisione-fonti { margin: 2rem 0 1.5rem; font-size: .8125rem; }
+.revisione-fonti > summary {
+  cursor: pointer;
+  color: var(--testo-tenue);
+  padding: .3rem 0;
+}
+.revisione-fonti > summary:hover { color: var(--accento); }
+.revisione-fonti ul { margin: .5rem 0 0; padding-left: 1.2rem; }
+.revisione-fonti li { margin-bottom: .35rem; line-height: 1.5; }
+.revisione-fonti a { color: var(--testo-tenue); }
+.revisione-fonti a:hover { color: var(--accento); }
+
+/* --- il registro delle riletture già fatte --------------------------- */
+.revisioni-passate { margin: 2rem 0 0; font-size: .8125rem; }
+.revisioni-passate > summary {
+  cursor: pointer; color: var(--testo-tenue); padding: .3rem 0;
+}
+.revisioni-passate > summary:hover { color: var(--accento); }
+.revisioni-elenco { list-style: none; margin: .6rem 0 0; padding: 0; }
+.revisioni-elenco li {
+  border-top: 1px solid var(--bordo);
+  padding: .7rem 0;
+  line-height: 1.6;
+}
+.revisioni-elenco .revisione-motivo,
+.revisioni-elenco .revisione-chiesto { display: block; }
+.revisione-chiesto { color: var(--testo-tenue); font-style: italic; }
+.revisione-quando { color: var(--testo-tenue); font-variant-numeric: tabular-nums; }
+.revisione-stato {
+  display: inline-block;
+  border: 1px solid var(--bordo);
+  border-radius: 2px;
+  padding: 0 .4rem;
+  margin-right: .5rem;
+  font-size: .6875rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--testo-tenue);
+}
+.revisione-applicata { border-color: var(--accento-scuro); color: var(--accento); }
+.revisione-errore    { border-color: rgba(242,100,123,.5); color: var(--avviso); }
+
+/* ------------------------------------------------- schermi stretti */
+/* Sotto i 52rem due colonne affiancate sono due colonne da venti
+   caratteri: il confronto si legge peggio di quanto si leggano i due
+   testi uno sotto l'altro. E uno sotto l'altro i segni continuano a
+   funzionare, che è la parte che conta. */
+@media (max-width: 52rem) {
+  .confronto-riga { grid-template-columns: 1fr; gap: .75rem; }
+  .confronto-prima, .confronto-dopo { max-height: 22rem; }
+}

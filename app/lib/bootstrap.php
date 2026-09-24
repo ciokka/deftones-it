@@ -532,6 +532,14 @@ function lavoriDisponibili(): array
         'archivio'       => ['passi' => [['recupera-archivio.php', '--limite=200']],
                              'log' => ['archivio'],
                              'quanto' => 'tre o quattro minuti, e non costa niente'],
+        // Le riletture chieste dal pannello. Nessun argomento: il
+        // programma svuota la coda di ar_revisioni, e quali articoli ci
+        // siano dentro l'ha deciso chi ha premuto il pulsante. Il tempo
+        // è quello vero di una ricerca sul web più una riscrittura —
+        // dirlo più breve farebbe pensare a un guasto a metà.
+        'migliora'       => ['passi' => [['migliora.php', '']],
+                             'log' => ['migliora'],
+                             'quanto' => 'qualche minuto per articolo, e costa'],
     ];
 }
 

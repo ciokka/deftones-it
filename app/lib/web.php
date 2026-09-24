@@ -700,3 +700,103 @@ function dataFotoBreve(string $d): string
     return $d;
 }
 
+
+/**
+ * Due testi affiancati, con marcato quello che cambia.
+ *
+ * Serve al confronto fra un articolo e la revisione che il modello ne
+ * propone. Senza, le due colonne sono due muri di parole quasi identici
+ * e trovare la differenza tocca all'occhio: cioè non succede, e si
+ * approva al buio — che è esattamente ciò che la pagina del confronto
+ * doveva impedire.
+ *
+ * L'algoritmo è la sottosequenza comune più lunga, parola per parola.
+ * Prima però si tagliano via il principio e la fine uguali: in una
+ * revisione sono quasi tutto, e senza quel taglio la tabella della
+ * programmazione dinamica su un articolo da novecento parole sarebbe un
+ * milione di celle. Se anche dopo il taglio resta troppa roba — due
+ * testi che non si somigliano più — si rinuncia ai segni e si torna il
+ * testo semplice: meglio nessuna evidenziazione che una pagina che non
+ * si apre.
+ *
+ * @return array{0:string,1:string} il prima e il dopo, già in HTML
+ */
+function diffParole(string $prima, string $dopo, int $tetto = 700): array
+{
+    // Ogni parola si porta dietro lo spazio che la segue, e non è un
+    // dettaglio: se gli spazi fossero pezzi a sé starebbero in mezzo a
+    // due parole cambiate, uguali da tutte e due le parti, e
+    // spezzerebbero il gruppo. «a febbraio 2026» diventerebbe tre
+    // riquadri rossi invece di una frase sola.
+    $taglia = function (string $t): array {
+        preg_match_all('/\S+\s*/u', $t, $m);
+        $pezzi = $m[0];
+        // lo spazio iniziale, che il taglio qui sopra butterebbe via
+        if ($pezzi && preg_match('/^\s+/u', $t, $s)) { array_unshift($pezzi, $s[0]); }
+        return $pezzi;
+    };
+    $a = $taglia($prima);
+    $b = $taglia($dopo);
+
+    // il principio uguale, e poi la fine uguale
+    $testa = 0;
+    while ($testa < count($a) && $testa < count($b) && $a[$testa] === $b[$testa]) { $testa++; }
+    $coda = 0;
+    while ($coda < count($a) - $testa && $coda < count($b) - $testa
+           && $a[count($a) - 1 - $coda] === $b[count($b) - 1 - $coda]) { $coda++; }
+
+    $comuneTesta = array_slice($a, 0, $testa);
+    $comuneCoda  = array_slice($a, count($a) - $coda, $coda);
+    $ax = array_slice($a, $testa, count($a) - $testa - $coda);
+    $bx = array_slice($b, $testa, count($b) - $testa - $coda);
+
+    $html = fn(array $p) => e(implode('', $p));
+
+    if (count($ax) > $tetto || count($bx) > $tetto) {
+        return [$html($a), $html($b)];
+    }
+    if (!$ax && !$bx) {
+        return [$html($a), $html($b)];       // identici
+    }
+
+    // LCS classica sul solo tratto che differisce
+    $n = count($ax); $m = count($bx);
+    $l = array_fill(0, $n + 1, array_fill(0, $m + 1, 0));
+    for ($i = $n - 1; $i >= 0; $i--) {
+        for ($j = $m - 1; $j >= 0; $j--) {
+            $l[$i][$j] = $ax[$i] === $bx[$j]
+                ? $l[$i + 1][$j + 1] + 1
+                : max($l[$i + 1][$j], $l[$i][$j + 1]);
+        }
+    }
+
+    // Si risale la tabella accumulando i pezzi. I tolti e gli aggiunti
+    // si raggruppano invece di marcare una parola per volta: dieci <del>
+    // consecutivi sono dieci riquadri rossi dove il lettore ne vede una
+    // frase sola.
+    $sx = $dx = '';
+    $tolto = $messo = '';
+    $chiudi = function () use (&$sx, &$dx, &$tolto, &$messo) {
+        if ($tolto !== '') { $sx .= '<del>' . e($tolto) . '</del>'; $tolto = ''; }
+        if ($messo !== '') { $dx .= '<ins>' . e($messo) . '</ins>'; $messo = ''; }
+    };
+
+    $i = $j = 0;
+    while ($i < $n && $j < $m) {
+        if ($ax[$i] === $bx[$j]) {
+            $chiudi();
+            $sx .= e($ax[$i]); $dx .= e($bx[$j]);
+            $i++; $j++;
+        } elseif ($l[$i + 1][$j] >= $l[$i][$j + 1]) {
+            $tolto .= $ax[$i++];
+        } else {
+            $messo .= $bx[$j++];
+        }
+    }
+    while ($i < $n) { $tolto .= $ax[$i++]; }
+    while ($j < $m) { $messo .= $bx[$j++]; }
+    $chiudi();
+
+    $t = $html($comuneTesta); $c = $html($comuneCoda);
+    return [$t . $sx . $c, $t . $dx . $c];
+}

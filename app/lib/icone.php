@@ -45,6 +45,15 @@ const ICONE = [
     'speciale'  => '<path d="M8 1.6c.6 3.3 1.5 4.2 4.8 4.8-3.3.6-4.2 1.5-4.8 4.8'
                  . '-.6-3.3-1.5-4.2-4.8-4.8 3.3-.6 4.2-1.5 4.8-4.8Z"/>',
     'cuore'     => '<path d="M8 13.4 2.9 8.5a3 3 0 0 1 4.2-4.3L8 5.1l.9-.9a3 3 0 0 1 4.2 4.3z"/>',
+    // Due scintille e non una: la scintilla singola a quattro punte è già
+    // "speciale", e questa azione non c'entra niente con quella — una la
+    // metti tu, l'altra la chiedi al modello. La seconda, piccola e in
+    // alto a sinistra, è quel che basta a distinguerle a quattordici
+    // pixel, ed è anche il segno con cui ovunque si dice "IA".
+    'migliora'  => '<path d="M9.4 3.1c.5 2.7 1.2 3.4 3.9 3.9-2.7.5-3.4 1.2-3.9 3.9'
+                 . '-.5-2.7-1.2-3.4-3.9-3.9 2.7-.5 3.4-1.2 3.9-3.9Z"/>'
+                 . '<path d="M4 10.2c.25 1.35.6 1.7 1.95 1.95-1.35.25-1.7.6-1.95 1.95'
+                 . '-.25-1.35-.6-1.7-1.95-1.95 1.35-.25 1.7-.6 1.95-1.95Z"/>',
 
     // raccolta fotografie
     'raccogli'  => '<path d="M8 1.8v8.4"/><path d="M4.8 7 8 10.2 11.2 7"/>'

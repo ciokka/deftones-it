@@ -118,6 +118,7 @@ dove viene una colonna.
 | `albums-seed.sql` | i tredici dischi con i loro identificativi MusicBrainz |
 | `temi.sql` | `df_temi`, le raccolte tematiche |
 | `richieste.sql` | `df_richieste`, gli articoli su commissione |
+| `revisioni.sql` | `df_revisioni`, le riletture di «migliora con IA» |
 | `correzioni-01…07.sql` | ritocchi fatti strada facendo |
 | `copertine.sql` | le colonne `immagine_*` e la tabella `df_immagini` |
 | `ricerca.sql` | l'indice a testo pieno che comprende il corpo |
@@ -353,6 +354,11 @@ Questi restano in tabella. Il redirect è `>/dev/null` **senza** `2>&1`.
 /opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/riepilogo.php >/dev/null
 ```
 
+`*/10 * * * *`
+```
+/opt/cpanel/ea-php83/root/usr/bin/php -q /home/bpdefton/deftones/app/cron/migliora.php >/dev/null
+```
+
 **`>/dev/null` senza `2>&1`**, e non è un dettaglio: l'output normale
 sparisce, ma gli errori restano su stderr e cPanel te li manda per
 email. Aggiungendo `2>&1` spariscono anche quelli, e un guasto diventa
@@ -366,6 +372,12 @@ gli archivi di fotografie né l'IA.
 Le richieste girano ogni mezz'ora perché a vuoto non costano niente: lo
 script prende un lock, non trova nulla in attesa ed esce. È la differenza
 fra ordinare un articolo e averlo entro mezz'ora, o il giorno dopo.
+
+Le riletture di «migliora con IA» (§8) le lancia già il pulsante, e nel
+caso normale la riga ogni dieci minuti non trova niente ed esce gratis.
+È la rete: se l'hosting smettesse di permettere `exec()` alle pagine, il
+pulsante continuerebbe a mettere in coda e le riletture si farebbero
+comunque, con qualche minuto di ritardo invece che subito.
 
 ### I lavori che si lanciano dal pannello
 
@@ -635,6 +647,16 @@ si giustifica solo sui contenuti che resteranno anni.
 
 - `--una` ne lavora una sola
 
+### migliora.php — le riletture
+Svuota la coda di `df_revisioni`, cioè le riletture chieste dal pulsante
+«migliora con IA» (§8). Non sceglie da sé cosa rileggere: una rilettura
+costa, e chi la paga deve averla chiesta. Due chiamate come per le
+richieste — `SYS_RILEGGI` cerca e riferisce, `SYS_RIVEDI` riscrive sul
+solo materiale raccolto — e nessuna delle due tocca l'articolo: la
+proposta si posa in `df_revisioni` e aspetta.
+
+- `--una` ne lavora una sola
+
 ### copertine.php — illustra
 Assegna una copertina agli articoli che non ce l'hanno. Non spende
 niente: pesca da un catalogo locale di fotografie con licenza libera.
@@ -724,7 +746,9 @@ due viste separate più un elenco delle pubblicate in fondo alla pagina.
 
 Si filtra per parola, categoria, anno, intervallo di date, presenza della
 copertina e soglia hot; si ordina per rilevanza, data, lunghezza o
-titolo. I filtri si sommano, comprese le date con l'anno: scegliere il
+titolo. Di suo l'elenco è per rilevanza, tranne fra gli online, dove
+viene prima l'ultimo uscito: fra le bozze conta cosa vale la pena
+pubblicare, fra le pubblicate cosa c'è di nuovo. I filtri si sommano, comprese le date con l'anno: scegliere il
 2013 e poi "dal 1º giugno" dà i mesi da giugno in poi di quell'anno.
 
 **L'etichetta "special"** è l'unica che mette una persona: la assegni tu
@@ -807,6 +831,51 @@ pubblica i dossier; **svuota cache** serve quando hai cambiato qualcosa
 fuori dal pannello — con una query diretta, per esempio — e il sito
 mostra ancora la versione vecchia.
 
+### «Migliora con IA» — le riletture
+
+Nella pagina di modifica di ogni articolo c'è **migliora con IA**. Il
+modello rilegge il pezzo, **cerca sul web cos'è successo dopo** — il
+disco annunciato che è uscito, il tour che ha aggiunto date, la voce
+confermata o smentita — e propone una versione nuova. Non la applica: la
+propone.
+
+**Puoi dirgli cosa cercare.** Sopra i pulsanti c'è un campo — «di' all'IA
+cosa controllare o cambiare» — e quel che ci scrivi arriva a tutt'e due
+le chiamate come priorità. «Controlla la data di uscita», «manca chi ha
+prodotto il disco»: è l'unica cosa che il modello non può dedurre
+dall'articolo che ha davanti.
+
+Il pulsante lavora **in due tempi**. Il primo clic non avvia niente:
+apre il campo e ci mette il cursore. Avvia il secondo, e la conferma
+ripete la richiesta scritta. Chi il campo l'ha già riempito parte al
+primo clic.
+
+**Niente viene sovrascritto senza un clic.** La proposta si posa in
+`df_revisioni` e `/admin/revisione/<id>` la mostra affiancata
+all'originale, con le differenze marcate parola per parola e l'elenco
+delle pagine consultate. Da lì si applica o si scarta. Applicando, lo
+**slug non cambia**: il titolo si aggiorna, l'indirizzo no, o si
+romperebbero i link di chi ci è già arrivato.
+
+Tre dettagli che non sono dettagli:
+
+- Il pulsante **salva prima di mettere in coda**: il modello deve
+  leggere l'articolo che hai davanti, non quello di prima delle
+  modifiche che stai guardando.
+- Le colonne `prima_*` conservano l'articolo com'era alla richiesta. Se
+  nel frattempo lo modifichi a mano, il confronto **te lo dice in
+  rosso**: applicare cancellerebbe quel lavoro.
+- Il modello può rispondere `invariato: true`. «Non c'era niente da
+  cambiare» è una risposta legittima, ed è quella che rende credibili
+  tutte le altre. Una rilettura che non ha consultato nessuna pagina,
+  invece, finisce in errore e non diventa una proposta.
+
+Una rilettura per articolo alla volta: finché ce n'è una in coda o una
+proposta che aspetta, il pulsante salva e basta. Costa una ricerca sul
+web più una riscrittura, quindi quanto una richiesta; compare in
+`/admin/costi` sotto il job `migliora`. Il meccanismo è nato su
+cronacheartemis.it ed è lo stesso.
+
 ---
 
 ## 9. Le tabelle
@@ -818,6 +887,7 @@ mostra ancora la versione vecchia.
 | `df_articles` | gli articoli in italiano: bozze, pubblicati, scartati |
 | `df_temi` | le raccolte tematiche |
 | `df_richieste` | gli articoli commissionati |
+| `df_revisioni` | le riletture proposte dall'IA, in attesa di un sì o di un no |
 | `df_immagini` | il catalogo delle foto libere: riferimento, provenienza, autore, licenza, data di scatto, quante volte è stata usata, e se è stata scartata |
 | `df_albums` | la discografia: date, etichette, tracklist, schede |
 | `df_shows` | i concerti — ancora da riempire |

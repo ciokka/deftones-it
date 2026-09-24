@@ -76,7 +76,7 @@ if ($azione === 'coda') {
     // Elenco chiuso: i nomi arrivano dalla pagina, e una pagina può
     // essere manomessa. Senza questo, "log=../../config" sarebbe una
     // richiesta legittima.
-    $ammessi = ['ingest', 'enrich', 'copertine', 'dischi', 'archivio', 'storico'];
+    $ammessi = ['ingest', 'enrich', 'copertine', 'dischi', 'archivio', 'storico', 'migliora'];
     $quali = array_values(array_filter(
         explode(',', (string)($_GET['log'] ?? '')),
         fn($q) => in_array($q, $ammessi, true)));
@@ -924,8 +924,118 @@ if ($azione === 'nuovo') {
         ],
         'categorie' => valoriEnum($pdo, t('articles'), 'categoria'),
         'attendib'  => valoriEnum($pdo, t('articles'), 'attendibilita'),
+        // Un articolo che non esiste ancora non ha niente da rileggere.
+        'revisioni' => [],
         'messaggio' => $msg,
     ], ['titolo' => 'Nuovo articolo — pannello']);
+    exit;
+}
+
+// ----------------------------------------------------------- revisioni
+//
+// «migliora con IA»: il modello rilegge un articolo già scritto, va a
+// vedere sul web cos'è successo dopo, e PROPONE una versione nuova.
+// Propone, non sostituisce — l'articolo non si muove finché non guardi
+// il confronto e decidi tu. Su un pezzo già online è l'unica forma che
+// non chiede di fidarsi al buio.
+
+/**
+ * Mette in coda la rilettura di un articolo e fa partire il lavoro.
+ *
+ * @return array il messaggio per la pagina, con dietro il log da seguire
+ */
+function chiediRevisione(PDO $pdo, int $articoloId, string $indicazioni = ''): array
+{
+    // Una per volta. Senza questo, tre clic impazienti sullo stesso
+    // pulsante sono tre ricerche sul web pagate per avere tre proposte
+    // sullo stesso articolo — e la seconda e la terza le butti.
+    $q = $pdo->prepare('SELECT id, stato FROM ' . t('revisioni') . "
+                         WHERE articolo_id = ? AND stato IN ('attesa','lavorazione','pronta')
+                         ORDER BY id DESC LIMIT 1");
+    $q->execute([$articoloId]);
+    if ($gia = $q->fetch()) {
+        // Il salvataggio si nomina comunque: il pulsante ne fa due, di
+        // cose, e se il messaggio parla solo di quella non riuscita
+        // sembra che non sia stato salvato niente.
+        return ['ko', 'Salvato. ' . ($gia['stato'] === 'pronta'
+            ? 'La rilettura no: c\'è già una proposta pronta per questo articolo. '
+              . 'Guarda quella, e semmai chiedine un\'altra dopo averla applicata o scartata.'
+            : 'La rilettura no: ce n\'è già una in coda per questo articolo. '
+              . 'Aspetta che finisca.')];
+    }
+
+    $pdo->prepare('INSERT INTO ' . t('revisioni') . ' (articolo_id, indicazioni) VALUES (?,?)')
+        ->execute([$articoloId, mb_substr(trim($indicazioni), 0, 500) ?: null]);
+
+    $esito = lanciaLavoro('migliora');
+    // Se l'hosting non lascia lanciare programmi dalle pagine la riga in
+    // coda resta buona: la prende il cron. Vale la pena dirlo, o
+    // sembrerebbe che il pulsante non abbia fatto niente.
+    if (($esito[0] ?? '') !== 'ok') {
+        return ['ko', 'Salvato. ' . ($esito[1] ?? 'Avvio fallito.')
+            . ' La rilettura resta comunque in coda: la farà il prossimo giro del cron.'];
+    }
+    return ['ok', 'Salvato, e rilettura avviata: cerca sul web, poi riscrive. '
+                . 'Ci mette qualche minuto — puoi anche chiudere la pagina e '
+                . 'tornare dopo, la proposta ti aspetta qui.', $esito[2] ?? null];
+}
+
+// --------------------------------------------- il confronto, e la scelta
+if (preg_match('#^revisione/(\d+)$#', $azione, $m)) {
+    $id = (int)$m[1];
+    $msg = messaggioDiPassaggio();
+
+    $q = $pdo->prepare('SELECT r.*, a.slug, a.stato AS stato_articolo,
+                               a.titolo_it AS ora_titolo, a.sommario_it AS ora_sommario,
+                               a.corpo_it AS ora_corpo, a.tag AS ora_tag
+                          FROM ' . t('revisioni') . ' r
+                          JOIN ' . t('articles') . ' a ON a.id = r.articolo_id
+                         WHERE r.id = ? LIMIT 1');
+    $q->execute([$id]);
+    $rev = $q->fetch();
+    if (!$rev) { pagina404(); }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!csrfValido($_POST['csrf'] ?? null)) {
+            $msg = ['ko', 'Sessione scaduta, riprova.'];
+        } else {
+            $che = (string)($_POST['che'] ?? '');
+            $art = (int)$rev['articolo_id'];
+
+            if ($che === 'scarta') {
+                $pdo->prepare('UPDATE ' . t('revisioni') . "
+                                  SET stato = 'scartata' WHERE id = ? AND stato = 'pronta'")
+                    ->execute([$id]);
+                $_SESSION['messaggio'] = ['ok', 'Proposta scartata. L\'articolo resta com\'era.'];
+                vaiA('admin/modifica/' . $art);
+            }
+
+            if ($che === 'applica' && $rev['stato'] === 'pronta') {
+                // Lo slug NON si tocca, nemmeno quando cambia il titolo.
+                // È l'indirizzo della pagina: cambiarlo rompe i link di
+                // chi ci è arrivato, quelli dentro il sito e quello che
+                // hai mandato a qualcuno il mese scorso. Il titolo si
+                // aggiorna, l'indirizzo resta — e se proprio lo vuoi
+                // diverso, si cambia a mano sapendo cosa si sta facendo.
+                $pdo->prepare('UPDATE ' . t('articles') . '
+                                  SET titolo_it = ?, sommario_it = ?, corpo_it = ?, tag = ?
+                                WHERE id = ?')
+                    ->execute([
+                        $rev['titolo_it'], $rev['sommario_it'],
+                        $rev['corpo_it'], $rev['tag'], $art,
+                    ]);
+                $pdo->prepare('UPDATE ' . t('revisioni') . "
+                                  SET stato = 'applicata' WHERE id = ?")->execute([$id]);
+                $n = cacheSvuota();
+                $_SESSION['messaggio'] = ['ok',
+                    "Revisione applicata. Cache svuotata ($n pagine)."];
+                vaiA('admin/modifica/' . $art);
+            }
+        }
+    }
+
+    echo render('admin-revisione', ['r' => $rev, 'messaggio' => $msg],
+        ['titolo' => 'Revisione — pannello']);
     exit;
 }
 
@@ -982,6 +1092,14 @@ if (preg_match('#^modifica/(\d+)$#', $azione, $m)) {
             ]);
             $n = cacheSvuota();
             $msg = ['ok', "Salvato. Cache svuotata ($n pagine)."];
+
+            // «migliora» salva e poi mette in coda una rilettura. Salva
+            // per primo di proposito: il modello deve leggere l'articolo
+            // che hai davanti, non quello che c'era nel database prima
+            // delle modifiche che stai ancora guardando sullo schermo.
+            if ((string)($_POST['come'] ?? '') === 'migliora') {
+                $msg = chiediRevisione($pdo, $id, (string)($_POST['indicazioni'] ?? ''));
+            }
         }
     }
 
@@ -990,10 +1108,22 @@ if (preg_match('#^modifica/(\d+)$#', $azione, $m)) {
     $a = $q->fetch();
     if (!$a) { pagina404(); }
 
+    // Le riletture di questo articolo. Quelle ancora vive — in coda o
+    // pronte — diventano un riquadro in cima alla pagina: una proposta
+    // pronta che nessuno vede è una ricerca pagata per niente. Le
+    // vecchie restano nell'elenco in fondo, perché «cos'ho già chiesto
+    // a questo articolo» è una domanda che ci si fa.
+    $q = $pdo->prepare('SELECT id, stato, motivazione, nota, indicazioni,
+                               token_in, token_out, creato_il, elaborato_il
+                          FROM ' . t('revisioni') . '
+                         WHERE articolo_id = ? ORDER BY id DESC LIMIT 10');
+    $q->execute([$id]);
+
     echo render('admin-modifica', [
         'a'          => $a,
         'categorie'  => valoriEnum($pdo, t('articles'), 'categoria'),
         'attendib'   => valoriEnum($pdo, t('articles'), 'attendibilita'),
+        'revisioni'  => $q->fetchAll(),
         'messaggio'  => $msg,
     ], ['titolo' => 'Modifica — pannello']);
     exit;

@@ -92,6 +92,27 @@ function claude(array $corpo, int $tentativi = 3): array
                                 . ($dati['stop_details']['category'] ?? 'senza categoria') . ')'];
         }
 
+        // Una risposta troncata non è una risposta.
+        //
+        // Quando il modello arriva a max_tokens l'API risponde 200 e il
+        // testo si interrompe a metà parola. Se quel testo doveva essere
+        // JSON, json_decode() torna null, e a valle diventa un generico
+        // «risposta non conforme»: il messaggio che manda a cercare nella
+        // direzione sbagliata — lo schema, il prompt, il modello — mentre
+        // il problema è solo che il tetto era basso.
+        //
+        // È successo al quarto giro del recupero storico: ottanta item
+        // producevano più eventi di quanti ne stessero in 8000 token, e
+        // enrich si è fermato con 289 item ancora in coda.
+        if (($dati['stop_reason'] ?? '') === 'max_tokens') {
+            return ['ok' => false, 'testo' => null, 'dati' => null,
+                    'in' => $in, 'out' => $out,
+                    'errore' => sprintf(
+                        'risposta troncata: ha esaurito i %d token di max_tokens. '
+                      . 'Alza il tetto, o chiedi meno roba per volta.',
+                        (int)($corpo['max_tokens'] ?? 0))];
+        }
+
         // con il ragionamento attivo i blocchi 'thinking' vengono prima:
         // prendiamo il primo blocco di tipo 'text'
         $testo = null;

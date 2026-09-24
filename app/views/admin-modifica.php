@@ -4,8 +4,43 @@
   <?php $nuovo = ($a['stato'] ?? '') === 'nuovo'; ?>
   <h1 class="titoletto"><?= $nuovo ? 'Nuovo articolo' : 'Modifica' ?></h1>
 
-  <?php if ($messaggio): ?>
-    <p class="avviso<?= $messaggio[0] === 'ok' ? 'Ok' : 'Ko' ?>"><?= e($messaggio[1]) ?></p>
+  <?php /* avviso() e non un <p> scritto a mano: quando il messaggio si
+           porta dietro un lavoro da seguire — «migliora» lo fa — ci
+           attacca sotto il riquadro che mostra il log riga per riga.
+           Senza, un pulsante che avvia qualcosa di lungo è
+           indistinguibile da un pulsante che non fa niente. */ ?>
+  <?= avviso($messaggio) ?>
+
+  <?php
+  /* La proposta che aspetta, in cima e prima del modulo.
+     Una revisione pronta che nessuno vede è una ricerca sul web pagata
+     per niente — e peggio: intanto modifichi a mano l'articolo, e quando
+     poi la applichi ti cancella il lavoro. Quindi si vede subito. */
+  $viva = null;
+  foreach ($revisioni as $rv) {
+      if (in_array($rv['stato'], ['pronta', 'attesa', 'lavorazione'], true)) { $viva = $rv; break; }
+  }
+  ?>
+  <?php if ($viva && $viva['stato'] === 'pronta'): ?>
+    <div class="avvisoOk revisione-pronta">
+      <p><strong>C'è una versione migliorata che aspetta il tuo giudizio.</strong>
+        <?php if ($viva['nota']): ?><br><em><?= e((string)$viva['nota']) ?></em><?php endif ?></p>
+      <?php if ($viva['motivazione']): ?>
+        <p class="revisione-motivo"><?= e(mb_substr((string)$viva['motivazione'], 0, 300)) ?><?php
+          ?><?= mb_strlen((string)$viva['motivazione']) > 300 ? '…' : '' ?></p>
+      <?php endif ?>
+      <p><a class="bottone" href="<?= u('admin/revisione/' . (int)$viva['id']) ?>">
+        <?= icona('anteprima') ?>guarda il confronto</a></p>
+    </div>
+  <?php /* Non quando il messaggio qui sopra si porta già dietro il
+           riquadro che segue il log dal vivo: lì l'avanzamento si vede
+           scorrere, e dire «ricarica la pagina» accanto a una cosa che
+           si sta aggiornando da sola è un invito a interromperla. */ ?>
+  <?php elseif ($viva && empty($messaggio[2])): ?>
+    <div class="avvisoOk">
+      <p>Rilettura in corso, chiesta <?= e(date('d/m alle H:i', strtotime((string)$viva['creato_il']))) ?>.
+        Ci mette qualche minuto: ricarica la pagina fra un po'.</p>
+    </div>
   <?php endif ?>
 
   <form method="post" action="<?= $nuovo ? u('admin/nuovo') : u('admin/modifica/' . (int)$a['id']) ?>" class="modulo">
@@ -79,6 +114,32 @@
       </label>
     </div>
 
+    <?php /* La richiesta specifica sta attaccata al pulsante che la usa.
+             Chiusa di suo — nove volte su dieci non serve dire niente, e
+             un campo sempre aperto sotto le azioni sembra obbligatorio —
+             ma «migliora con IA» la apre da sé al primo clic e avvia solo
+             al secondo. Un pieghevole che nessuno apre è un campo che non
+             esiste: prima, chi non ci aveva fatto caso si accorgeva di
+             avere una richiesta da fare dopo aver già pagato la rilettura.
+
+             Quando sai già cosa manca all'articolo — «controlla la data
+             di lancio», «manca la posizione dell'ESA» — dirlo vale più di
+             qualunque istruzione generica nel prompt, ed è l'unica cosa
+             che il modello non può dedurre da solo. */ ?>
+    <?php if (!$nuovo): ?>
+      <details class="indicazioni-rilettura" id="indicazioni-ia">
+        <summary>di' all'IA cosa controllare o cambiare <em>— facoltativo</em></summary>
+        <label class="campo-largo">
+          <span>La tua richiesta, se ne hai una precisa</span>
+          <textarea name="indicazioni" id="campo-indicazioni" rows="2" maxlength="500"
+                    placeholder="per esempio: verifica la data di lancio, e vedi se l'ESA ha detto qualcosa"></textarea>
+        </label>
+        <p class="indicazioni-nota" id="nota-indicazioni" hidden>
+          Scrivi la richiesta, poi premi di nuovo per avviare. Senza indicazioni
+          il modello decide da sé cosa vale la pena migliorare.</p>
+      </details>
+    <?php endif ?>
+
     <div class="barra-azioni">
       <?php if ($nuovo): ?>
         <?php /* Tre modi di finire, perché sono tre intenzioni diverse:
@@ -93,6 +154,27 @@
           <?= icona('salva') ?>salva come bozza</button>
       <?php else: ?>
         <button class="bottone" type="submit"><?= icona('salva') ?>salva</button>
+        <?php /* Salva anche questo, e poi mette in coda la rilettura: il
+                 modello deve leggere l'articolo che hai davanti, non
+                 quello che c'era nel database prima delle modifiche che
+                 stai ancora guardando.
+
+                 La conferma c'è perché questo pulsante spende — è la
+                 stessa regola di «cerca notizie» nell'elenco — e perché
+                 dura minuti, che su un pannello dove tutto il resto è
+                 istantaneo va detto prima e non dopo.
+
+                 Il confirm scritto qui è la rete per il browser senza
+                 JavaScript. Dove c'è, lo script in fondo lo toglie e
+                 mette i due tempi: il primo clic apre le indicazioni,
+                 il secondo avvia — e la conferma ripete la richiesta
+                 scritta, che è l'ultimo momento buono per accorgersi
+                 che si sta chiedendo la cosa sbagliata. */ ?>
+        <button class="bottone bottone-tenue" type="submit" name="come" value="migliora"
+                id="bottone-migliora"
+                <?= $viva ? 'disabled title="c\'è già una rilettura in corso o una proposta da guardare"' : '' ?>
+                onclick="return confirm('Salvo, poi il modello rilegge l\'articolo, cerca sul web cos\'è successo dopo e propone una versione nuova.\n\nCi mette qualche minuto e costa qualche centesimo. Niente viene sovrascritto: la proposta te la mostro prima.\n\nProcedo?')">
+          <?= icona('migliora') ?><span id="testo-migliora">migliora con IA</span></button>
         <a class="bottone bottone-tenue" href="<?= u('admin/copertina/' . (int)$a['id']) ?>">
           <?= icona('immagine') ?>copertina</a>
         <?php if ($a['stato'] === 'pubblicato'): ?>
@@ -108,4 +190,88 @@
       <?php endif ?>
     </div>
   </form>
+  <?php /* Le riletture già fatte. Serve a rispondere a «questo articolo
+           l'ho già fatto rivedere?», che è la domanda per cui uno
+           altrimenti ne chiede una seconda uguale — e la paga. Le
+           motivazioni restano leggibili anche dopo: sono il registro di
+           cosa è cambiato e perché, che sull'articolo non si vede. */ ?>
+  <?php $passate = array_filter($revisioni, fn($rv) => in_array($rv['stato'],
+        ['applicata', 'scartata', 'errore'], true)); ?>
+  <?php if ($passate): ?>
+    <details class="revisioni-passate">
+      <summary><?= count($passate) ?>
+        <?= count($passate) === 1 ? 'rilettura già fatta' : 'riletture già fatte' ?></summary>
+      <ul class="revisioni-elenco">
+        <?php foreach ($passate as $rv): ?>
+          <li>
+            <span class="revisione-stato revisione-<?= e($rv['stato']) ?>"><?= e($rv['stato']) ?></span>
+            <span class="revisione-quando">
+              <?= e(date('d/m/Y', strtotime((string)$rv['creato_il']))) ?>
+              <?php if ((int)$rv['token_in'] + (int)$rv['token_out'] > 0): ?>
+                · <?= e(number_format(costoEuro((int)$rv['token_in'], (int)$rv['token_out']), 2, ',', '.')) ?> €
+              <?php endif ?>
+            </span>
+            <?php if ($rv['indicazioni']): ?>
+              <span class="revisione-chiesto">«<?= e((string)$rv['indicazioni']) ?>»</span>
+            <?php endif ?>
+            <?php if ($rv['stato'] === 'errore'): ?>
+              <span class="revisione-motivo"><?= e((string)$rv['nota']) ?></span>
+            <?php elseif ($rv['motivazione']): ?>
+              <span class="revisione-motivo"><?= e((string)$rv['motivazione']) ?></span>
+            <?php endif ?>
+            <a href="<?= u('admin/revisione/' . (int)$rv['id']) ?>">confronto</a>
+          </li>
+        <?php endforeach ?>
+      </ul>
+    </details>
+  <?php endif ?>
 </div>
+
+<?php if (!$nuovo): ?>
+<script>
+// «migliora con IA» in due tempi. Il campo delle indicazioni c'era già,
+// ma stava chiuso in un pieghevole: chi non lo apriva prima si accorgeva
+// di avere una richiesta da fare quando la rilettura era già partita —
+// e una rilettura partita costa e non si annulla. Così il primo clic non
+// avvia niente: apre il campo e ci mette il cursore. Avvia il secondo.
+//
+// Chi la richiesta l'ha già scritta salta il primo tempo: il pulsante
+// avvia subito, altrimenti diventerebbe un clic in più per tutti.
+(function () {
+  var bottone = document.getElementById('bottone-migliora');
+  var scatola = document.getElementById('indicazioni-ia');
+  var campo   = document.getElementById('campo-indicazioni');
+  var nota    = document.getElementById('nota-indicazioni');
+  var testo   = document.getElementById('testo-migliora');
+  if (!bottone || !scatola || !campo) { return; }
+
+  // La rete per chi non ha JavaScript non serve più a chi ce l'ha, e
+  // lasciarla vorrebbe dire due conferme di fila.
+  bottone.removeAttribute('onclick');
+  var armato = false;
+
+  bottone.addEventListener('click', function (ev) {
+    var chiesto = campo.value.trim();
+
+    if (!armato && chiesto === '') {
+      ev.preventDefault();
+      armato = true;
+      scatola.open = true;
+      if (nota) { nota.hidden = false; }
+      if (testo) { testo.textContent = 'avvia la rilettura'; }
+      campo.focus();
+      return;
+    }
+
+    var d = 'Salvo, poi il modello rilegge l\'articolo, cerca sul web cos\'è '
+          + 'successo dopo e propone una versione nuova.\n\n'
+          + (chiesto !== ''
+              ? 'Gli chiedi: «' + chiesto + '»\n\n'
+              : 'Senza indicazioni: decide da sé cosa vale la pena migliorare.\n\n')
+          + 'Ci mette qualche minuto e costa qualche centesimo. Niente viene '
+          + 'sovrascritto: la proposta te la mostro prima.\n\nProcedo?';
+    if (!confirm(d)) { ev.preventDefault(); }
+  });
+})();
+</script>
+<?php endif ?>
