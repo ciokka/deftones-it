@@ -40,7 +40,14 @@
     <?php endif ?>
   </div>
 
-  <h2 class="titoletto">Oppure scegline una</h2>
+  <?php /* Il catalogo sta chiuso dietro un pulsante: chi apre la pagina
+           di solito vuole vedere la copertina che c'è, e sessanta
+           miniature sotto la spingono fuori dallo schermo. Si apre da sé
+           solo quando si torna da un filtro, perché lì le foto sono
+           proprio quello che si stava cercando. */ ?>
+  <details class="caricamento scegli-foto" id="catalogo"<?= $cerca !== '' ? ' open' : '' ?>>
+    <summary><?= icona('immagine') ?> oppure scegline una dal catalogo</summary>
+
   <p class="occhiello">
     Le fotografie del catalogo, con licenza libera. Vengono prima quelle
     di <strong><?= e($mira) ?></strong>, che è il soggetto di questo articolo, e
@@ -48,10 +55,13 @@
     cambierà più da solo.
   </p>
 
-  <form class="ricerca-blocco" method="get">
+  <?php /* Due filtri in uno. Mentre si scrive si nascondono le foto già
+           in pagina che non c'entrano, senza ricaricare; con Invio si
+           cerca nel catalogo intero, che è più delle sessanta mostrate. */ ?>
+  <form class="ricerca-blocco" method="get" action="#catalogo">
     <div class="ricerca">
-      <input type="search" name="q" value="<?= e($cerca) ?>"
-             placeholder="filtra per autore o per titolo del file…">
+      <input type="search" name="q" value="<?= e($cerca) ?>" id="filtro-foto"
+             placeholder="filtra per autore, titolo o soggetto…" autocomplete="off">
       <button type="submit">filtra</button>
     </div>
   </form>
@@ -59,9 +69,12 @@
   <?php if (!$foto): ?>
     <p class="vuoto">Nessuna fotografia con questo filtro.</p>
   <?php else: ?>
+    <p class="vuoto" id="filtro-vuoto" hidden>Nessuna di queste: premi Invio per cercare in tutto il catalogo.</p>
     <div class="griglia-foto">
       <?php foreach ($foto as $f): ?>
-        <form method="post" class="foto-scelta">
+        <form method="post" class="foto-scelta"
+              data-testo="<?= e(mb_strtolower(implode(' ', [$f['titolo'] ?? '', $f['autore'] ?? '',
+                  $f['soggetto'] ?? '', $f['riferimento'] ?? '']))) ?>">
           <input type="hidden" name="csrf" value="<?= e(csrf()) ?>">
           <input type="hidden" name="che" value="scelta">
           <input type="hidden" name="img" value="<?= (int)$f['id'] ?>">
@@ -97,4 +110,32 @@
       <?php endforeach ?>
     </div>
   <?php endif ?>
+  </details>
 </div>
+
+<script>
+(function () {
+  var pannello = document.getElementById('catalogo');
+  var campo = document.getElementById('filtro-foto');
+  var vuoto = document.getElementById('filtro-vuoto');
+  var foto = document.querySelectorAll('.griglia-foto .foto-scelta');
+  if (!pannello || !campo) return;
+
+  // Aperto il pannello, si può scrivere subito.
+  pannello.addEventListener('toggle', function () {
+    if (pannello.open) campo.focus();
+  });
+
+  campo.addEventListener('input', function () {
+    var parole = campo.value.toLowerCase().split(/\s+/).filter(Boolean);
+    var viste = 0;
+    foto.forEach(function (f) {
+      var t = f.getAttribute('data-testo') || '';
+      var si = parole.every(function (p) { return t.indexOf(p) !== -1; });
+      f.hidden = !si;
+      if (si) viste++;
+    });
+    if (vuoto) vuoto.hidden = viste > 0 || foto.length === 0;
+  });
+})();
+</script>

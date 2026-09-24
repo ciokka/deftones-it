@@ -1829,6 +1829,14 @@ figure:has(> img.img-mancante) { display: none; }
 .caricamento > summary:hover { color: var(--accento); border-color: var(--accento); }
 .caricamento .occhiello { margin: 1rem 0; font-size: .92rem; }
 
+/* Il catalogo delle copertine usa lo stesso pulsante che si apre, ma
+   dentro c'è una griglia di foto: la misura di un modulo la stringerebbe
+   a tre colonne. */
+.scegli-foto { max-width: none; margin-top: 2rem; }
+.scegli-foto[open] > summary { margin-bottom: .25rem; }
+.scegli-foto .ricerca-blocco { margin-bottom: 1.25rem; }
+.griglia-foto .foto-scelta[hidden] { display: none; }
+
 .modulo-foto { display: grid; gap: .9rem; }
 .modulo-foto label {
   display: grid;

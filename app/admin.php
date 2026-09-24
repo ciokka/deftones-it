@@ -816,9 +816,11 @@ if (preg_match('#^copertina/(\d+)$#', $azione, $m)) {
     $dove = ['scartata = 0'];
     $par  = [];
     if ($cerca !== '') {
-        $dove[] = '(autore LIKE ? OR riferimento LIKE ?)';
-        $par[] = '%' . $cerca . '%';
-        $par[] = '%' . $cerca . '%';
+        // Anche nel titolo e nel soggetto: il titolo è la didascalia di
+        // chi ha scattato — «Deftones @ Alcatraz» — ed è con quella che
+        // una persona ricorda una foto, più che con l'autore.
+        $dove[] = '(titolo LIKE ? OR autore LIKE ? OR soggetto LIKE ? OR riferimento LIKE ?)';
+        for ($n = 0; $n < 4; $n++) { $par[] = '%' . $cerca . '%'; }
     }
     $q = $pdo->prepare('SELECT * FROM ' . t('immagini') . '
                          WHERE ' . implode(' AND ', $dove) . '
