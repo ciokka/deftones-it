@@ -1023,7 +1023,6 @@ $pagina    = max(1, (int)($_GET['p'] ?? 1));
 $cerca     = trim((string)($_GET['q'] ?? ''));
 $anno      = (int)($_GET['anno'] ?? 0);
 $cat       = (string)($_GET['cat'] ?? '');
-$ordine    = (string)($_GET['ord'] ?? 'rilevanza');
 $hot       = !empty($_GET['hot']);
 $sp        = !empty($_GET['sp']);
 $cop       = (string)($_GET['cop'] ?? '');          // '' | con | senza
@@ -1045,6 +1044,13 @@ if ($stato === '' && (($_POST['vista'] ?? $_GET['vista'] ?? '') === 'scartate'))
     $stato = 'scartato';
 }
 if (!in_array($stato, $statiValidi, true)) { $stato = 'draft'; }
+
+// Fra le bozze conta cosa vale la pena pubblicare, fra quelle online cosa
+// è uscito per ultimo: lo stesso ordine per tutte e due non serve a
+// nessuna delle due.
+$ordineDefault = $stato === 'pubblicato' ? 'recenti' : 'rilevanza';
+$ordine        = (string)($_GET['ord'] ?? '');
+if ($ordine === '') { $ordine = $ordineDefault; }
 
 $dove = [];
 $par  = [];
@@ -1137,6 +1143,7 @@ echo render('admin-bozze', [
     'messaggio' => $messaggio ?? messaggioDiPassaggio(),
     'totale' => $totale, 'pagina' => $pagina, 'pagine' => $pagine,
     'cerca' => $cerca, 'anno' => $anno, 'cat' => $cat, 'ordine' => $ordine,
+    'ordineDefault' => $ordineDefault,
     'hot' => $hot, 'sp' => $sp, 'cop' => $cop, 'da' => $da, 'a' => $a,
     'anni' => $anni, 'categorie' => $categorie,
     'senzaCopertina' => $senzaCopertina, 'quantiHot' => $quantiHot,

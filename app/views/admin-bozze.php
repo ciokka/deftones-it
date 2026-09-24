@@ -1,8 +1,8 @@
 <?php
 /** Costruisce un URL del pannello conservando i filtri attivi. */
-$link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina, $stato, $hot, $sp, $cop, $da, $a): string {
+$link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $ordineDefault, $pagina, $stato, $hot, $sp, $cop, $da, $a): string {
     $p = [
-        'q' => $cerca, 'anno' => $anno ?: '', 'cat' => $cat, 'ord' => $ordine,
+        'q' => $cerca, 'anno' => $anno ?: '', 'cat' => $cat, 'ord' => $ordine === $ordineDefault ? '' : $ordine,
         'stato' => $stato === 'draft' ? '' : $stato,
         'hot' => $hot ? '1' : '', 'sp' => $sp ? '1' : '',
         'cop' => $cop, 'da' => $da, 'a' => $a,
@@ -22,7 +22,7 @@ $link = function (array $cambia = []) use ($cerca, $anno, $cat, $ordine, $pagina
    senza filtri e alla prima pagina a ogni clic. Solo chiavi note, da
    valori già convalidati. */
 $filtriCorrenti = http_build_query(array_filter([
-    'q' => $cerca, 'anno' => $anno ?: '', 'cat' => $cat, 'ord' => $ordine,
+    'q' => $cerca, 'anno' => $anno ?: '', 'cat' => $cat, 'ord' => $ordine === $ordineDefault ? '' : $ordine,
     'stato' => $stato === 'draft' ? '' : $stato,
     'hot' => $hot ? '1' : '', 'sp' => $sp ? '1' : '',
     'cop' => $cop, 'da' => $da, 'a' => $a,
@@ -81,7 +81,7 @@ $filtriAttivi = $cerca || $anno || $cat || $hot || $sp || $cop || $da || $a;
   <nav class="linguette">
     <?php foreach ($etichetteStato as $k => $et): ?>
       <a class="linguetta<?= $stato === $k ? ' attiva' : '' ?>"
-         href="<?= e($link(['stato' => $k === 'draft' ? '' : $k, 'anno' => '', 'cat' => ''])) ?>">
+         href="<?= e($link(['stato' => $k === 'draft' ? '' : $k, 'anno' => '', 'cat' => '', 'ord' => ''])) ?>">
         <?= e($et) ?><span class="linguetta-n"><?= (int)$conta[$k] ?></span></a>
     <?php endforeach ?>
   </nav>
